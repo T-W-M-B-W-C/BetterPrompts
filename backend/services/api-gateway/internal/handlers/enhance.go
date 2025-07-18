@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"net/http"
 	"time"
 
@@ -51,14 +53,30 @@ func EnhancePrompt(clients *services.ServiceClients) gin.HandlerFunc {
 		// Get user ID if authenticated
 		userID, _ := c.Get("user_id")
 
-		// Step 1: Analyze intent
-		intentResult, err := clients.IntentClassifier.ClassifyIntent(c.Request.Context(), req.Text)
-		if err != nil {
-			logger.WithError(err).Error("Intent classification failed")
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "Failed to analyze intent",
-			})
-			return
+		// Generate text hash for caching
+		textHash := generateTextHash(req.Text)
+
+		// Check cache for intent classification
+		var intentResult *services.IntentClassificationResult
+		if clients.Cache != nil {
+			intentResult, _ = clients.Cache.GetCachedIntentClassification(c.Request.Context(), textHash)
+		}
+
+		// Step 1: Analyze intent if not cached
+		if intentResult == nil {
+			intentResult, err = clients.IntentClassifier.ClassifyIntent(c.Request.Context(), req.Text)
+			if err != nil {
+				logger.WithError(err).Error("Intent classification failed")
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"error": "Failed to analyze intent",
+				})
+				return
+			}
+
+			// Cache the result
+			if clients.Cache != nil {
+				clients.Cache.CacheIntentClassification(c.Request.Context(), textHash, intentResult, 1*time.Hour)
+			}
 		}
 
 		// Step 2: Select techniques
@@ -123,8 +141,12 @@ func EnhancePrompt(clients *services.ServiceClients) gin.HandlerFunc {
 		}
 
 		// Step 5: Cache result
-		cacheKey := generateCacheKey(req.Text, techniques)
-		clients.Cache.Set(c.Request.Context(), cacheKey, enhancedPrompt, 1*time.Hour)
+		if clients.Cache != nil {
+			err = clients.Cache.CacheEnhancedPrompt(c.Request.Context(), textHash, techniques, response, 1*time.Hour)
+			if err != nil {
+				logger.WithError(err).Debug("Failed to cache enhanced prompt")
+			}
+		}
 
 		// Prepare response
 		response := EnhanceResponse{
@@ -153,10 +175,12 @@ func EnhancePrompt(clients *services.ServiceClients) gin.HandlerFunc {
 	}
 }
 
-// generateCacheKey creates a cache key for the enhancement result
-func generateCacheKey(text string, techniques []string) string {
-	// Simple implementation - in production, use a proper hash
-	return "enhance:" + text[:min(50, len(text))]
+// generateTextHash creates a hash of the input text for caching
+func generateTextHash(text string) string {
+	// Create SHA256 hash of the text
+	h := sha256.New()
+	h.Write([]byte(text))
+	return hex.EncodeToString(h.Sum(nil))[:16] // Use first 16 chars of hash
 }
 
 func min(a, b int) int {
