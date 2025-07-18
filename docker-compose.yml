@@ -1,0 +1,228 @@
+version: '3.9'
+
+services:
+  # Frontend Service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../docker/frontend/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost/api/v1
+        NODE_ENV: development
+    container_name: betterprompts-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost/api/v1
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - betterprompts-network
+    depends_on:
+      - nginx
+
+  # Intent Classification Service
+  intent-classifier:
+    build:
+      context: ./backend/services/intent-classifier
+      dockerfile: ../../../docker/backend/intent-classifier/Dockerfile
+    container_name: betterprompts-intent-classifier
+    ports:
+      - "8001:8001"
+    environment:
+      - ENVIRONMENT=development
+      - DATABASE_URL=postgresql://betterprompts:betterprompts@postgres:5432/betterprompts
+      - REDIS_URL=redis://redis:6379/0
+      - MODEL_NAME=microsoft/deberta-v3-base
+      - LOG_LEVEL=DEBUG
+    volumes:
+      - ./backend/services/intent-classifier:/app
+      - intent-models:/app/models
+      - ml-cache:/app/cache
+    networks:
+      - betterprompts-network
+    depends_on:
+      - postgres
+      - redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Technique Selection Engine
+  technique-selector:
+    build:
+      context: ./backend/services/technique-selector
+      dockerfile: ../../../docker/backend/technique-selector/Dockerfile
+    container_name: betterprompts-technique-selector
+    ports:
+      - "8002:8002"
+    environment:
+      - GIN_MODE=debug
+      - DATABASE_URL=postgresql://betterprompts:betterprompts@postgres:5432/betterprompts
+      - REDIS_URL=redis://redis:6379/1
+      - JWT_SECRET=dev-secret-change-in-production
+      - LOG_LEVEL=DEBUG
+    volumes:
+      - ./backend/services/technique-selector:/app
+      - go-cache:/go/pkg/mod
+    networks:
+      - betterprompts-network
+    depends_on:
+      - postgres
+      - redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+  # Prompt Generation Service
+  prompt-generator:
+    build:
+      context: ./backend/services/prompt-generator
+      dockerfile: ../../../docker/backend/prompt-generator/Dockerfile
+    container_name: betterprompts-prompt-generator
+    ports:
+      - "8003:8003"
+    environment:
+      - ENVIRONMENT=development
+      - DATABASE_URL=postgresql://betterprompts:betterprompts@postgres:5432/betterprompts
+      - REDIS_URL=redis://redis:6379/2
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - LOG_LEVEL=DEBUG
+    volumes:
+      - ./backend/services/prompt-generator:/app
+      - prompt-templates:/app/templates
+    networks:
+      - betterprompts-network
+    depends_on:
+      - postgres
+      - redis
+      - technique-selector
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Nginx API Gateway
+  nginx:
+    build:
+      context: ./docker/nginx
+      dockerfile: Dockerfile
+    container_name: betterprompts-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
+      - nginx-cache:/var/cache/nginx
+    networks:
+      - betterprompts-network
+    depends_on:
+      - intent-classifier
+      - technique-selector
+      - prompt-generator
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/healthcheck"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+  # PostgreSQL Database
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: betterprompts-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=betterprompts
+      - POSTGRES_PASSWORD=betterprompts
+      - POSTGRES_DB=betterprompts
+      - POSTGRES_INITDB_ARGS=--encoding=UTF8
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./backend/migrations:/docker-entrypoint-initdb.d:ro
+    networks:
+      - betterprompts-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U betterprompts"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: betterprompts-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    networks:
+      - betterprompts-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # Monitoring - Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: betterprompts-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus:/etc/prometheus:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    networks:
+      - betterprompts-network
+
+  # Monitoring - Grafana
+  grafana:
+    image: grafana/grafana:latest
+    container_name: betterprompts-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    networks:
+      - betterprompts-network
+    depends_on:
+      - prometheus
+
+networks:
+  betterprompts-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  postgres-data:
+  redis-data:
+  intent-models:
+  ml-cache:
+  go-cache:
+  prompt-templates:
+  nginx-cache:
+  prometheus-data:
+  grafana-data:
