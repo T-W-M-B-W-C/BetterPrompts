@@ -1,0 +1,10 @@
+outs:
+- md5: placeholder
+  size: 0
+  path: data/raw
+- md5: placeholder  
+  size: 0
+  path: data/processed
+- md5: placeholder
+  size: 0
+  path: data/external

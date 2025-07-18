@@ -1,0 +1,138 @@
+# ML Pipeline Configuration
+
+project:
+  name: "BetterPrompts"
+  description: "Intent Classification and Prompt Enhancement ML Pipeline"
+  version: "1.0.0"
+  
+paths:
+  data_dir: "./data"
+  models_dir: "./models"
+  logs_dir: "./logs"
+  artifacts_dir: "./artifacts"
+
+data:
+  raw_data_path: "./data/raw"
+  processed_data_path: "./data/processed"
+  external_data_path: "./data/external"
+  train_test_split: 0.8
+  validation_split: 0.1
+  random_seed: 42
+  max_samples: null  # Use all available data
+
+preprocessing:
+  max_length: 512
+  min_length: 10
+  remove_duplicates: true
+  lowercase: false  # Preserve casing for code-related prompts
+  remove_special_chars: false
+  augmentation:
+    enabled: true
+    techniques:
+      - "paraphrase"
+      - "back_translation"
+      - "synonym_replacement"
+    augmentation_factor: 2
+
+model:
+  intent_classifier:
+    architecture: "deberta-v3"
+    pretrained_model: "microsoft/deberta-v3-base"
+    num_labels: 10
+    hidden_dropout_prob: 0.1
+    attention_dropout_prob: 0.1
+    max_position_embeddings: 512
+    
+training:
+  batch_size: 32
+  learning_rate: 2e-5
+  num_epochs: 10
+  warmup_steps: 500
+  weight_decay: 0.01
+  gradient_accumulation_steps: 4
+  fp16: true
+  evaluation_strategy: "steps"
+  eval_steps: 100
+  save_strategy: "steps"
+  save_steps: 500
+  load_best_model_at_end: true
+  metric_for_best_model: "f1_weighted"
+  greater_is_better: true
+  
+hyperparameter_tuning:
+  enabled: true
+  n_trials: 50
+  timeout: 3600  # 1 hour
+  parameters:
+    learning_rate:
+      type: "float"
+      low: 1e-5
+      high: 5e-5
+    batch_size:
+      type: "categorical"
+      choices: [16, 32, 64]
+    warmup_ratio:
+      type: "float"
+      low: 0.0
+      high: 0.2
+    weight_decay:
+      type: "float"
+      low: 0.0
+      high: 0.3
+
+evaluation:
+  metrics:
+    - "accuracy"
+    - "precision"
+    - "recall"
+    - "f1_weighted"
+    - "f1_macro"
+    - "confusion_matrix"
+    - "classification_report"
+  confidence_threshold: 0.7
+  
+serving:
+  model_server: "torchserve"
+  batch_size: 8
+  max_batch_delay: 100  # ms
+  response_timeout: 1000  # ms
+  workers: 4
+  gpu_enabled: true
+  
+monitoring:
+  drift_detection:
+    enabled: true
+    method: "kolmogorov_smirnov"
+    threshold: 0.1
+    window_size: 1000
+  performance_tracking:
+    enabled: true
+    metrics:
+      - "latency_p50"
+      - "latency_p95"
+      - "latency_p99"
+      - "throughput"
+      - "error_rate"
+  alerting:
+    enabled: true
+    channels:
+      - "email"
+      - "slack"
+    thresholds:
+      accuracy_drop: 0.05
+      latency_p95: 200  # ms
+      error_rate: 0.01
+
+mlflow:
+  tracking_uri: "sqlite:///mlflow.db"
+  experiment_name: "intent_classification"
+  registry_uri: "sqlite:///mlflow_registry.db"
+  
+dvc:
+  remote: "s3://betterprompts-ml-data"
+  cache_dir: ".dvc/cache"
+  
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "./logs/ml_pipeline.log"
