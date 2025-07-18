@@ -1,0 +1,230 @@
+# Prompt Engineering Techniques Configuration
+
+techniques:
+  - id: chain_of_thought
+    name: "Chain of Thought"
+    description: "Encourages step-by-step reasoning by explicitly asking the model to show its thinking process"
+    enabled: true
+    priority: 10
+    parameters:
+      min_steps: 3
+      max_steps: 10
+      step_prefix: "Step"
+    best_for:
+      - reasoning
+      - problem_solving
+      - analysis
+      - calculation
+    not_recommended_for:
+      - simple_lookup
+      - creative_writing
+    min_complexity: 0.3
+    max_tokens_overhead: 200
+
+  - id: tree_of_thoughts
+    name: "Tree of Thoughts"
+    description: "Explores multiple reasoning paths and evaluates different approaches"
+    enabled: true
+    priority: 8
+    parameters:
+      num_branches: 3
+      evaluation_criteria:
+        - feasibility
+        - efficiency
+        - completeness
+    best_for:
+      - complex_problems
+      - optimization
+      - strategic_planning
+    not_recommended_for:
+      - simple_tasks
+      - time_sensitive
+    min_complexity: 0.6
+    max_tokens_overhead: 500
+
+  - id: few_shot
+    name: "Few-Shot Learning"
+    description: "Provides examples of input-output pairs to guide behavior"
+    enabled: true
+    priority: 9
+    parameters:
+      min_examples: 2
+      max_examples: 5
+      example_selection: similarity
+    best_for:
+      - pattern_matching
+      - formatting
+      - classification
+      - consistency
+    not_recommended_for:
+      - novel_problems
+      - creative_tasks
+    min_complexity: 0.2
+    max_tokens_overhead: 300
+
+  - id: zero_shot
+    name: "Zero-Shot Learning"
+    description: "Provides clear instructions without examples"
+    enabled: true
+    priority: 7
+    parameters:
+      instruction_style: direct
+      include_constraints: true
+    best_for:
+      - straightforward_tasks
+      - general_queries
+      - quick_responses
+    not_recommended_for:
+      - complex_formatting
+      - nuanced_tasks
+    min_complexity: 0.0
+    max_tokens_overhead: 100
+
+  - id: role_play
+    name: "Role Playing"
+    description: "Assigns a specific role or persona to influence responses"
+    enabled: true
+    priority: 6
+    parameters:
+      default_role: expert
+      include_traits: true
+    best_for:
+      - expert_advice
+      - specialized_knowledge
+      - perspective_taking
+    not_recommended_for:
+      - factual_queries
+      - calculations
+    min_complexity: 0.1
+    max_tokens_overhead: 150
+
+  - id: step_by_step
+    name: "Step by Step"
+    description: "Breaks down complex tasks into clear, sequential steps"
+    enabled: true
+    priority: 9
+    parameters:
+      auto_number: true
+      include_verification: true
+    best_for:
+      - procedures
+      - tutorials
+      - workflows
+      - instructions
+    not_recommended_for:
+      - simple_queries
+      - creative_writing
+    min_complexity: 0.3
+    max_tokens_overhead: 200
+
+  - id: structured_output
+    name: "Structured Output"
+    description: "Requests responses in specific formats"
+    enabled: true
+    priority: 7
+    parameters:
+      supported_formats:
+        - json
+        - markdown
+        - table
+        - xml
+        - yaml
+      include_example: true
+    best_for:
+      - data_extraction
+      - formatting
+      - organization
+      - parsing
+    not_recommended_for:
+      - narrative_responses
+      - creative_content
+    min_complexity: 0.1
+    max_tokens_overhead: 150
+
+  - id: emotional_appeal
+    name: "Emotional Appeal"
+    description: "Adds emotional context to motivate engagement"
+    enabled: true
+    priority: 4
+    parameters:
+      appeal_types:
+        - importance
+        - learning
+        - impact
+        - curiosity
+      subtlety_level: medium
+    best_for:
+      - creative_tasks
+      - persuasion
+      - engagement
+    not_recommended_for:
+      - technical_documentation
+      - factual_analysis
+    min_complexity: 0.0
+    max_tokens_overhead: 100
+
+  - id: constraints
+    name: "Constraints"
+    description: "Adds specific requirements and boundaries"
+    enabled: true
+    priority: 8
+    parameters:
+      constraint_types:
+        - length
+        - format
+        - tone
+        - content
+      enforce_strictly: true
+    best_for:
+      - precision_tasks
+      - compliance
+      - specific_requirements
+    not_recommended_for:
+      - open_ended_creative
+      - exploration
+    min_complexity: 0.0
+    max_tokens_overhead: 150
+
+  - id: analogical
+    name: "Analogical Reasoning"
+    description: "Uses analogies to explain complex concepts"
+    enabled: true
+    priority: 5
+    parameters:
+      analogy_domains:
+        - everyday_life
+        - nature
+        - technology
+        - sports
+      include_connection: true
+    best_for:
+      - explanation
+      - teaching
+      - understanding
+      - simplification
+    not_recommended_for:
+      - precise_technical
+      - direct_answers
+    min_complexity: 0.2
+    max_tokens_overhead: 200
+
+# Technique Combination Rules
+combinations:
+  compatible:
+    - [chain_of_thought, structured_output]
+    - [role_play, constraints]
+    - [few_shot, structured_output]
+    - [step_by_step, constraints]
+    - [analogical, role_play]
+    
+  incompatible:
+    - [zero_shot, few_shot]
+    - [tree_of_thoughts, emotional_appeal]
+    
+  recommended:
+    - techniques: [chain_of_thought, structured_output]
+      for: complex_analysis
+    - techniques: [role_play, constraints]
+      for: expert_consultation
+    - techniques: [few_shot, structured_output]
+      for: data_processing

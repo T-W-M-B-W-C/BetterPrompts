@@ -1,0 +1,268 @@
+# Technique Selection Rules Configuration
+
+techniques:
+  - id: "chain_of_thought"
+    name: "Chain of Thought"
+    description: "Step-by-step reasoning that breaks down complex problems"
+    priority: 1
+    conditions:
+      intents:
+        - "reasoning"
+        - "problem_solving"
+        - "data_analysis"
+      complexity_threshold: 0.5
+      keywords:
+        - "explain"
+        - "why"
+        - "how"
+        - "analyze"
+        - "solve"
+        - "calculate"
+        - "derive"
+      multi_step_indicators:
+        - "step by step"
+        - "first"
+        - "then"
+        - "finally"
+        - "process"
+    template: |
+      I'll work through this step-by-step.
+      
+      {original_prompt}
+      
+      Let me break this down:
+
+  - id: "tree_of_thoughts"
+    name: "Tree of Thoughts"
+    description: "Explores multiple reasoning paths and evaluates different approaches"
+    priority: 2
+    conditions:
+      intents:
+        - "problem_solving"
+        - "task_planning"
+        - "reasoning"
+      complexity_threshold: 0.7
+      keywords:
+        - "options"
+        - "alternatives"
+        - "compare"
+        - "evaluate"
+        - "best approach"
+        - "pros and cons"
+      requires_exploration: true
+    template: |
+      I'll explore different approaches to this problem.
+      
+      {original_prompt}
+      
+      Let me consider multiple perspectives:
+
+  - id: "few_shot"
+    name: "Few-Shot Learning"
+    description: "Provides examples to guide the response format and style"
+    priority: 3
+    conditions:
+      intents:
+        - "creative_writing"
+        - "code_generation"
+        - "translation"
+      keywords:
+        - "example"
+        - "format"
+        - "style"
+        - "pattern"
+        - "template"
+        - "like"
+      requires_pattern: true
+    template: |
+      I'll follow a similar pattern to these examples:
+      
+      {examples}
+      
+      Now for your request:
+      {original_prompt}
+
+  - id: "zero_shot"
+    name: "Zero-Shot Learning"
+    description: "Direct task completion without examples"
+    priority: 10
+    conditions:
+      intents:
+        - "question_answering"
+        - "conversation"
+      complexity_threshold_max: 0.3
+      simple_request: true
+    template: |
+      {original_prompt}
+
+  - id: "self_consistency"
+    name: "Self-Consistency"
+    description: "Multiple attempts at solving with consistency verification"
+    priority: 4
+    conditions:
+      intents:
+        - "data_analysis"
+        - "code_generation"
+        - "reasoning"
+      keywords:
+        - "verify"
+        - "check"
+        - "accurate"
+        - "correct"
+        - "validate"
+      requires_accuracy: true
+    template: |
+      I'll solve this multiple ways to ensure accuracy.
+      
+      {original_prompt}
+      
+      Approach 1:
+
+  - id: "constitutional_ai"
+    name: "Constitutional AI"
+    description: "Applies ethical principles and guidelines to responses"
+    priority: 5
+    conditions:
+      keywords:
+        - "ethical"
+        - "moral"
+        - "safe"
+        - "appropriate"
+        - "responsible"
+        - "fair"
+      sensitive_content: true
+    template: |
+      I'll approach this with appropriate ethical considerations.
+      
+      {original_prompt}
+      
+      Considering the ethical implications:
+
+  - id: "iterative_refinement"
+    name: "Iterative Refinement"
+    description: "Progressive improvement through multiple iterations"
+    priority: 6
+    conditions:
+      intents:
+        - "creative_writing"
+        - "code_generation"
+      keywords:
+        - "improve"
+        - "refine"
+        - "enhance"
+        - "optimize"
+        - "polish"
+        - "iterate"
+    template: |
+      I'll start with a basic version and then refine it.
+      
+      {original_prompt}
+      
+      Initial version:
+
+  - id: "role_based"
+    name: "Role-Based Prompting"
+    description: "Assumes a specific role or expertise for the response"
+    priority: 7
+    conditions:
+      keywords:
+        - "expert"
+        - "professional"
+        - "specialist"
+        - "as a"
+        - "role"
+        - "perspective"
+      requires_expertise: true
+    template: |
+      As a {role}, I'll address this request:
+      
+      {original_prompt}
+
+  - id: "structured_output"
+    name: "Structured Output"
+    description: "Provides response in a specific structured format"
+    priority: 8
+    conditions:
+      keywords:
+        - "list"
+        - "bullet points"
+        - "table"
+        - "json"
+        - "markdown"
+        - "format"
+      requires_structure: true
+    template: |
+      I'll provide this in a structured format.
+      
+      {original_prompt}
+      
+      Here's the structured response:
+
+  - id: "metacognitive"
+    name: "Metacognitive Prompting"
+    description: "Reflects on the thinking process while solving"
+    priority: 9
+    conditions:
+      intents:
+        - "reasoning"
+        - "problem_solving"
+      complexity_threshold: 0.8
+      keywords:
+        - "think"
+        - "consider"
+        - "reflect"
+        - "approach"
+    template: |
+      Let me think about how to approach this problem.
+      
+      {original_prompt}
+      
+      My thinking process:
+
+# Selection rules
+selection_rules:
+  max_techniques: 3  # Maximum number of techniques to apply
+  min_confidence: 0.7  # Minimum confidence to suggest a technique
+  
+  # Combination rules
+  compatible_combinations:
+    - ["chain_of_thought", "self_consistency"]
+    - ["few_shot", "iterative_refinement"]
+    - ["tree_of_thoughts", "metacognitive"]
+    - ["role_based", "structured_output"]
+  
+  incompatible_combinations:
+    - ["zero_shot", "few_shot"]
+    - ["tree_of_thoughts", "zero_shot"]
+  
+  # Priority overrides based on intent
+  intent_priority_boost:
+    reasoning:
+      chain_of_thought: 2
+      tree_of_thoughts: 1
+    code_generation:
+      few_shot: 2
+      structured_output: 1
+    creative_writing:
+      iterative_refinement: 2
+      role_based: 1
+
+# Complexity scoring factors
+complexity_factors:
+  word_count:
+    - range: [0, 20]
+      score: 0.1
+    - range: [21, 50]
+      score: 0.3
+    - range: [51, 100]
+      score: 0.5
+    - range: [101, 200]
+      score: 0.7
+    - range: [201, -1]
+      score: 0.9
+  
+  multi_part_question: 0.3
+  technical_terms: 0.2
+  requires_calculation: 0.3
+  abstract_concepts: 0.2
+  multiple_constraints: 0.3
