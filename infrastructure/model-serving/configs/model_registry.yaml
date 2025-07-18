@@ -1,0 +1,97 @@
+# Model Registry Configuration
+
+registry:
+  local_path: "../registry"
+  s3_bucket: "betterprompts-model-registry"
+  s3_prefix: "models"
+
+versioning:
+  scheme: "semantic"  # semantic, timestamp, or custom
+  auto_increment: true
+  
+  # Semantic versioning rules
+  major_triggers:
+    - "breaking_change"
+    - "architecture_change"
+    - "incompatible_api"
+  
+  minor_triggers:
+    - "feature_addition"
+    - "performance_improvement"
+    - "accuracy_improvement"
+  
+  patch_triggers:
+    - "bug_fix"
+    - "minor_update"
+    - "documentation"
+
+lifecycle:
+  stages:
+    - training
+    - validation
+    - staging
+    - production
+    - deprecated
+    - archived
+  
+  promotion_rules:
+    validation:
+      min_accuracy: 0.80
+      min_test_samples: 1000
+      required_tests:
+        - "unit_tests"
+        - "integration_tests"
+        - "performance_tests"
+    
+    staging:
+      min_accuracy: 0.85
+      soak_time_hours: 24
+      canary_percentage: 10
+    
+    production:
+      min_accuracy: 0.90
+      approval_required: true
+      rollback_window_hours: 48
+
+retention:
+  keep_production_versions: 3
+  keep_staging_versions: 5
+  keep_validation_versions: 10
+  archive_after_days: 90
+  delete_archived_after_days: 365
+
+metadata:
+  required_fields:
+    - "training_date"
+    - "dataset_version"
+    - "hyperparameters"
+    - "metrics"
+    - "dependencies"
+  
+  tracking:
+    - "inference_count"
+    - "error_rate"
+    - "latency_p50"
+    - "latency_p95"
+    - "latency_p99"
+
+notifications:
+  channels:
+    slack:
+      webhook_url: "${SLACK_WEBHOOK_URL}"
+      enabled: true
+    
+    email:
+      smtp_server: "smtp.gmail.com"
+      smtp_port: 587
+      from_address: "ml-platform@betterprompts.com"
+      to_addresses:
+        - "ml-team@betterprompts.com"
+      enabled: false
+  
+  events:
+    - "model_registered"
+    - "model_promoted"
+    - "model_deprecated"
+    - "performance_degradation"
+    - "error_threshold_exceeded"

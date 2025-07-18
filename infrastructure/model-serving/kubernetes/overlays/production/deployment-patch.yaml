@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: torchserve
+spec:
+  replicas: 5
+  template:
+    spec:
+      containers:
+      - name: torchserve
+        resources:
+          requests:
+            cpu: "4"
+            memory: "8Gi"
+            nvidia.com/gpu: "1"
+          limits:
+            cpu: "8"
+            memory: "16Gi"
+            nvidia.com/gpu: "1"
+        env:
+        - name: JAVA_OPTS
+          value: "-Xmx8g -Xms4g -XX:+UseG1GC -XX:MaxGCPauseMillis=50"
+        - name: ENVIRONMENT
+          value: "production"
+        - name: DD_AGENT_HOST
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: DD_TRACE_ENABLED
+          value: "true"
+        envFrom:
+        - secretRef:
+            name: model-credentials
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app: torchserve
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app: torchserve

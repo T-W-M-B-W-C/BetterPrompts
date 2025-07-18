@@ -1,0 +1,16 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: torchserve
+spec:
+  rules:
+  - host: models-dev.betterprompts.com
+    http:
+      paths:
+      - path: /predictions
+        pathType: Prefix
+        backend:
+          service:
+            name: torchserve
+            port:
+              number: 8080

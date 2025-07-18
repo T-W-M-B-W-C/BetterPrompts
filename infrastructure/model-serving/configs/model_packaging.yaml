@@ -1,0 +1,59 @@
+# Model Packaging Configuration
+
+paths:
+  model_dir: "../../ml-pipeline/models/production"
+  archive_dir: "../torchserve/models"
+  temp_dir: "/tmp/model_packaging"
+
+model:
+  intent_labels:
+    - "question_answering"
+    - "creative_writing"
+    - "code_generation"
+    - "data_analysis"
+    - "reasoning"
+    - "summarization"
+    - "translation"
+    - "conversation"
+    - "task_planning"
+    - "problem_solving"
+  
+  max_length: 512
+  
+  versions:
+    retention_policy: "keep_last_5"
+    naming_convention: "v{major}.{minor}.{patch}"
+
+packaging:
+  compression: true
+  include_source_code: false
+  include_requirements: true
+  
+validation:
+  min_file_size_mb: 100
+  max_file_size_mb: 5000
+  required_files:
+    - "model.pt"
+    - "config.json"
+    - "tokenizer/tokenizer_config.json"
+    - "tokenizer/vocab.txt"
+
+deployment:
+  model_store_s3: "s3://betterprompts-models/torchserve"
+  model_store_local: "../torchserve/model-store"
+  
+  strategies:
+    canary:
+      enabled: true
+      initial_traffic_percentage: 10
+      increment: 10
+      interval_minutes: 30
+    
+    blue_green:
+      enabled: false
+      switch_percentage: 100
+    
+    rolling:
+      enabled: true
+      max_surge: 1
+      max_unavailable: 0
