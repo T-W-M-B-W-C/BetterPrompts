@@ -1,0 +1,167 @@
+package handlers
+
+import (
+	"net/http"
+	"time"
+
+	"github.com/betterprompts/api-gateway/internal/models"
+	"github.com/betterprompts/api-gateway/internal/services"
+	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
+)
+
+// EnhanceRequest represents the request body for prompt enhancement
+type EnhanceRequest struct {
+	Text              string                 `json:"text" binding:"required,min=1,max=5000"`
+	Context           map[string]interface{} `json:"context,omitempty"`
+	PreferTechniques  []string               `json:"prefer_techniques,omitempty"`
+	ExcludeTechniques []string               `json:"exclude_techniques,omitempty"`
+	TargetComplexity  string                 `json:"target_complexity,omitempty"`
+}
+
+// EnhanceResponse represents the response for prompt enhancement
+type EnhanceResponse struct {
+	ID               string                 `json:"id"`
+	OriginalText     string                 `json:"original_text"`
+	EnhancedText     string                 `json:"enhanced_text"`
+	Intent           string                 `json:"intent"`
+	Complexity       string                 `json:"complexity"`
+	TechniquesUsed   []string               `json:"techniques_used"`
+	Confidence       float64                `json:"confidence"`
+	ProcessingTime   float64                `json:"processing_time_ms"`
+	Metadata         map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// EnhancePrompt handles the main prompt enhancement endpoint
+func EnhancePrompt(clients *services.ServiceClients) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		startTime := time.Now()
+		logger := c.MustGet("logger").(*logrus.Entry)
+
+		var req EnhanceRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			logger.WithError(err).Error("Invalid request body")
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "Invalid request body",
+				"details": err.Error(),
+			})
+			return
+		}
+
+		// Get user ID if authenticated
+		userID, _ := c.Get("user_id")
+
+		// Step 1: Analyze intent
+		intentResult, err := clients.IntentClassifier.ClassifyIntent(c.Request.Context(), req.Text)
+		if err != nil {
+			logger.WithError(err).Error("Intent classification failed")
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Failed to analyze intent",
+			})
+			return
+		}
+
+		// Step 2: Select techniques
+		techniqueRequest := models.TechniqueSelectionRequest{
+			Intent:            intentResult.Intent,
+			Complexity:        intentResult.Complexity,
+			PreferTechniques:  req.PreferTechniques,
+			ExcludeTechniques: req.ExcludeTechniques,
+			UserID:            userID,
+		}
+
+		techniques, err := clients.TechniqueSelector.SelectTechniques(c.Request.Context(), techniqueRequest)
+		if err != nil {
+			logger.WithError(err).Error("Technique selection failed")
+			// Fall back to suggested techniques from intent classifier
+			techniques = intentResult.SuggestedTechniques
+		}
+
+		// Step 3: Generate enhanced prompt
+		generationRequest := models.PromptGenerationRequest{
+			Text:       req.Text,
+			Intent:     intentResult.Intent,
+			Complexity: intentResult.Complexity,
+			Techniques: techniques,
+			Context:    req.Context,
+		}
+
+		enhancedPrompt, err := clients.PromptGenerator.GeneratePrompt(c.Request.Context(), generationRequest)
+		if err != nil {
+			logger.WithError(err).Error("Prompt generation failed")
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Failed to generate enhanced prompt",
+			})
+			return
+		}
+
+		// Step 4: Save to history if user is authenticated
+		sessionID := c.GetHeader("X-Session-ID")
+		if sessionID == "" {
+			sessionID = c.MustGet("request_id").(string)
+		}
+
+		historyEntry := models.PromptHistory{
+			UserID:         userID,
+			SessionID:      sessionID,
+			OriginalInput:  req.Text,
+			EnhancedOutput: enhancedPrompt.Text,
+			Intent:         intentResult.Intent,
+			Complexity:     intentResult.Complexity,
+			TechniquesUsed: techniques,
+			Confidence:     intentResult.Confidence,
+			Metadata: map[string]interface{}{
+				"processing_time_ms": time.Since(startTime).Milliseconds(),
+				"model_version":      enhancedPrompt.ModelVersion,
+			},
+		}
+
+		historyID, err := clients.Database.SavePromptHistory(c.Request.Context(), historyEntry)
+		if err != nil {
+			logger.WithError(err).Warn("Failed to save prompt history")
+			// Don't fail the request if history save fails
+		}
+
+		// Step 5: Cache result
+		cacheKey := generateCacheKey(req.Text, techniques)
+		clients.Cache.Set(c.Request.Context(), cacheKey, enhancedPrompt, 1*time.Hour)
+
+		// Prepare response
+		response := EnhanceResponse{
+			ID:             historyID,
+			OriginalText:   req.Text,
+			EnhancedText:   enhancedPrompt.Text,
+			Intent:         intentResult.Intent,
+			Complexity:     intentResult.Complexity,
+			TechniquesUsed: techniques,
+			Confidence:     intentResult.Confidence,
+			ProcessingTime: float64(time.Since(startTime).Milliseconds()),
+			Metadata: map[string]interface{}{
+				"tokens_used":   enhancedPrompt.TokensUsed,
+				"model_version": enhancedPrompt.ModelVersion,
+			},
+		}
+
+		logger.WithFields(logrus.Fields{
+			"intent":          response.Intent,
+			"complexity":      response.Complexity,
+			"techniques_used": response.TechniquesUsed,
+			"processing_time": response.ProcessingTime,
+		}).Info("Prompt enhanced successfully")
+
+		c.JSON(http.StatusOK, response)
+	}
+}
+
+// generateCacheKey creates a cache key for the enhancement result
+func generateCacheKey(text string, techniques []string) string {
+	// Simple implementation - in production, use a proper hash
+	return "enhance:" + text[:min(50, len(text))]
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}

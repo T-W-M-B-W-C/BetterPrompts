@@ -1,0 +1,1 @@
+"""Database components for the Intent Classification Service."""
