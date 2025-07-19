@@ -28,14 +28,25 @@ The prompt-generator service implements 12 advanced prompt engineering technique
   - Compares pros and cons of each approach
   - Supports custom approach definitions
 
-### 3. Few-shot Learning
-- **Purpose**: Provides examples to demonstrate the desired output format
-- **Best for**: Classification, translation, format conversion
-- **Example**: Shows input-output pairs before the actual task
+### 3. Few-Shot Learning (Enhanced)
+- **Purpose**: Provides carefully selected examples to guide model behavior and output format
+- **Best for**: Classification, translation, code generation, summarization, Q&A, analysis
+- **Example**: Shows relevant input-output pairs with optional explanations
 - **Key Features**:
-  - Default examples for common tasks
-  - Supports custom examples via context
-  - Automatically formats examples consistently
+  - **Smart Example Selection**: Similarity-based example selection for relevance
+  - **Multiple Format Styles**: 
+    - INPUT/OUTPUT format (default)
+    - XML-like markup for structured data
+    - Delimiter-based format for custom separators
+  - **Comprehensive Default Examples**: 
+    - 8 task types with domain-specific examples
+    - Classification, summarization, translation, code generation, Q&A, analysis, generation, reasoning
+  - **Chain-of-Thought Integration**: Optional reasoning explanations for each example
+  - **Dynamic Configuration**:
+    - Configurable min/max examples (2-5 default)
+    - Optional example randomization (preserving best example first)
+    - Toggle explanations on/off
+  - **Validation**: Ensures examples have proper structure and sufficient quantity
 
 ### 4. Zero-shot Learning
 - **Purpose**: Provides clear instructions without examples
@@ -64,14 +75,30 @@ The prompt-generator service implements 12 advanced prompt engineering technique
   - Supports verification steps
   - Clear numbered formatting
 
-### 7. Structured Output
-- **Purpose**: Enforces specific output formats
-- **Best for**: Data extraction, API responses, reports
-- **Example**: Specifies JSON, Markdown, or custom formats
+### 7. Structured Output (Enhanced)
+- **Purpose**: Enforces specific output formats with schema validation and optimization
+- **Best for**: Data extraction, API responses, reports, integration with external systems
+- **Example**: JSON with schema, XML with structure, YAML configs, CSV data, Markdown docs
 - **Key Features**:
-  - Multiple format support (JSON, XML, Markdown, etc.)
-  - Schema definition capability
-  - Format validation
+  - **Multiple Format Support**: 
+    - JSON (with JSON Schema validation)
+    - XML (with structure validation)
+    - YAML (configuration-friendly)
+    - CSV (tabular data)
+    - Markdown (documentation)
+    - Tables (formatted display)
+    - Custom formats
+  - **Schema Validation**: 
+    - JSON Schema support with automatic example generation
+    - Type checking and required field validation
+    - Nested structure support
+  - **Advanced Features**:
+    - Prefilling hints for better format adherence
+    - Hierarchical generation for complex structures
+    - Task-aware examples (analysis, classification, etc.)
+    - Error handling modes (explicit, implicit, retry)
+    - Temperature override for deterministic output
+  - **Validation Tools**: Built-in output validation and parsing
 
 ### 8. Emotional Appeal
 - **Purpose**: Adds emotional context to improve engagement
@@ -190,6 +217,79 @@ request = PromptGenerationRequest(
         "output_format": "markdown"
     }
 )
+
+# Few-shot with custom examples
+request = PromptGenerationRequest(
+    text="Convert temperature from Celsius to Fahrenheit",
+    intent="transformation",
+    complexity=0.3,
+    techniques=["few_shot"],
+    context={
+        "examples": [
+            {"input": "0°C", "output": "32°F", "explanation": "Freezing point"},
+            {"input": "100°C", "output": "212°F", "explanation": "Boiling point"},
+            {"input": "37°C", "output": "98.6°F", "explanation": "Body temperature"}
+        ],
+        "format_style": "xml",  # Use XML format
+        "include_explanations": True
+    }
+)
+
+# Few-shot with task type (uses default examples)
+request = PromptGenerationRequest(
+    text="Is this review positive or negative?",
+    intent="classification",
+    complexity=0.4,
+    techniques=["few_shot"],
+    context={
+        "task_type": "classification",
+        "format_style": "input_output",  # Default format
+        "max_examples": 4
+    }
+)
+
+# Structured output with JSON schema
+request = PromptGenerationRequest(
+    text="Analyze customer feedback and summarize findings",
+    intent="analysis",
+    complexity=0.6,
+    techniques=["structured_output"],
+    context={
+        "output_format": "json",
+        "schema": {
+            "type": "object",
+            "properties": {
+                "summary": {"type": "string"},
+                "sentiment": {"type": "string", "enum": ["positive", "negative", "neutral"]},
+                "key_themes": {"type": "array", "items": {"type": "string"}},
+                "metrics": {
+                    "type": "object",
+                    "properties": {
+                        "total_feedback": {"type": "integer"},
+                        "satisfaction_score": {"type": "number"}
+                    }
+                }
+            },
+            "required": ["summary", "sentiment", "key_themes"]
+        },
+        "strict_mode": True,
+        "use_prefilling": True
+    }
+)
+
+# Structured output with custom format
+request = PromptGenerationRequest(
+    text="Generate a technical report",
+    intent="generation",
+    complexity=0.7,
+    techniques=["structured_output"],
+    context={
+        "output_format": "markdown",
+        "markdown_features": ["headings", "tables", "code blocks", "lists"],
+        "hierarchical_generation": True,
+        "task_type": "analysis"
+    }
+)
 ```
 
 ## Best Practices
@@ -207,6 +307,23 @@ The Chain of Thought technique has been significantly enhanced with:
 - Adaptive complexity handling with dynamic step generation
 - Built-in quality metrics for reasoning evaluation
 - Backward compatibility with basic mode
+
+The Few-Shot Learning technique has been enhanced with:
+- Smart example selection based on similarity scoring
+- Multiple formatting styles (INPUT/OUTPUT, XML, delimiter-based)
+- Comprehensive default examples for 8 task types
+- Chain-of-thought integration for example explanations
+- Dynamic configuration with validation
+
+The Structured Output technique has been enhanced with:
+- Support for 7 output formats (JSON, XML, YAML, CSV, Markdown, Table, Custom)
+- JSON Schema validation with automatic example generation
+- Prefilling hints for better format adherence
+- Task-aware examples for different use cases
+- Hierarchical generation mode for complex structures
+- Built-in output validation and parsing
+- Error handling modes (explicit, implicit, retry)
+- Temperature override for deterministic generation
 
 ## Future Enhancements
 

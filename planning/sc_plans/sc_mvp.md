@@ -25,19 +25,19 @@ Transform the current 60-70% complete project into a **locally runnable MVP** th
 
 ## 🚨 Priority 1: ML Model Integration (Critical Path)
 
-/sc:fix ml-integration-blocker --focus intent-classifier --think --persona-backend --safe-mode
+-[x] /sc:fix ml-integration-blocker --focus intent-classifier --think --persona-backend --safe-mode
   # Addresses the 0% complete ML model integration
   # Connects intent-classifier service to TorchServe endpoint
   # Implements proper error handling and fallback mechanisms
   # Expected output: Working ML classification pipeline
 
-/sc:implement torchserve-client --persona-backend --c7 --validate --safe-mode
+-[x] /sc:implement torchserve-client --persona-backend --c7 --validate --safe-mode
   # Creates HTTP client for TorchServe communication
   # Handles model inference requests and responses
   # Implements retry logic and timeout handling
   # Expected output: Robust TorchServe integration layer
 
-/sc:test ml-integration --validate --persona-qa --think
+-[x] /sc:test ml-integration --validate --persona-qa --think
   # Tests ML model integration end-to-end
   # Validates classification accuracy and response times
   # Tests error handling and fallback scenarios
@@ -45,25 +45,25 @@ Transform the current 60-70% complete project into a **locally runnable MVP** th
 
 ## 🚨 Priority 2: Prompt Generation Logic Implementation
 
-/sc:implement prompt-techniques --focus core-techniques --persona-backend --seq --c7
+-[x] /sc:implement prompt-techniques --focus core-techniques --persona-backend --seq --c7
   # Implements the 10 core prompt engineering techniques
   # Creates technique-specific logic for Chain of Thought, Few-shot, etc.
   # Builds technique chaining and context awareness
   # Expected output: Working prompt enhancement engine
 
-/sc:implement technique-chain-of-thought --persona-backend --think --validate
+-[x] /sc:implement technique-chain-of-thought --persona-backend --think --validate
   # Implements Chain of Thought technique with step-by-step reasoning
   # Adds "Let's think step by step" and reasoning structure
   # Handles complex reasoning prompts effectively
   # Expected output: Functional CoT implementation
 
-/sc:implement technique-few-shot --persona-backend --c7 --validate
+-[x] /sc:implement technique-few-shot --persona-backend --c7 --validate
   # Implements Few-shot learning with example injection
   # Creates example database and selection logic
   # Handles context-appropriate example selection
   # Expected output: Working few-shot technique
 
-/sc:implement technique-structured-output --persona-backend --validate --safe-mode
+-[x] /sc:implement technique-structured-output --persona-backend --validate
   # Implements structured output formatting
   # Adds JSON, markdown, and custom format support
   # Handles output validation and formatting
