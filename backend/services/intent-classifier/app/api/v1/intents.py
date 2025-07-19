@@ -16,6 +16,11 @@ from app.models import classifier
 from app.core.logging import setup_logging
 from app.services.cache import CacheService
 from app.core.config import settings
+from app.models.torchserve_client import (
+    TorchServeError,
+    TorchServeConnectionError,
+    TorchServeInferenceError
+)
 
 router = APIRouter()
 logger = setup_logging()
@@ -74,10 +79,32 @@ async def classify_intent(
         
         return response
         
+    except TorchServeConnectionError as e:
+        logger.error(f"TorchServe connection error: {e}")
+        intent_requests.labels(status="torchserve_connection_error").inc()
+        raise HTTPException(
+            status_code=503, 
+            detail="Model service temporarily unavailable. Please try again later."
+        )
+    except TorchServeInferenceError as e:
+        logger.error(f"TorchServe inference error: {e}")
+        intent_requests.labels(status="torchserve_inference_error").inc()
+        raise HTTPException(
+            status_code=500,
+            detail="Model inference failed. Please check your input and try again."
+        )
+    except TorchServeError as e:
+        logger.error(f"TorchServe error: {e}")
+        intent_requests.labels(status="torchserve_error").inc()
+        raise HTTPException(status_code=500, detail="Model service error")
+    except ValueError as e:
+        logger.error(f"Invalid input: {e}")
+        intent_requests.labels(status="validation_error").inc()
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        logger.error(f"Intent classification failed: {e}")
-        intent_requests.labels(status="error").inc()
-        raise HTTPException(status_code=500, detail="Classification failed")
+        logger.error(f"Unexpected error during classification: {e}", exc_info=True)
+        intent_requests.labels(status="unexpected_error").inc()
+        raise HTTPException(status_code=500, detail="An unexpected error occurred")
 
 
 @router.post("/intents/classify/batch", response_model=IntentBatchResponse)
@@ -128,9 +155,20 @@ async def classify_intents_batch(
             total_processing_time=time.time() - start_time,
         )
         
+    except TorchServeConnectionError as e:
+        logger.error(f"TorchServe connection error in batch: {e}")
+        intent_requests.labels(status="batch_torchserve_connection_error").inc()
+        raise HTTPException(
+            status_code=503, 
+            detail="Model service temporarily unavailable. Please try again later."
+        )
+    except TorchServeError as e:
+        logger.error(f"TorchServe error in batch: {e}")
+        intent_requests.labels(status="batch_torchserve_error").inc()
+        raise HTTPException(status_code=500, detail="Model service error during batch processing")
     except Exception as e:
-        logger.error(f"Batch intent classification failed: {e}")
-        intent_requests.labels(status="batch_error").inc()
+        logger.error(f"Batch intent classification failed: {e}", exc_info=True)
+        intent_requests.labels(status="batch_unexpected_error").inc()
         raise HTTPException(status_code=500, detail="Batch classification failed")
 
 

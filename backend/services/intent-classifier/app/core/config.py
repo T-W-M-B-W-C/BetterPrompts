@@ -64,6 +64,33 @@ class Settings(BaseSettings):
     MODEL_BATCH_SIZE: int = 32
     MODEL_DEVICE: str = "cpu"  # "cuda" for GPU
     
+    # TorchServe Configuration
+    TORCHSERVE_HOST: str = "localhost"
+    TORCHSERVE_PORT: int = 8080
+    TORCHSERVE_MODEL_NAME: str = "intent_classifier"
+    TORCHSERVE_TIMEOUT: int = 30  # seconds
+    TORCHSERVE_MAX_RETRIES: int = 3
+    USE_TORCHSERVE: bool = True  # Toggle between local model and TorchServe
+    
+    # Circuit Breaker Configuration
+    CIRCUIT_BREAKER_FAILURE_THRESHOLD: int = 5  # failures before opening
+    CIRCUIT_BREAKER_RECOVERY_TIMEOUT: int = 60  # seconds
+    CIRCUIT_BREAKER_EXPECTED_EXCEPTION_TYPES: List[str] = ["ConnectError", "TimeoutException"]
+    
+    # Health Check Configuration
+    HEALTH_CHECK_INTERVAL: int = 30  # seconds between health checks
+    HEALTH_CHECK_TIMEOUT: int = 5  # seconds for health check timeout
+    
+    @property
+    def TORCHSERVE_URL(self) -> str:
+        """Construct TorchServe inference URL."""
+        return f"http://{self.TORCHSERVE_HOST}:{self.TORCHSERVE_PORT}/predictions/{self.TORCHSERVE_MODEL_NAME}"
+    
+    @property
+    def TORCHSERVE_HEALTH_URL(self) -> str:
+        """Construct TorchServe health check URL."""
+        return f"http://{self.TORCHSERVE_HOST}:{self.TORCHSERVE_PORT}/ping"
+    
     # Cache
     CACHE_TTL: int = 3600  # 1 hour
     ENABLE_CACHING: bool = True
