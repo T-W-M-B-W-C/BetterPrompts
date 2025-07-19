@@ -13,6 +13,8 @@ from .structured_output import StructuredOutputTechnique
 from .emotional_appeal import EmotionalAppealTechnique
 from .constraints import ConstraintsTechnique
 from .analogical import AnalogicalTechnique
+from .self_consistency import SelfConsistencyTechnique
+from .react import ReactTechnique
 
 __all__ = [
     "BaseTechnique",
@@ -27,4 +29,6 @@ __all__ = [
     "EmotionalAppealTechnique",
     "ConstraintsTechnique",
     "AnalogicalTechnique",
+    "SelfConsistencyTechnique",
+    "ReactTechnique",
 ]

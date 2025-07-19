@@ -45,7 +45,9 @@ class PromptGenerationEngine:
             StructuredOutputTechnique,
             EmotionalAppealTechnique,
             ConstraintsTechnique,
-            AnalogicalTechnique
+            AnalogicalTechnique,
+            SelfConsistencyTechnique,
+            ReactTechnique
         )
         
         # Register techniques
@@ -59,7 +61,9 @@ class PromptGenerationEngine:
             TechniqueType.STRUCTURED_OUTPUT: StructuredOutputTechnique,
             TechniqueType.EMOTIONAL_APPEAL: EmotionalAppealTechnique,
             TechniqueType.CONSTRAINTS: ConstraintsTechnique,
-            TechniqueType.ANALOGICAL: AnalogicalTechnique
+            TechniqueType.ANALOGICAL: AnalogicalTechnique,
+            TechniqueType.SELF_CONSISTENCY: SelfConsistencyTechnique,
+            TechniqueType.REACT: ReactTechnique
         }
         
         # Load configurations and create instances

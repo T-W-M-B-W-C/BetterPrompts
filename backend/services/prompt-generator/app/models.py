@@ -16,6 +16,8 @@ class TechniqueType(str, Enum):
     EMOTIONAL_APPEAL = "emotional_appeal"
     CONSTRAINTS = "constraints"
     ANALOGICAL = "analogical"
+    SELF_CONSISTENCY = "self_consistency"
+    REACT = "react"
     SOCRATIC = "socratic"
     META_PROMPTING = "meta_prompting"
     RECURSIVE = "recursive"
