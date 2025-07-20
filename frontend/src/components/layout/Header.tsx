@@ -81,9 +81,9 @@ export default function Header() {
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.2 }}
-            className="border-t bg-white md:hidden"
           >
-            <Container>
+            <div className="border-t bg-white md:hidden">
+              <Container>
               <div className="py-4 space-y-3">
                 {navItems.map((item) => (
                   <Link
@@ -109,6 +109,7 @@ export default function Header() {
                 </Link>
               </div>
             </Container>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

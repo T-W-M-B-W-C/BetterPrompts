@@ -25,7 +25,7 @@ interface UseStreamingEnhancementOptions {
 
 export function useStreamingEnhancement(options: UseStreamingEnhancementOptions = {}) {
   const wsRef = useRef<WebSocket | null>(null)
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout>()
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const {
     updateStreamingStep,
     completeStreamingStep,

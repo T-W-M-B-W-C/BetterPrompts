@@ -13,65 +13,181 @@
   }
 
   body {
-    @apply text-gray-900;
+    color: #111827; /* gray-900 equivalent */
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-semibold tracking-tight;
+    font-weight: 600;
+    letter-spacing: -0.025em;
   }
 
   h1 {
-    @apply text-4xl sm:text-5xl md:text-6xl;
+    font-size: 2.25rem;
+    line-height: 2.5rem;
+  }
+
+  @media (min-width: 640px) {
+    h1 {
+      font-size: 3rem;
+      line-height: 1;
+    }
+  }
+
+  @media (min-width: 768px) {
+    h1 {
+      font-size: 3.75rem;
+      line-height: 1;
+    }
   }
 
   h2 {
-    @apply text-3xl sm:text-4xl;
+    font-size: 1.875rem;
+    line-height: 2.25rem;
+  }
+
+  @media (min-width: 640px) {
+    h2 {
+      font-size: 2.25rem;
+      line-height: 2.5rem;
+    }
   }
 
   h3 {
-    @apply text-2xl sm:text-3xl;
+    font-size: 1.5rem;
+    line-height: 2rem;
+  }
+
+  @media (min-width: 640px) {
+    h3 {
+      font-size: 1.875rem;
+      line-height: 2.25rem;
+    }
   }
 
   h4 {
-    @apply text-xl sm:text-2xl;
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+  }
+
+  @media (min-width: 640px) {
+    h4 {
+      font-size: 1.5rem;
+      line-height: 2rem;
+    }
   }
 
   h5 {
-    @apply text-lg sm:text-xl;
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+  }
+
+  @media (min-width: 640px) {
+    h5 {
+      font-size: 1.25rem;
+      line-height: 1.75rem;
+    }
   }
 
   h6 {
-    @apply text-base sm:text-lg;
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+
+  @media (min-width: 640px) {
+    h6 {
+      font-size: 1.125rem;
+      line-height: 1.75rem;
+    }
   }
 }
 
 @layer components {
   .gradient-text {
-    @apply bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent;
+    background: linear-gradient(to right, #2563eb, #7c3aed);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
 
   .gradient-bg {
-    @apply bg-gradient-to-r from-blue-600 to-purple-600;
+    background: linear-gradient(to right, #2563eb, #7c3aed);
   }
 
   .card {
-    @apply rounded-xl border bg-white p-6 shadow-sm transition-shadow hover:shadow-md;
+    border-radius: 0.75rem;
+    border: 1px solid #e5e7eb;
+    background-color: white;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.2s;
+  }
+
+  .card:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   }
 
   .btn {
-    @apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+
+  .btn:focus {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 2px white, 0 0 0 4px currentColor;
+  }
+
+  .btn:disabled {
+    pointer-events: none;
+    opacity: 0.5;
   }
 
   .btn-primary {
-    @apply btn bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500;
+    background-color: #2563eb;
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background-color: #1d4ed8;
+  }
+
+  .btn-primary:focus {
+    box-shadow: 0 0 0 2px white, 0 0 0 4px #3b82f6;
   }
 
   .btn-secondary {
-    @apply btn border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-gray-500;
+    border: 1px solid #d1d5db;
+    background-color: white;
+    color: #374151;
+  }
+
+  .btn-secondary:hover {
+    background-color: #f9fafb;
+  }
+
+  .btn-secondary:focus {
+    box-shadow: 0 0 0 2px white, 0 0 0 4px #9ca3af;
   }
 
   .btn-ghost {
-    @apply btn hover:bg-gray-100 focus:ring-gray-500;
+    background-color: transparent;
+    color: inherit;
+  }
+
+  .btn-ghost:hover {
+    background-color: #f3f4f6;
+  }
+
+  .btn-ghost:focus {
+    box-shadow: 0 0 0 2px white, 0 0 0 4px #9ca3af;
   }
 }
 
@@ -142,10 +258,10 @@ body.using-keyboard *:focus {
 /* High contrast mode adjustments */
 @media (prefers-contrast: high) {
   .btn-primary {
-    @apply border-2 border-white;
+    border: 2px solid white;
   }
 
   .card {
-    @apply border-2 border-gray-900;
+    border: 2px solid #111827;
   }
 }

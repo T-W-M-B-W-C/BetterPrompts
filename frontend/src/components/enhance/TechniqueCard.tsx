@@ -19,17 +19,19 @@ export default function TechniqueCard({ technique, isSelected, onClick }: Techni
     <Tooltip.Provider>
       <Tooltip.Root>
         <Tooltip.Trigger asChild>
-          <motion.button
+          <motion.div
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            onClick={onClick}
-            className={cn(
-              "relative w-full rounded-lg border p-4 text-left transition-all",
-              isSelected
-                ? "border-blue-500 bg-blue-50 shadow-md"
-                : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm"
-            )}
           >
+            <button
+              onClick={onClick}
+              className={cn(
+                "relative w-full rounded-lg border p-4 text-left transition-all",
+                isSelected
+                  ? "border-blue-500 bg-blue-50 shadow-md"
+                  : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm"
+              )}
+            >
             {/* Selection indicator */}
             {isSelected && (
               <div className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-blue-500 text-white">
@@ -53,21 +55,24 @@ export default function TechniqueCard({ technique, isSelected, onClick }: Techni
                   initial={{ width: 0 }}
                   animate={{ width: `${technique.confidence * 100}%` }}
                   transition={{ duration: 0.5, delay: 0.2 }}
-                  className={cn(
+                  style={{ height: '100%' }}
+                >
+                  <div className={cn(
                     "h-full rounded-full",
                     technique.confidence > 0.8
                       ? "bg-green-500"
                       : technique.confidence > 0.6
                       ? "bg-yellow-500"
                       : "bg-red-500"
-                  )}
-                />
+                  )} />
+                </motion.div>
               </div>
               <span className="text-xs font-medium text-gray-700">
                 {Math.round(technique.confidence * 100)}%
               </span>
             </div>
-          </motion.button>
+            </button>
+          </motion.div>
         </Tooltip.Trigger>
         <Tooltip.Portal>
           <Tooltip.Content

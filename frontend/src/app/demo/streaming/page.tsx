@@ -115,27 +115,29 @@ export default function StreamingDemoPage() {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="max-w-4xl mx-auto"
               >
-                <EnhancementFlow
-                  onComplete={(result) => {
-                    setEnhancementResult(result)
-                  }}
-                />
-                
-                {enhancementResult && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mt-6 p-6 bg-green-50 rounded-lg border border-green-200"
-                  >
-                    <h3 className="font-semibold text-green-900 mb-2">Enhancement Result:</h3>
-                    <p className="text-sm text-green-800">{enhancementResult.prompt}</p>
-                    <p className="text-xs text-green-600 mt-2">
-                      Technique used: {enhancementResult.technique}
-                    </p>
-                  </motion.div>
-                )}
+                <div className="max-w-4xl mx-auto">
+                  <EnhancementFlow
+                    onComplete={(result) => {
+                      setEnhancementResult(result)
+                    }}
+                  />
+                  
+                  {enhancementResult && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                    >
+                      <div className="mt-6 p-6 bg-green-50 rounded-lg border border-green-200">
+                        <h3 className="font-semibold text-green-900 mb-2">Enhancement Result:</h3>
+                        <p className="text-sm text-green-800">{enhancementResult.prompt}</p>
+                        <p className="text-xs text-green-600 mt-2">
+                          Technique used: {enhancementResult.technique}
+                        </p>
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
               </motion.div>
             )}
           </div>

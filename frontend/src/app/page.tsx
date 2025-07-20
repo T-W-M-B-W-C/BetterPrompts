@@ -89,9 +89,9 @@ export default function Home() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3, duration: 0.5 }}
-              className="mt-16"
             >
-              <p className="mb-4 text-sm font-medium text-gray-500">
+              <div className="mt-16">
+                <p className="mb-4 text-sm font-medium text-gray-500">
                 Powered by advanced techniques:
               </p>
               <div className="flex flex-wrap justify-center gap-2">
@@ -101,11 +101,13 @@ export default function Home() {
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.4 + index * 0.05 }}
-                    className="rounded-full bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700"
                   >
-                    {technique}
+                    <span className="inline-block rounded-full bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700">
+                      {technique}
+                    </span>
                   </motion.span>
                 ))}
+              </div>
               </div>
             </motion.div>
           </div>
@@ -137,13 +139,14 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
                 viewport={{ once: true }}
-                className="card group"
               >
-                <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-blue-50 text-blue-600 transition-colors group-hover:bg-blue-100">
-                  <feature.icon className="h-6 w-6" />
+                <div className="card group">
+                  <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-blue-50 text-blue-600 transition-colors group-hover:bg-blue-100">
+                    <feature.icon className="h-6 w-6" />
+                  </div>
+                  <h3 className="mb-2 text-xl font-semibold">{feature.title}</h3>
+                  <p className="text-gray-600">{feature.description}</p>
                 </div>
-                <h3 className="mb-2 text-xl font-semibold">{feature.title}</h3>
-                <p className="text-gray-600">{feature.description}</p>
               </motion.div>
             ))}
           </div>
@@ -157,8 +160,8 @@ export default function Home() {
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 to-purple-600 px-8 py-16 text-center text-white sm:px-16 sm:py-20"
           >
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 to-purple-600 px-8 py-16 text-center text-white sm:px-16 sm:py-20">
             <h2 className="mb-4 text-3xl font-bold sm:text-4xl">
               Ready to Transform Your Prompts?
             </h2>
@@ -176,6 +179,7 @@ export default function Home() {
             {/* Background decoration */}
             <div className="absolute -right-20 -top-20 h-80 w-80 rounded-full bg-white/10 blur-3xl" />
             <div className="absolute -bottom-20 -left-20 h-80 w-80 rounded-full bg-white/10 blur-3xl" />
+            </div>
           </motion.div>
         </Container>
       </section>

@@ -109,11 +109,13 @@ export default function StreamingProgress({
         {/* Overall Progress Bar */}
         <div className="absolute -top-2 left-0 right-0 h-1 bg-gray-100 rounded-full overflow-hidden">
           <motion.div
-            className="h-full bg-gradient-to-r from-blue-500 to-purple-500"
             initial={{ width: 0 }}
             animate={{ width: `${overallProgress}%` }}
             transition={{ duration: 0.5, ease: "easeOut" }}
-          />
+            style={{ height: '100%' }}
+          >
+            <div className="h-full bg-gradient-to-r from-blue-500 to-purple-500" />
+          </motion.div>
         </div>
 
         {/* Current Step Display */}
@@ -124,13 +126,13 @@ export default function StreamingProgress({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3 }}
-            className={cn(
+          >
+            <div className={cn(
               "bg-white rounded-lg border-2 p-6 shadow-sm",
               isError && "border-red-200 bg-red-50",
               isComplete && "border-green-200 bg-green-50",
               !isError && !isComplete && "border-blue-200"
-            )}
-          >
+            )}>
             <div className="flex items-center space-x-4">
               {/* Icon with animation */}
               <div className="relative">
@@ -155,10 +157,15 @@ export default function StreamingProgress({
                 {/* Pulse animation for active steps */}
                 {!isError && !isComplete && (
                   <motion.div
-                    className="absolute inset-0 rounded-full bg-blue-400"
                     initial={{ scale: 0.8, opacity: 0.5 }}
                     animate={{ scale: 1.5, opacity: 0 }}
                     transition={{ duration: 1.5, repeat: Infinity }}
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      borderRadius: '9999px',
+                      backgroundColor: 'rgb(96 165 250)'
+                    }}
                   />
                 )}
               </div>
@@ -189,14 +196,17 @@ export default function StreamingProgress({
               <div className="mt-4">
                 <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                   <motion.div
-                    className="h-full bg-gradient-to-r from-blue-400 to-blue-600"
                     initial={{ width: 0 }}
                     animate={{ width: `${progress}%` }}
                     transition={{ duration: 0.3 }}
-                  />
+                    style={{ height: '100%' }}
+                  >
+                    <div className="h-full bg-gradient-to-r from-blue-400 to-blue-600" />
+                  </motion.div>
                 </div>
               </div>
             )}
+            </div>
           </motion.div>
         </AnimatePresence>
       </div>
@@ -216,11 +226,12 @@ export default function StreamingProgress({
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  className="flex items-center space-x-2 text-sm"
                 >
+                  <div className="flex items-center space-x-2 text-sm">
                   <CheckCircle2 className="h-4 w-4 text-green-500" />
                   <span className="text-gray-600">{stepConfig.label}</span>
                   <ArrowRight className="h-3 w-3 text-gray-400" />
+                  </div>
                 </motion.div>
               )
             })}

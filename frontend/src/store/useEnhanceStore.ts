@@ -13,7 +13,12 @@ export interface Technique {
   description: string
   category: string
   complexity: number
-  effectiveness: number
+  effectiveness: {
+    overall: number
+    byIntent: Record<string, number>
+  }
+  examples?: string[]
+  parameters?: Record<string, any>
 }
 
 export interface EnhancedPrompt {

@@ -145,83 +145,95 @@ export default function StreamingDemo() {
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-3xl mx-auto">
         <motion.div
           whileHover={{ scale: 1.02 }}
-          className="p-4 border rounded-lg cursor-pointer"
-          onClick={() => {
-            resetDemo()
-            setCurrentStep('analyzing')
-            setProgress(45)
-          }}
         >
-          <h3 className="font-medium mb-1">Analyzing State</h3>
-          <p className="text-sm text-gray-600">Shows initial analysis phase</p>
+          <div 
+            className="p-4 border rounded-lg cursor-pointer"
+            onClick={() => {
+              resetDemo()
+              setCurrentStep('analyzing')
+              setProgress(45)
+            }}>
+            <h3 className="font-medium mb-1">Analyzing State</h3>
+            <p className="text-sm text-gray-600">Shows initial analysis phase</p>
+          </div>
         </motion.div>
 
         <motion.div
           whileHover={{ scale: 1.02 }}
-          className="p-4 border rounded-lg cursor-pointer"
-          onClick={() => {
+        >
+          <div 
+            className="p-4 border rounded-lg cursor-pointer"
+            onClick={() => {
             resetDemo()
             setCurrentStep('selecting_techniques')
             setProgress(75)
             setCompletedSteps(['analyzing', 'classifying_intent'])
-          }}
-        >
-          <h3 className="font-medium mb-1">Mid-Process</h3>
-          <p className="text-sm text-gray-600">Multiple steps completed</p>
+          }}>
+            <h3 className="font-medium mb-1">Mid-Process</h3>
+            <p className="text-sm text-gray-600">Multiple steps completed</p>
+          </div>
         </motion.div>
 
         <motion.div
           whileHover={{ scale: 1.02 }}
-          className="p-4 border rounded-lg cursor-pointer"
-          onClick={() => {
+        >
+          <div 
+            className="p-4 border rounded-lg cursor-pointer"
+            onClick={() => {
             resetDemo()
             setCurrentStep('complete')
             setCompletedSteps([...ENHANCEMENT_STEPS])
-          }}
-        >
-          <h3 className="font-medium mb-1">Complete State</h3>
-          <p className="text-sm text-gray-600">Shows success state</p>
+          }}>
+            <h3 className="font-medium mb-1">Complete State</h3>
+            <p className="text-sm text-gray-600">Shows success state</p>
+          </div>
         </motion.div>
 
         <motion.div
           whileHover={{ scale: 1.02 }}
-          className="p-4 border rounded-lg cursor-pointer"
-          onClick={() => {
+        >
+          <div 
+            className="p-4 border rounded-lg cursor-pointer"
+            onClick={() => {
             resetDemo()
             setCurrentStep('error')
             setError('Failed to connect to enhancement service')
-          }}
-        >
-          <h3 className="font-medium mb-1">Error State</h3>
-          <p className="text-sm text-gray-600">Shows error handling</p>
+          }}>
+            <h3 className="font-medium mb-1">Error State</h3>
+            <p className="text-sm text-gray-600">Shows error handling</p>
+          </div>
         </motion.div>
 
         <motion.div
           whileHover={{ scale: 1.02 }}
-          className="p-4 border rounded-lg cursor-pointer"
-          onClick={() => {
+        >
+          <div 
+            className="p-4 border rounded-lg cursor-pointer"
+            onClick={() => {
             resetDemo()
             setCurrentStep('generating_prompt')
             setProgress(30)
             setCompletedSteps(['analyzing', 'classifying_intent', 'selecting_techniques'])
-          }}
-        >
-          <h3 className="font-medium mb-1">Generating</h3>
-          <p className="text-sm text-gray-600">Main generation phase</p>
+          }}>
+            <h3 className="font-medium mb-1">Generating</h3>
+            <p className="text-sm text-gray-600">Main generation phase</p>
+          </div>
         </motion.div>
 
         <motion.div
           whileHover={{ scale: 1.02 }}
-          className="p-4 border rounded-lg cursor-pointer"
-          onClick={() => {
+        >
+          <div 
+            className="p-4 border rounded-lg cursor-pointer"
+            onClick={() => {
             resetDemo()
             setCurrentStep('optimizing')
             setProgress(60)
             setCompletedSteps(['analyzing', 'classifying_intent', 'selecting_techniques', 'generating_prompt'])
-          }}
-        >
-          <h3 className="font-medium mb-1">Final Phase</h3>
-          <p className="text-sm text-gray-600">Optimization in progress</p>
+          }}>
+            <h3 className="font-medium mb-1">Final Phase</h3>
+            <p className="text-sm text-gray-600">Optimization in progress</p>
+          </div>
         </motion.div>
       </div>
     </div>

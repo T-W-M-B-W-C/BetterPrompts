@@ -220,8 +220,8 @@ export default function EnhancementFlow({ className, onComplete }: EnhancementFl
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.3 }}
-            className="relative"
           >
+            <div className="relative">
             <StreamingProgress
               currentStep={streaming.currentStep!}
               progress={streaming.stepProgress}
@@ -245,8 +245,8 @@ export default function EnhancementFlow({ className, onComplete }: EnhancementFl
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200"
               >
+                <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
                 {streaming.streamingData.intent && (
                   <p className="text-sm text-gray-600">
                     <span className="font-medium">Detected Intent:</span> {streaming.streamingData.intent}
@@ -258,8 +258,10 @@ export default function EnhancementFlow({ className, onComplete }: EnhancementFl
                     {streaming.streamingData.techniques.join(', ')}
                   </p>
                 )}
+                </div>
               </motion.div>
             )}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -272,9 +274,9 @@ export default function EnhancementFlow({ className, onComplete }: EnhancementFl
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3 }}
-            className="overflow-hidden"
           >
-            <div className="space-y-4">
+            <div className="overflow-hidden">
+              <div className="space-y-4">
               {/* Loading state */}
               {loadingTechniques && (
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -313,6 +315,7 @@ export default function EnhancementFlow({ className, onComplete }: EnhancementFl
                   ))}
                 </div>
               )}
+              </div>
             </div>
           </motion.div>
         )}
@@ -326,15 +329,16 @@ export default function EnhancementFlow({ className, onComplete }: EnhancementFl
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.4 }}
-            className="bg-green-50 border border-green-200 rounded-lg p-6"
           >
-            <div className="flex items-start">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+              <div className="flex items-start">
               <Sparkles className="h-6 w-6 text-green-500 mt-0.5 mr-3 flex-shrink-0" />
               <div className="flex-1">
                 <h3 className="text-lg font-semibold text-green-900">Enhancement Complete!</h3>
                 <p className="text-sm text-green-700 mt-1">
                   Your prompt has been successfully enhanced. The result is ready to use.
                 </p>
+              </div>
               </div>
             </div>
           </motion.div>

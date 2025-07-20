@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { historyService, PromptHistoryItem, HistoryFilters } from '@/lib/api/history'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -26,7 +26,7 @@ export default function HistoryPage() {
   const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error', message: string } | null>(null)
 
   // Fetch history data
-  const fetchHistory = async () => {
+  const fetchHistory = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -50,12 +50,12 @@ export default function HistoryPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [filters, searchQuery, selectedIntent, selectedTechnique])
 
   // Initial load and when filters change
   useEffect(() => {
     fetchHistory()
-  }, [filters.page, selectedIntent, selectedTechnique])
+  }, [fetchHistory])
 
   // Auto-hide toast message
   useEffect(() => {
@@ -76,7 +76,7 @@ export default function HistoryPage() {
     }, 500)
     
     return () => clearTimeout(timer)
-  }, [searchQuery])
+  }, [searchQuery, filters.search])
 
   // Delete history item
   const handleDelete = async (id: string) => {

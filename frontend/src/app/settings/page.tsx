@@ -321,7 +321,7 @@ export default function SettingsPage() {
                 <Select
                   value={formData.theme}
                   onValueChange={(value) => 
-                    setFormData(prev => ({ ...prev, theme: value }))
+                    setFormData(prev => ({ ...prev, theme: value as 'light' | 'dark' | 'system' }))
                   }
                 >
                   <SelectTrigger id="theme">

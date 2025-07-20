@@ -1,10 +1,10 @@
 # MVP Remaining Tasks Checklist
 
 ## 🎯 Executive Summary
-**Project Status**: ~98% Complete (Docker build issues FIXED!)  
-**Time to MVP**: 2-3 hours  
-**Critical Blockers**: 0 - All infrastructure ready and connected!  
-**Good News**: ML integration complete, ALL prompt techniques implemented, Frontend fully integrated, Database ready, Docker build fixed, streaming progress indicators implemented!
+**Project Status**: ~97% Complete (Docker frontend build still has issues)  
+**Time to MVP**: 3-4 hours  
+**Critical Blockers**: 1 - Frontend Docker build failing with Next.js static generation error  
+**Good News**: ML integration complete, ALL prompt techniques implemented, Frontend fully integrated, Database ready, most Docker services fixed, streaming progress indicators implemented!
 
 ### What's Done ✅
 - **Prompt Generation Service (100%)** - ALL 12 techniques fully implemented!
@@ -13,7 +13,7 @@
 - **Settings Page Integration (100%)** - Fully connected to auth.user_preferences table!
 - **History Page Integration (100%)** - Fully connected to prompts.history table! (July 20, 2025)
 - **Streaming Progress Indicators (100%)** - Beautiful real-time feedback implemented! (July 20, 2025)
-- **Docker Build Issues (100%)** - Fixed all build errors (July 20, 2025)
+- **Docker Build Issues (90%)** - Fixed most build errors, frontend still failing (July 20, 2025)
 - TorchServe ML integration with circuit breaker (100%)
 - API Gateway with auth & routing (85%)
 - Technique selection engine (100%)
@@ -21,11 +21,12 @@
 - Docker setup & monitoring (100%)
 - PostgreSQL + pgvector + Redis configured and ready
 
-### What's Left 🔄 (Only 2% Remaining!)
+### What's Left 🔄 (3% Remaining!)
 - ✅ ~~Run database migrations~~ (COMPLETE!)
 - ✅ ~~Connect Settings page to backend~~ (COMPLETE!)
 - ✅ ~~Connect History page to backend~~ (COMPLETE!)
 - ✅ ~~Add progress indicators for enhancement flow~~ (COMPLETE!)
+- Fix frontend Docker build error - 1 hour
 - End-to-end testing - 1-2 hours
 - Demo preparation - 1 hour
 
@@ -448,9 +449,9 @@ docker compose up -d
 
 ---
 
-*Last Updated: July 20, 2025 (Docker Build Issues Fixed)*
-*Estimated Completion: 2-3 hours*
-*Project Completion: ~98% (Docker build fixed, all services ready to run)*
+*Last Updated: July 20, 2025 (Frontend Docker Build Still Failing)*
+*Estimated Completion: 3-4 hours*
+*Project Completion: ~97% (Frontend Docker build needs fix, other services ready)*
 
 ## 🎉 Latest Progress Update (July 20, 2025)
 
@@ -485,35 +486,59 @@ All frontend pages are now fully integrated with the backend API:
 
 ## 🔥 IMMEDIATE NEXT STEPS
 
-### ✅ Docker Build Issues Fixed! (July 20, 2025)
+### 🔄 Docker Build Progress (July 20, 2025)
 
 #### What Was Fixed:
-1. **technique-selector**: Added missing `go.sum` file and fixed Dockerfile directory reference
-2. **frontend**: Fixed React dependency conflict with `--legacy-peer-deps`
-3. **prompt-generator**: Replaced deprecated `httpx-mock` with `respx`
-4. **Environment**: Created comprehensive `.env` file with all configurations
-5. **Build Script**: Created `scripts/build-services.sh` for incremental builds
+1. **technique-selector**: ✅ Added missing `go.sum` file and fixed Dockerfile directory reference
+2. **prompt-generator**: ✅ Replaced deprecated `httpx-mock` with `respx`
+3. **Environment**: ✅ Created comprehensive `.env` file with all configurations
+4. **Build Script**: ✅ Created `scripts/build-services.sh` for incremental builds
+5. **Frontend UI Components**: ✅ Created missing shadcn/ui components (card, button, input)
+6. **Frontend TypeScript Errors**: ✅ Fixed motion.div className errors and ESLint warnings
 
-#### How to Build:
+#### Still Failing:
+1. **frontend**: ❌ Docker build failing with "Html should not be imported outside of pages/_document" error during static generation
+   - Local build works fine (`npm run build` succeeds)
+   - Issue appears to be Docker-specific during Next.js static page generation
+   - Added standalone output config and health endpoint
+
+#### Current Status:
 ```bash
-# Use the build script for progressive validation
-./scripts/build-services.sh
+# These services build successfully:
+- nginx ✅
+- postgres ✅
+- redis ✅
+- technique-selector ✅
+- api-gateway ✅ (should build)
+- prompt-generator ✅ (takes time due to ML dependencies)
+- intent-classifier ✅ (takes 10-15 min due to PyTorch)
 
-# Or build all at once (may take 10-15 minutes for ML dependencies)
-docker compose build
-
-# Start all services
-docker compose up -d
+# This service fails:
+- frontend ❌ (static generation error in Docker only)
 ```
 
 ### ✅ Frontend Integration Complete! Final Steps:
 
-#### 1. End-to-End Testing (NEXT IMMEDIATE TASK)
+#### 1. Fix Frontend Docker Build (NEXT IMMEDIATE TASK)
 ```bash
-# Build services first
-./scripts/build-services.sh
+# Options to fix the frontend build:
 
-# Run all services and test complete flow
+# Option 1: Disable static generation for Docker
+/sc:implement --type fix "Disable static page generation in Docker build by using dynamic rendering" @frontend/ --persona-frontend
+
+# Option 2: Find and fix the Html import issue
+/sc:analyze @frontend/ --focus "Html import _document next.js error" --think-hard
+
+# Option 3: Use multi-stage build with local build artifacts
+/sc:implement --type dockerfile "Multi-stage build that copies pre-built frontend from local" @docker/frontend/Dockerfile --persona-devops
+
+# Option 4: Run frontend outside Docker for now
+npm run build && npm start  # In frontend directory
+```
+
+#### 2. End-to-End Testing (After Docker Fix)
+```bash
+# Once frontend builds, run all services
 docker compose up -d
 
 # Run comprehensive E2E tests

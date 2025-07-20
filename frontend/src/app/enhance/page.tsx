@@ -73,15 +73,16 @@ export default function EnhancePage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
-              className="mb-6"
             >
-              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 flex items-center">
-                <WifiOff className="h-5 w-5 text-orange-500 mr-3 flex-shrink-0" />
-                <div className="flex-1">
-                  <p className="text-sm text-orange-800 font-medium">Connection Issue</p>
-                  <p className="text-xs text-orange-600 mt-1">
-                    Unable to connect to the server. Please check your internet connection and try again.
-                  </p>
+              <div className="mb-6">
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 flex items-center">
+                  <WifiOff className="h-5 w-5 text-orange-500 mr-3 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm text-orange-800 font-medium">Connection Issue</p>
+                    <p className="text-xs text-orange-600 mt-1">
+                      Unable to connect to the server. Please check your internet connection and try again.
+                    </p>
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -168,9 +169,9 @@ export default function EnhancePage() {
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.3 }}
-                className="mb-8 overflow-hidden"
               >
-                <div className="space-y-4">
+                <div className="mb-8 overflow-hidden">
+                  <div className="space-y-4">
                   {/* Loading state */}
                   {loadingTechniques && (
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -209,6 +210,7 @@ export default function EnhancePage() {
                       ))}
                     </div>
                   )}
+                  </div>
                 </div>
               </motion.div>
             )}
@@ -222,13 +224,14 @@ export default function EnhancePage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3 }}
-                className="mb-6"
               >
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start">
+                <div className="mb-6">
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start">
                   <AlertCircle className="h-5 w-5 text-red-500 mt-0.5 mr-2 flex-shrink-0" />
                   <div>
                     <p className="text-sm text-red-800 font-medium">Enhancement failed</p>
                     <p className="text-xs text-red-600 mt-1">{enhanceError}</p>
+                  </div>
                   </div>
                 </div>
               </motion.div>

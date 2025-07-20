@@ -4,20 +4,37 @@ FROM node:20-alpine AS builder
 
 # Add build arguments for environment variables
 ARG NEXT_PUBLIC_API_URL
-ARG NODE_ENV=production
+
+# Set environment variables for build
+ENV NODE_ENV=production
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 
 # Set working directory
 WORKDIR /app
 
 # Install dependencies first (better layer caching)
 COPY package*.json ./
-RUN npm ci --legacy-peer-deps && \
+RUN npm ci --legacy-peer-deps --production=false && \
+    npm install tailwindcss postcss autoprefixer --save-dev --legacy-peer-deps && \
     npm cache clean --force
 
 # Copy source code
 COPY . .
 
+# Replace globals.css with Docker-compatible version and remove PostCSS configs
+RUN cp src/app/globals-docker.css src/app/globals.css && \
+    rm -f postcss.config.js postcss.config.mjs tailwind.config.js tailwind.config.ts
+
+# Install swc dependencies explicitly for Next.js
+RUN npm install @next/swc-linux-x64-musl --legacy-peer-deps && \
+    npm cache clean --force
+
+# Ensure all dependencies are installed
+RUN npm list
+
 # Build the application
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NPM_CONFIG_LEGACY_PEER_DEPS=true
 RUN npm run build
 
 # Production stage

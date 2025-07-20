@@ -66,10 +66,15 @@ export default function StreamingProgressCompact({
         {/* Pulse for active steps */}
         {!isError && !isComplete && (
           <motion.div
-            className="absolute inset-0 rounded-full bg-blue-400"
             initial={{ scale: 0.8, opacity: 0.5 }}
             animate={{ scale: 1.8, opacity: 0 }}
             transition={{ duration: 1.5, repeat: Infinity }}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              borderRadius: '9999px',
+              backgroundColor: 'rgb(96 165 250)'
+            }}
           />
         )}
       </div>
@@ -94,11 +99,13 @@ export default function StreamingProgressCompact({
         {!isError && !isComplete && (
           <div className="h-1 bg-gray-200 rounded-full overflow-hidden">
             <motion.div
-              className="h-full bg-gradient-to-r from-blue-400 to-blue-600"
               initial={{ width: 0 }}
               animate={{ width: `${progress}%` }}
               transition={{ duration: 0.3 }}
-            />
+              style={{ height: '100%' }}
+            >
+              <div className="h-full bg-gradient-to-r from-blue-400 to-blue-600" />
+            </motion.div>
           </div>
         )}
       </div>
@@ -177,20 +184,26 @@ export function StreamingProgressDots({
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: index * 0.1 }}
-            className={cn(
+          >
+            <div className={cn(
               "h-2 w-2 rounded-full",
               isCompleted && "bg-green-500",
               isCurrent && "bg-blue-500",
               isPending && "bg-gray-300"
-            )}
-          >
+            )}>
             {isCurrent && (
               <motion.div
-                className="h-full w-full rounded-full bg-blue-400"
                 animate={{ scale: [1, 1.5, 1] }}
                 transition={{ duration: 1, repeat: Infinity }}
+                style={{
+                  height: '100%',
+                  width: '100%',
+                  borderRadius: '9999px',
+                  backgroundColor: 'rgb(96 165 250)'
+                }}
               />
             )}
+            </div>
           </motion.div>
         )
       })}
