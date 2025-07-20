@@ -1,3 +1,6 @@
 .snapshots
 .venv
 .env
+# Build logs
+build-*.log
+frontend-build-debug.log
