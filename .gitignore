@@ -4,3 +4,6 @@
 # Build logs
 build-*.log
 frontend-build-debug.log
+
+# Local Docker overrides
+docker-compose.override.yml

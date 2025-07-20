@@ -2,6 +2,9 @@
 # Build stage
 FROM python:3.11-slim AS builder
 
+# Build argument for PyTorch variant (cpu or gpu)
+ARG PYTORCH_VARIANT=cpu
+
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
@@ -12,10 +15,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Set working directory
 WORKDIR /app
 
-# Install Python dependencies
-COPY requirements.txt .
+# Copy all requirements files
+COPY requirements*.txt ./
+
+# Install Python dependencies based on variant
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+    if [ "$PYTORCH_VARIANT" = "gpu" ]; then \
+        echo "Installing GPU-enabled PyTorch..."; \
+        pip install --no-cache-dir -r requirements-gpu.txt; \
+    else \
+        echo "Installing CPU-only PyTorch..."; \
+        pip install --no-cache-dir -r requirements-cpu.txt; \
+    fi
 
 # Production stage
 FROM python:3.11-slim AS runner

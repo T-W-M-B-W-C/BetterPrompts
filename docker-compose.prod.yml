@@ -102,6 +102,11 @@ services:
     image: ${DOCKER_REGISTRY}/betterprompts/prompt-generator:${VERSION:-latest}
     container_name: betterprompts-prompt-generator
     restart: unless-stopped
+    build:
+      context: ./backend/services/prompt-generator
+      dockerfile: ../../../docker/backend/prompt-generator/Dockerfile
+      args:
+        PYTORCH_VARIANT: gpu
     environment:
       - ENVIRONMENT=production
       - DATABASE_URL=${DATABASE_URL}
@@ -110,6 +115,8 @@ services:
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - LOG_LEVEL=INFO
       - SENTRY_DSN=${SENTRY_DSN}
+      - PYTORCH_DEVICE=cuda
+      - CUDA_VISIBLE_DEVICES=0
     volumes:
       - prompt-templates:/app/templates
     networks:
@@ -122,11 +129,15 @@ services:
         order: start-first
       resources:
         limits:
+          cpus: '2'
+          memory: 4G
+        reservations:
           cpus: '1'
           memory: 2G
-        reservations:
-          cpus: '0.5'
-          memory: 1G
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
     logging:
       driver: "json-file"
       options:
