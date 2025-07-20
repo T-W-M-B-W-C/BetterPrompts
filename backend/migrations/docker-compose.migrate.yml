@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  # PostgreSQL database for development
+  postgres-migrate:
+    image: postgres:16-alpine
+    container_name: betterprompts-postgres-migrate
+    environment:
+      POSTGRES_USER: betterprompts
+      POSTGRES_PASSWORD: betterprompts
+      POSTGRES_DB: betterprompts
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-migrate-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U betterprompts"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Migration runner service
+  migrate:
+    image: migrate/migrate:latest
+    container_name: betterprompts-migrate
+    depends_on:
+      postgres-migrate:
+        condition: service_healthy
+    volumes:
+      - ./up:/migrations/up
+      - ./down:/migrations/down
+    environment:
+      DATABASE_URL: "postgresql://betterprompts:betterprompts@postgres-migrate:5432/betterprompts?sslmode=disable"
+    entrypoint: ["echo", "Use 'docker-compose run migrate' with appropriate commands"]
+
+  # Alternative: Run migrations with psql
+  psql-migrate:
+    image: postgres:16-alpine
+    container_name: betterprompts-psql-migrate
+    depends_on:
+      postgres-migrate:
+        condition: service_healthy
+    volumes:
+      - ./:/migrations
+    environment:
+      PGPASSWORD: betterprompts
+    entrypoint: ["psql", "-h", "postgres-migrate", "-U", "betterprompts", "-d", "betterprompts"]
+
+volumes:
+  postgres-migrate-data:
+
+# Usage Examples:
+# 
+# 1. Start the database:
+#    docker-compose -f docker-compose.migrate.yml up -d postgres-migrate
+#
+# 2. Run all migrations up:
+#    docker-compose -f docker-compose.migrate.yml run --rm migrate -path=/migrations/up -database="$DATABASE_URL" up
+#
+# 3. Run migrations down to version 2:
+#    docker-compose -f docker-compose.migrate.yml run --rm migrate -path=/migrations -database="$DATABASE_URL" down 2
+#
+# 4. Check migration status:
+#    docker-compose -f docker-compose.migrate.yml run --rm migrate -path=/migrations -database="$DATABASE_URL" version
+#
+# 5. Run with psql directly:
+#    docker-compose -f docker-compose.migrate.yml run --rm psql-migrate -f /migrations/up/001_initial_schema.sql
+#
+# 6. Interactive psql session:
+#    docker-compose -f docker-compose.migrate.yml run --rm psql-migrate
+#
+# 7. Run the bash migration script:
+#    DB_HOST=localhost ./scripts/migrate.sh up
+#
+# 8. Run the Go migration tool:
+#    go run scripts/migrate.go -cmd=up
