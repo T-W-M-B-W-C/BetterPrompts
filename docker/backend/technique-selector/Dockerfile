@@ -39,11 +39,11 @@ RUN addgroup -g 1001 -S appgroup && \
 
 WORKDIR /app
 
-# Copy binary from builder
-COPY --from=builder /app/technique-selector .
+# Copy binary from builder to a specific location
+COPY --from=builder /app/technique-selector /usr/local/bin/technique-selector
 
-# Copy configuration files
-COPY --chown=appuser:appgroup configs ./configs
+# Copy configuration files if they exist
+COPY --chown=appuser:appgroup configs* ./configs/
 
 # Create necessary directories
 RUN mkdir -p /app/logs /app/data && \
@@ -65,4 +65,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8002/health || exit 1
 
 # Start the application
-CMD ["./technique-selector"]
+CMD ["/usr/local/bin/technique-selector"]
