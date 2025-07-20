@@ -4,6 +4,8 @@ import "./globals.css";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import AccessibilityProvider from "@/components/providers/AccessibilityProvider";
+import { ThemeProvider } from "@/components/providers/theme-provider";
+import { Toaster } from "@/components/ui/toaster";
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -32,13 +34,16 @@ export default function RootLayout({
       <body
         className={`${inter.className} flex min-h-full flex-col bg-white text-gray-900 antialiased`}
       >
-        <AccessibilityProvider>
-          <Header />
-          <main id="main-content" className="flex-1">
-            {children}
-          </main>
-          <Footer />
-        </AccessibilityProvider>
+        <ThemeProvider>
+          <AccessibilityProvider>
+            <Header />
+            <main id="main-content" className="flex-1">
+              {children}
+            </main>
+            <Footer />
+            <Toaster />
+          </AccessibilityProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

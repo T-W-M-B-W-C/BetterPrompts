@@ -1,5 +1,11 @@
 import { create } from 'zustand'
 import { devtools, persist } from 'zustand/middleware'
+import { StreamingStep, calculateEstimatedTime } from '@/components/enhance/StreamingProgress'
+
+// Helper function to calculate remaining time
+function calculateRemainingTime(currentStep: StreamingStep): number {
+  return calculateEstimatedTime(currentStep)
+}
 
 export interface Technique {
   id: string
@@ -26,12 +32,28 @@ export interface UserPreferences {
   theme: 'light' | 'dark' | 'system'
 }
 
+interface StreamingState {
+  currentStep: StreamingStep | null
+  stepProgress: number
+  completedSteps: StreamingStep[]
+  error: string | null
+  estimatedTimeRemaining: number
+  streamingData: {
+    intent?: string
+    techniques?: string[]
+    partialOutput?: string
+  }
+}
+
 interface EnhanceState {
   // Current enhancement session
   currentInput: string
   currentOutput: string
   selectedTechnique: string | null
   isEnhancing: boolean
+  
+  // Streaming progress state
+  streaming: StreamingState
   
   // History
   history: EnhancedPrompt[]
@@ -47,6 +69,13 @@ interface EnhanceState {
   setCurrentOutput: (output: string) => void
   setSelectedTechnique: (techniqueId: string | null) => void
   setIsEnhancing: (isEnhancing: boolean) => void
+  
+  // Streaming actions
+  updateStreamingStep: (step: StreamingStep | null, progress?: number) => void
+  completeStreamingStep: (step: StreamingStep) => void
+  setStreamingError: (error: string | null) => void
+  updateStreamingData: (data: Partial<StreamingState['streamingData']>) => void
+  resetStreaming: () => void
   
   // History actions
   addToHistory: (prompt: Omit<EnhancedPrompt, 'id' | 'timestamp'>) => void
@@ -69,6 +98,15 @@ const defaultPreferences: UserPreferences = {
   theme: 'system',
 }
 
+const defaultStreamingState: StreamingState = {
+  currentStep: null,
+  stepProgress: 0,
+  completedSteps: [],
+  error: null,
+  estimatedTimeRemaining: 0,
+  streamingData: {}
+}
+
 export const useEnhanceStore = create<EnhanceState>()(
   devtools(
     persist(
@@ -78,6 +116,7 @@ export const useEnhanceStore = create<EnhanceState>()(
         currentOutput: '',
         selectedTechnique: null,
         isEnhancing: false,
+        streaming: defaultStreamingState,
         history: [],
         availableTechniques: [],
         preferences: defaultPreferences,
@@ -87,6 +126,50 @@ export const useEnhanceStore = create<EnhanceState>()(
         setCurrentOutput: (output) => set({ currentOutput: output }),
         setSelectedTechnique: (techniqueId) => set({ selectedTechnique: techniqueId }),
         setIsEnhancing: (isEnhancing) => set({ isEnhancing }),
+        
+        // Streaming actions
+        updateStreamingStep: (step, progress = 0) =>
+          set((state) => ({
+            streaming: {
+              ...state.streaming,
+              currentStep: step,
+              stepProgress: progress,
+              error: null,
+              estimatedTimeRemaining: step ? calculateRemainingTime(step) : 0
+            }
+          })),
+          
+        completeStreamingStep: (step) =>
+          set((state) => ({
+            streaming: {
+              ...state.streaming,
+              completedSteps: [...state.streaming.completedSteps, step],
+              stepProgress: 100
+            }
+          })),
+          
+        setStreamingError: (error) =>
+          set((state) => ({
+            streaming: {
+              ...state.streaming,
+              currentStep: error ? 'error' : state.streaming.currentStep,
+              error
+            }
+          })),
+          
+        updateStreamingData: (data) =>
+          set((state) => ({
+            streaming: {
+              ...state.streaming,
+              streamingData: {
+                ...state.streaming.streamingData,
+                ...data
+              }
+            }
+          })),
+          
+        resetStreaming: () =>
+          set({ streaming: defaultStreamingState }),
         
         // History actions
         addToHistory: (prompt) =>

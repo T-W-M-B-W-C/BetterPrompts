@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Send, Copy, RefreshCw, Info, Sparkles, ChevronDown, AlertCircle } from 'lucide-react'
+import { Send, Copy, RefreshCw, Info, Sparkles, ChevronDown, AlertCircle, WifiOff } from 'lucide-react'
 import Container from '@/components/layout/Container'
 import TechniqueCard from '@/components/enhance/TechniqueCard'
+import TechniqueCardSkeleton from '@/components/enhance/TechniqueCardSkeleton'
 import { cn } from '@/lib/utils'
 import { useEnhance, useTechniques } from '@/hooks/useEnhance'
+import { useApiStatus } from '@/hooks/useApiStatus'
 import { Technique } from '@/lib/api/enhance'
 
 export default function EnhancePage() {
@@ -20,6 +22,7 @@ export default function EnhancePage() {
   // API hooks
   const { enhance, isLoading: isEnhancing, error: enhanceError } = useEnhance()
   const { fetchTechniques, isLoading: loadingTechniques, error: techniquesError } = useTechniques()
+  const { isConnected, isChecking } = useApiStatus()
 
   // Load techniques on mount
   useEffect(() => {
@@ -62,6 +65,29 @@ export default function EnhancePage() {
   return (
     <section className="py-8 sm:py-16">
       <Container size="xl">
+        {/* Connection Status Banner */}
+        <AnimatePresence>
+          {!isConnected && !isChecking && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+              className="mb-6"
+            >
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 flex items-center">
+                <WifiOff className="h-5 w-5 text-orange-500 mr-3 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm text-orange-800 font-medium">Connection Issue</p>
+                  <p className="text-xs text-orange-600 mt-1">
+                    Unable to connect to the server. Please check your internet connection and try again.
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <div className="mx-auto max-w-4xl">
           {/* Header */}
           <div className="mb-8 text-center">
@@ -97,16 +123,21 @@ export default function EnhancePage() {
             <div className="mt-4 flex items-center justify-between">
               <button
                 onClick={handleEnhance}
-                disabled={!userInput.trim() || isEnhancing}
+                disabled={!userInput.trim() || isEnhancing || !isConnected}
                 className={cn(
                   "btn-primary",
-                  isEnhancing && "cursor-not-allowed opacity-50"
+                  (isEnhancing || !isConnected) && "cursor-not-allowed opacity-50"
                 )}
               >
                 {isEnhancing ? (
                   <>
                     <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
                     Enhancing...
+                  </>
+                ) : !isConnected ? (
+                  <>
+                    <WifiOff className="mr-2 h-4 w-4" />
+                    Offline
                   </>
                 ) : (
                   <>
@@ -142,9 +173,10 @@ export default function EnhancePage() {
                 <div className="space-y-4">
                   {/* Loading state */}
                   {loadingTechniques && (
-                    <div className="text-center py-4">
-                      <RefreshCw className="h-6 w-6 animate-spin mx-auto text-gray-400" />
-                      <p className="text-sm text-gray-500 mt-2">Loading techniques...</p>
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      {[...Array(6)].map((_, i) => (
+                        <TechniqueCardSkeleton key={i} />
+                      ))}
                     </div>
                   )}
                   

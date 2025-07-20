@@ -14,6 +14,7 @@ const navItems = [
   { href: '/history', label: 'History' },
   { href: '/techniques', label: 'Techniques' },
   { href: '/docs', label: 'Documentation' },
+  { href: '/settings', label: 'Settings' },
 ]
 
 export default function Header() {

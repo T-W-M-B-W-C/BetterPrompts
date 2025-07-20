@@ -85,6 +85,26 @@ export interface Technique {
 }
 
 class EnhanceService {
+  private readonly MAX_RETRIES = 3
+  private readonly RETRY_DELAY = 1000 // 1 second
+
+  // Helper method for retry logic
+  private async withRetry<T>(
+    operation: () => Promise<T>, 
+    retries = this.MAX_RETRIES
+  ): Promise<T> {
+    try {
+      return await operation()
+    } catch (error: any) {
+      if (retries > 0 && error.status >= 500) {
+        // Only retry on server errors
+        await new Promise(resolve => setTimeout(resolve, this.RETRY_DELAY))
+        return this.withRetry(operation, retries - 1)
+      }
+      throw error
+    }
+  }
+
   // Main enhance method with adapter
   async enhance(request: FrontendEnhanceRequest): Promise<FrontendEnhanceResponse> {
     // Transform frontend request to backend format
@@ -94,8 +114,10 @@ class EnhanceService {
       context: request.options ? { options: request.options } : undefined
     }
 
-    // Call backend API
-    const backendResponse = await apiClient.post<EnhanceResponse>('/enhance', backendRequest)
+    // Call backend API with retry logic
+    const backendResponse = await this.withRetry(() => 
+      apiClient.post<EnhanceResponse>('/enhance', backendRequest)
+    )
 
     // Transform backend response to frontend format
     return this.transformToFrontendResponse(backendResponse, request)

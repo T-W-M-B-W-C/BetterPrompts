@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Search, Filter, Trash2, ChevronLeft, ChevronRight, Copy, ExternalLink } from 'lucide-react'
-import { useState } from 'react'
 
 export default function HistoryPage() {
   const [history, setHistory] = useState<PromptHistoryItem[]>([])
@@ -111,7 +110,7 @@ export default function HistoryPage() {
   const uniqueIntents = Array.from(new Set(history.map(item => item.intent).filter(Boolean)))
   const uniqueTechniques = Array.from(new Set(history.flatMap(item => item.techniques_used)))
 
-  const totalPages = Math.ceil(totalItems / filters.limit)
+  const totalPages = Math.ceil(totalItems / (filters.limit || 20))
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -139,7 +138,7 @@ export default function HistoryPage() {
                   type="text"
                   placeholder="Search prompts..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
                   className="pl-10"
                 />
               </div>
@@ -283,14 +282,14 @@ export default function HistoryPage() {
       {totalPages > 1 && (
         <div className="mt-8 flex justify-between items-center">
           <p className="text-sm text-muted-foreground">
-            Showing {((filters.page - 1) * filters.limit) + 1} - {Math.min(filters.page * filters.limit, totalItems)} of {totalItems}
+            Showing {(((filters.page || 1) - 1) * (filters.limit || 20)) + 1} - {Math.min((filters.page || 1) * (filters.limit || 20), totalItems)} of {totalItems}
           </p>
           <div className="flex gap-2">
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setFilters(prev => ({ ...prev, page: prev.page! - 1 }))}
-              disabled={filters.page === 1}
+              onClick={() => setFilters(prev => ({ ...prev, page: (prev.page || 1) - 1 }))}
+              disabled={(filters.page || 1) === 1}
             >
               <ChevronLeft className="h-4 w-4 mr-1" />
               Previous
@@ -298,7 +297,7 @@ export default function HistoryPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setFilters(prev => ({ ...prev, page: prev.page! + 1 }))}
+              onClick={() => setFilters(prev => ({ ...prev, page: (prev.page || 1) + 1 }))}
               disabled={!hasMore}
             >
               Next
