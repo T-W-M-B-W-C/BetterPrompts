@@ -11,7 +11,7 @@ WORKDIR /app
 
 # Install dependencies first (better layer caching)
 COPY package*.json ./
-RUN npm ci --only=production && \
+RUN npm ci --legacy-peer-deps && \
     npm cache clean --force
 
 # Copy source code

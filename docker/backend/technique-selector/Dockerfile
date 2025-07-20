@@ -43,7 +43,7 @@ WORKDIR /app
 COPY --from=builder /app/technique-selector .
 
 # Copy configuration files
-COPY --chown=appuser:appgroup config ./config
+COPY --chown=appuser:appgroup configs ./configs
 
 # Create necessary directories
 RUN mkdir -p /app/logs /app/data && \
