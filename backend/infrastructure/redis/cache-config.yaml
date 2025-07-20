@@ -1,0 +1,100 @@
+# BetterPrompts Redis Cache Configuration
+# Defines cache namespaces and TTL settings
+
+namespaces:
+  # User session cache
+  sessions:
+    prefix: "session:"
+    ttl: 86400  # 24 hours
+    max_size: 10000
+    description: "User session data and JWT refresh tokens"
+
+  # API response cache
+  api_responses:
+    prefix: "api:response:"
+    ttl: 300  # 5 minutes
+    max_size: 50000
+    description: "Cached API responses for common requests"
+
+  # Intent classification cache
+  intent_classification:
+    prefix: "ml:intent:"
+    ttl: 3600  # 1 hour
+    max_size: 100000
+    description: "Cached ML model predictions for intent classification"
+
+  # Technique selection cache
+  technique_selection:
+    prefix: "technique:"
+    ttl: 1800  # 30 minutes
+    max_size: 50000
+    description: "Cached technique recommendations"
+
+  # Prompt templates cache
+  templates:
+    prefix: "template:"
+    ttl: 7200  # 2 hours
+    max_size: 1000
+    description: "Cached prompt templates"
+
+  # User preferences cache
+  user_preferences:
+    prefix: "user:pref:"
+    ttl: 3600  # 1 hour
+    max_size: 10000
+    description: "Cached user preferences and settings"
+
+  # Rate limiting
+  rate_limits:
+    prefix: "ratelimit:"
+    ttl: 3600  # 1 hour rolling window
+    max_size: 100000
+    description: "API rate limiting counters"
+
+  # Analytics cache
+  analytics:
+    prefix: "analytics:"
+    ttl: 900  # 15 minutes
+    max_size: 10000
+    description: "Cached analytics and metrics data"
+
+  # Feature flags
+  feature_flags:
+    prefix: "feature:"
+    ttl: 60  # 1 minute
+    max_size: 100
+    description: "Feature flag states"
+
+  # Temporary data
+  temp:
+    prefix: "temp:"
+    ttl: 300  # 5 minutes
+    max_size: 10000
+    description: "Temporary data and work queues"
+
+# Cache invalidation patterns
+invalidation:
+  patterns:
+    - trigger: "user_update"
+      invalidates: ["user:pref:*", "session:*"]
+    - trigger: "template_update"
+      invalidates: ["template:*", "api:response:*/templates*"]
+    - trigger: "model_update"
+      invalidates: ["ml:intent:*", "technique:*"]
+
+# Redis connection pools
+pools:
+  default:
+    size: 100
+    timeout: 5000
+    idle_timeout: 300000
+  
+  high_priority:
+    size: 50
+    timeout: 1000
+    idle_timeout: 60000
+
+  analytics:
+    size: 20
+    timeout: 10000
+    idle_timeout: 600000

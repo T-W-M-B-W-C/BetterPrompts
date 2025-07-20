@@ -1,54 +1,50 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Send, Copy, RefreshCw, Info, Sparkles, ChevronDown } from 'lucide-react'
+import { Send, Copy, RefreshCw, Info, Sparkles, ChevronDown, AlertCircle } from 'lucide-react'
 import Container from '@/components/layout/Container'
 import TechniqueCard from '@/components/enhance/TechniqueCard'
 import { cn } from '@/lib/utils'
-
-// Mock techniques for now - will be replaced with API data
-const mockTechniques = [
-  {
-    id: 'cot',
-    name: 'Chain of Thought',
-    description: 'Break down complex reasoning into step-by-step analysis',
-    confidence: 0.95,
-  },
-  {
-    id: 'few-shot',
-    name: 'Few-shot Learning',
-    description: 'Provide examples to guide the model response',
-    confidence: 0.87,
-  },
-  {
-    id: 'tot',
-    name: 'Tree of Thoughts',
-    description: 'Explore multiple reasoning paths systematically',
-    confidence: 0.82,
-  },
-]
+import { useEnhance, useTechniques } from '@/hooks/useEnhance'
+import { Technique } from '@/lib/api/enhance'
 
 export default function EnhancePage() {
   const [userInput, setUserInput] = useState('')
   const [enhancedPrompt, setEnhancedPrompt] = useState('')
   const [selectedTechnique, setSelectedTechnique] = useState<string | null>(null)
-  const [isEnhancing, setIsEnhancing] = useState(false)
   const [showTechniques, setShowTechniques] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [techniques, setTechniques] = useState<Technique[]>([])
+  
+  // API hooks
+  const { enhance, isLoading: isEnhancing, error: enhanceError } = useEnhance()
+  const { fetchTechniques, isLoading: loadingTechniques, error: techniquesError } = useTechniques()
+
+  // Load techniques on mount
+  useEffect(() => {
+    fetchTechniques().then(techs => {
+      setTechniques(techs)
+    })
+  }, [fetchTechniques])
 
   const handleEnhance = async () => {
     if (!userInput.trim()) return
 
-    setIsEnhancing(true)
     setShowTechniques(true)
     
-    // Simulate API call - replace with actual API integration
-    setTimeout(() => {
-      setEnhancedPrompt(`Let's approach this step-by-step:\n\n${userInput}\n\nFirst, I'll analyze the key components...\n[Enhanced with Chain of Thought technique]`)
-      setSelectedTechnique('cot')
-      setIsEnhancing(false)
-    }, 1500)
+    const response = await enhance({
+      input: userInput,
+      technique: selectedTechnique || undefined,
+      options: {
+        explanation: true
+      }
+    })
+
+    if (response) {
+      setEnhancedPrompt(response.enhanced.prompt)
+      setSelectedTechnique(response.enhanced.technique)
+    }
   }
 
   const handleCopy = () => {
@@ -143,15 +139,65 @@ export default function EnhancePage() {
                 transition={{ duration: 0.3 }}
                 className="mb-8 overflow-hidden"
               >
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {mockTechniques.map((technique) => (
-                    <TechniqueCard
-                      key={technique.id}
-                      technique={technique}
-                      isSelected={selectedTechnique === technique.id}
-                      onClick={() => setSelectedTechnique(technique.id)}
-                    />
-                  ))}
+                <div className="space-y-4">
+                  {/* Loading state */}
+                  {loadingTechniques && (
+                    <div className="text-center py-4">
+                      <RefreshCw className="h-6 w-6 animate-spin mx-auto text-gray-400" />
+                      <p className="text-sm text-gray-500 mt-2">Loading techniques...</p>
+                    </div>
+                  )}
+                  
+                  {/* Error state */}
+                  {techniquesError && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start">
+                      <AlertCircle className="h-5 w-5 text-red-500 mt-0.5 mr-2 flex-shrink-0" />
+                      <div>
+                        <p className="text-sm text-red-800">Failed to load techniques</p>
+                        <p className="text-xs text-red-600 mt-1">{techniquesError}</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Techniques grid */}
+                  {!loadingTechniques && !techniquesError && (
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      {techniques.map((technique) => (
+                        <TechniqueCard
+                          key={technique.id}
+                          technique={{
+                            id: technique.id,
+                            name: technique.name,
+                            description: technique.description,
+                            confidence: technique.effectiveness.overall
+                          }}
+                          isSelected={selectedTechnique === technique.id}
+                          onClick={() => setSelectedTechnique(technique.id)}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Error Section */}
+          <AnimatePresence>
+            {enhanceError && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+                className="mb-6"
+              >
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start">
+                  <AlertCircle className="h-5 w-5 text-red-500 mt-0.5 mr-2 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm text-red-800 font-medium">Enhancement failed</p>
+                    <p className="text-xs text-red-600 mt-1">{enhanceError}</p>
+                  </div>
                 </div>
               </motion.div>
             )}
@@ -159,7 +205,7 @@ export default function EnhancePage() {
 
           {/* Output Section */}
           <AnimatePresence>
-            {enhancedPrompt && (
+            {enhancedPrompt && !enhanceError && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}

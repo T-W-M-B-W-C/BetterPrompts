@@ -1,5 +1,9 @@
 import { useState } from 'react'
-import { enhanceService, EnhanceRequest, EnhanceResponse } from '@/lib/api/enhance'
+import { 
+  enhanceService, 
+  FrontendEnhanceRequest, 
+  FrontendEnhanceResponse 
+} from '@/lib/api/enhance'
 import { useEnhanceStore } from '@/store/useEnhanceStore'
 import { ApiError } from '@/lib/api/client'
 
@@ -14,7 +18,7 @@ export function useEnhance() {
     preferences,
   } = useEnhanceStore()
 
-  const enhance = async (request: EnhanceRequest): Promise<EnhanceResponse | null> => {
+  const enhance = async (request: FrontendEnhanceRequest): Promise<FrontendEnhanceResponse | null> => {
     setIsLoading(true)
     setIsEnhancing(true)
     setError(null)
