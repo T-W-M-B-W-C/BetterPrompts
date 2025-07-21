@@ -16,7 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 # Copy all requirements files
-COPY requirements*.txt ./
+COPY backend/services/prompt-generator/requirements*.txt ./
 
 # Install Python dependencies based on variant
 RUN pip install --no-cache-dir --upgrade pip && \
@@ -46,7 +46,7 @@ COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/pytho
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy application code
-COPY --chown=appuser:appuser . .
+COPY --chown=appuser:appuser backend/services/prompt-generator/ .
 
 # Create directories for templates and cache
 RUN mkdir -p /app/templates /app/cache && \

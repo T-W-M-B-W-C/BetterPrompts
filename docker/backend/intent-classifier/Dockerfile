@@ -22,8 +22,10 @@ RUN pip install --no-cache-dir --upgrade pip && \
 FROM python:3.11-slim AS runner
 
 # Install runtime dependencies
+# libgomp1 is required for sentencepiece
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
+    libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user

@@ -21,12 +21,17 @@ services:
       - betterprompts-network
     depends_on:
       - nginx
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   # Intent Classification Service
   intent-classifier:
     build:
-      context: ./backend/services/intent-classifier
-      dockerfile: ../../../docker/backend/intent-classifier/Dockerfile
+      context: .
+      dockerfile: docker/backend/intent-classifier/Dockerfile
     container_name: betterprompts-intent-classifier
     ports:
       - "8001:8001"
@@ -82,8 +87,8 @@ services:
   # Prompt Generation Service
   prompt-generator:
     build:
-      context: ./backend/services/prompt-generator
-      dockerfile: ../../../docker/backend/prompt-generator/Dockerfile
+      context: .
+      dockerfile: docker/backend/prompt-generator/Dockerfile
     container_name: betterprompts-prompt-generator
     ports:
       - "8003:8003"
