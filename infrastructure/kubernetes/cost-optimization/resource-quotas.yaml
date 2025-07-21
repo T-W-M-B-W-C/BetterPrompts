@@ -1,0 +1,214 @@
+# Resource Quotas and Limit Ranges for Cost Control
+# Prevents resource overuse and ensures fair allocation
+
+---
+# Default Namespace Resource Quota
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: default-quota
+  namespace: default
+spec:
+  hard:
+    requests.cpu: "100"
+    requests.memory: "200Gi"
+    limits.cpu: "200"
+    limits.memory: "400Gi"
+    requests.storage: "500Gi"
+    persistentvolumeclaims: "20"
+    pods: "100"
+    services: "20"
+    services.loadbalancers: "2"
+    services.nodeports: "10"
+    # GPU quotas
+    requests.nvidia.com/gpu: "10"
+    limits.nvidia.com/gpu: "10"
+
+---
+# Development Environment Quota (more restrictive)
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: development-quota
+  namespace: development
+spec:
+  hard:
+    requests.cpu: "20"
+    requests.memory: "40Gi"
+    limits.cpu: "40"
+    limits.memory: "80Gi"
+    requests.storage: "100Gi"
+    persistentvolumeclaims: "10"
+    pods: "50"
+    services: "10"
+    services.loadbalancers: "0"  # No LBs in dev
+    services.nodeports: "5"
+    requests.nvidia.com/gpu: "1"
+    limits.nvidia.com/gpu: "1"
+
+---
+# Staging Environment Quota
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: staging-quota
+  namespace: staging
+spec:
+  hard:
+    requests.cpu: "50"
+    requests.memory: "100Gi"
+    limits.cpu: "100"
+    limits.memory: "200Gi"
+    requests.storage: "200Gi"
+    persistentvolumeclaims: "15"
+    pods: "75"
+    services: "15"
+    services.loadbalancers: "1"
+    services.nodeports: "10"
+    requests.nvidia.com/gpu: "3"
+    limits.nvidia.com/gpu: "3"
+
+---
+# Default LimitRange
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: default-limits
+  namespace: default
+spec:
+  limits:
+  - default:
+      cpu: "1000m"
+      memory: "2Gi"
+    defaultRequest:
+      cpu: "100m"
+      memory: "256Mi"
+    min:
+      cpu: "50m"
+      memory: "128Mi"
+    max:
+      cpu: "4000m"
+      memory: "16Gi"
+    type: Container
+  - min:
+      storage: "1Gi"
+    max:
+      storage: "100Gi"
+    type: PersistentVolumeClaim
+
+---
+# ML Workload LimitRange (higher limits)
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: ml-limits
+  namespace: default
+spec:
+  limits:
+  - default:
+      cpu: "2000m"
+      memory: "4Gi"
+      nvidia.com/gpu: "0"
+    defaultRequest:
+      cpu: "1000m"
+      memory: "2Gi"
+      nvidia.com/gpu: "0"
+    min:
+      cpu: "500m"
+      memory: "1Gi"
+    max:
+      cpu: "8000m"
+      memory: "32Gi"
+      nvidia.com/gpu: "1"
+    type: Container
+    selector:
+      matchLabels:
+        workload: ml
+
+---
+# Pod Disruption Budgets for Cost-Optimized Scaling
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: frontend-pdb
+  namespace: default
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: frontend
+  maxUnavailable: 50%
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: api-gateway-pdb
+  namespace: default
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: api-gateway
+  maxUnavailable: 33%
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ml-services-pdb
+  namespace: default
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      workload: ml
+  maxUnavailable: 1
+
+---
+# Network Policy for Cost Control (limit egress)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-network-policy
+  namespace: default
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: default
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    - namespaceSelector:
+        matchLabels:
+          name: monitoring
+  egress:
+  # Allow DNS
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    ports:
+    - protocol: UDP
+      port: 53
+  # Allow internal cluster communication
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: default
+  # Allow specific external services
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - protocol: TCP
+      port: 443  # HTTPS
+    - protocol: TCP
+      port: 5432  # PostgreSQL
+    - protocol: TCP
+      port: 6379  # Redis
