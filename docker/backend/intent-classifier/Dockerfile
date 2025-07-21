@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 # Install Python dependencies
-COPY requirements.txt .
+COPY backend/services/intent-classifier/requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
@@ -38,7 +38,7 @@ COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/pytho
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy application code
-COPY --chown=appuser:appuser . .
+COPY --chown=appuser:appuser backend/services/intent-classifier/ .
 
 # Create directories for models and cache
 RUN mkdir -p /app/models /app/cache && \

@@ -1,0 +1,69 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+.venv
+venv/
+ENV/
+env/
+*.egg-info
+.pytest_cache
+.mypy_cache
+.ruff_cache
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+.next/
+out/
+dist/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project specific
+*.log
+*.sqlite
+*.db
+.env
+.env.*
+!.env.example
+coverage/
+htmlcov/
+build/
+*.mar
+models/*.pth
+models/*.bin
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Build artifacts
+docker/build-logs/
+
+# Large files
+ml-pipeline/data/
+ml-pipeline/models/
+infrastructure/model-serving/models/

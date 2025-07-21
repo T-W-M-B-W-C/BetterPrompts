@@ -68,10 +68,8 @@ EXPOSE 8080 8081 8082
 # Set working directory
 WORKDIR /home/model-server
 
+# Copy startup script with correct permissions
+COPY --chmod=755 torchserve/startup.sh /home/model-server/startup.sh
+
 # Default command
-CMD ["torchserve", \
-     "--start", \
-     "--ts-config", "/home/model-server/config/config.properties", \
-     "--models", "all", \
-     "--model-store", "/home/model-server/model-store", \
-     "--foreground"]
+CMD ["/home/model-server/startup.sh"]

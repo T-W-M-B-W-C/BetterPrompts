@@ -11,6 +11,7 @@ transformers==4.36.0
 scikit-learn==1.3.2
 numpy==1.26.2
 pandas==2.1.4
+sentencepiece==0.1.99
 
 # Database
 asyncpg==0.29.0
@@ -46,3 +47,4 @@ black==23.12.0
 isort==5.13.2
 mypy==1.7.1
 pre-commit==3.6.0
+protobuf>=3.20.0
