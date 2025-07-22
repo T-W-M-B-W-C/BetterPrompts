@@ -46,9 +46,14 @@ cp .env.example .env
 # - Support for custom examples and Chain of Thought integration
 # - Performance: ~10-20ms generation time
 
-# Implement Step-by-Step technique
-/sc:implement --persona-backend --seq --validate \
-  "Implement the Step-by-Step technique in backend/services/prompt-generator/app/techniques/step_by_step.py that breaks down complex tasks into numbered steps"
+# ✅ COMPLETED - Step-by-Step technique
+# - Implemented advanced step generation based on intent and complexity
+# - Support for 11+ task types with specialized step sequences
+# - Sub-steps for complex tasks with smart generation
+# - Multiple format styles (standard, detailed, checklist)
+# - Time estimates and progress tracking features
+# - Verification steps for quality assurance
+# - Performance: ~10-20ms generation time
 
 # Implement technique chaining in engine
 /sc:implement --persona-backend --persona-architect --think-hard --seq \
@@ -229,7 +234,7 @@ cp .env.example .env
 ## 🎯 Success Metrics
 
 - [x] ML integration working end-to-end ✅
-- [x] 2/3+ prompt techniques fully implemented ✅ (Chain of Thought & Few-Shot complete)
+- [x] 3/3 prompt techniques fully implemented ✅ (Chain of Thought, Few-Shot & Step-by-Step complete)
 - [ ] Frontend-backend integration complete
 - [ ] Basic authentication working
 - [ ] Demo script prepared and tested
