@@ -24,6 +24,11 @@ class ChainOfThoughtTechnique(BaseTechnique):
     def __init__(self, config: Dict[str, Any]):
         super().__init__(config)
         
+        # Track metadata for chaining
+        self._last_application_metadata = {}
+        self._detected_domain = None
+        self._reasoning_steps_used = []
+        
         # Basic template for backward compatibility
         self.default_template = """{{ text }}
 
@@ -186,6 +191,16 @@ Please provide detailed reasoning for each step before reaching your conclusion.
                 f"complexity={complexity:.2f}, steps={len(reasoning_steps)}, "
                 f"enhanced_mode={self.enhanced_mode}"
             )
+            
+            # Store metadata for chaining
+            self._last_application_metadata = {
+                "domain": domain,
+                "complexity": complexity_str,
+                "reasoning_steps": reasoning_steps,
+                "enhanced_mode": True
+            }
+            self._detected_domain = domain
+            self._reasoning_steps_used = reasoning_steps
             
             return enhanced_prompt
             
@@ -417,3 +432,31 @@ Please provide detailed reasoning for each step before reaching your conclusion.
         metrics["completeness"] = 1.0 if has_conclusion else 0.5
         
         return metrics
+    
+    def get_application_metadata(self) -> Dict[str, Any]:
+        """Get metadata about the last application for chaining."""
+        return self._last_application_metadata.copy()
+    
+    def extract_context_updates(self, text: str, result: str, context: Dict[str, Any]) -> Dict[str, Any]:
+        """Extract context updates to pass to subsequent techniques."""
+        context_updates = {}
+        
+        # Pass domain information to subsequent techniques
+        if self._detected_domain and self._detected_domain != "general":
+            context_updates["cot_domain"] = self._detected_domain
+            
+        # Pass reasoning structure for other techniques to follow
+        if self._reasoning_steps_used:
+            context_updates["cot_reasoning_structure"] = self._reasoning_steps_used
+            
+        # If we detected high complexity, subsequent techniques should know
+        if self._last_application_metadata.get("complexity") == "complex":
+            context_updates["cot_detected_complexity"] = "complex"
+            
+        # Check if this is using chain information from previous techniques
+        if context.get("chain_info"):
+            previous_techniques = context["chain_info"].get("previous_techniques", [])
+            if previous_techniques:
+                context_updates["cot_builds_on"] = previous_techniques
+                
+        return context_updates

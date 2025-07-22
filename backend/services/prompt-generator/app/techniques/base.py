@@ -65,6 +65,25 @@ class BaseTechnique(ABC):
             "enabled": self.enabled,
             "parameters": self.parameters,
         }
+    
+    def get_application_metadata(self) -> Dict[str, Any]:
+        """Get metadata about the last application of this technique
+        
+        Override this method to provide custom metadata after technique application.
+        This metadata can be used by subsequent techniques in the chain.
+        """
+        return {}
+    
+    def extract_context_updates(self, text: str, result: str, context: Dict[str, Any]) -> Dict[str, Any]:
+        """Extract context updates to pass to subsequent techniques
+        
+        Override this method to provide context updates that should be accumulated
+        and passed to subsequent techniques in the chain.
+        
+        Returns:
+            Dict containing context updates that will be merged into accumulated context
+        """
+        return {}
 
 
 class TechniqueRegistry:
