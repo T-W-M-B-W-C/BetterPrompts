@@ -46,7 +46,7 @@ func (db *DatabaseService) SavePromptHistory(ctx context.Context, entry models.P
 		entry.Intent,
 		entry.Complexity,
 		techniques,
-		entry.Confidence,
+		entry.IntentConfidence.Float64,
 		entry.Metadata,
 		entry.CreatedAt,
 	)
@@ -79,7 +79,7 @@ func (db *DatabaseService) GetPromptHistory(ctx context.Context, id string) (*mo
 		&entry.Intent,
 		&entry.Complexity,
 		&techniques,
-		&entry.Confidence,
+		&entry.IntentConfidence.Float64,
 		&entry.Metadata,
 		&entry.CreatedAt,
 	)
@@ -126,7 +126,7 @@ func (db *DatabaseService) GetUserPromptHistory(ctx context.Context, userID stri
 			&entry.Intent,
 			&entry.Complexity,
 			&techniques,
-			&entry.Confidence,
+			&entry.IntentConfidence.Float64,
 			&entry.Metadata,
 			&entry.CreatedAt,
 		)
@@ -139,4 +139,8 @@ func (db *DatabaseService) GetUserPromptHistory(ctx context.Context, userID stri
 	}
 
 	return entries, nil
+}
+// Ping tests the database connection
+func (s *DatabaseService) Ping() error {
+	return s.DB.Ping()
 }

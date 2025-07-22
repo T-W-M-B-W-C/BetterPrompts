@@ -1,0 +1,61 @@
+# TorchServe Development Configuration - Optimized for Fast Local Development
+# This config prioritizes low latency over throughput/efficiency
+
+# Server Configuration
+inference_address=http://0.0.0.0:8080
+management_address=http://0.0.0.0:8081
+metrics_address=http://0.0.0.0:8082
+
+# Reduced thread pool for faster startup
+number_of_netty_threads=2
+job_queue_size=10
+
+# Correct model store path
+model_store=/home/model-server/model-store
+
+# Single worker, no batching for minimal latency
+default_workers_per_model=1
+default_response_timeout=5
+unregister_model_timeout=30
+
+# Disable ALL batching for instant response
+batch_size=1
+max_batch_delay=0
+enable_dynamic_batching=false
+
+# Model configuration - minimal workers
+models={\
+  "intent_classifier": {\
+    "1.0": {\
+        "defaultVersion": true,\
+        "marName": "intent_classifier.mar",\
+        "minWorkers": 1,\
+        "maxWorkers": 1,\
+        "batchSize": 1,\
+        "maxBatchDelay": 0,\
+        "responseTimeout": 5\
+    }\
+  }\
+}
+
+# CORS - Allow everything in dev
+cors_allowed_origin=*
+cors_allowed_methods=*
+cors_allowed_headers=*
+
+# Logging - Async for performance
+async_logging=true
+default_trace_mode=false
+
+# Metrics - Keep enabled but lightweight
+enable_metrics_api=true
+metrics_format=prometheus
+metrics_interval=60
+
+# Performance Tuning for Development
+use_native_io=true
+preload_model=false
+model_warmup=false
+
+# Development-specific settings
+enable_model_api=true  # Allow model management in dev

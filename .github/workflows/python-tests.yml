@@ -1,0 +1,195 @@
+name: Python Tests with Coverage
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'backend/services/intent-classifier/**'
+      - 'backend/services/prompt-generator/**'
+      - '.github/workflows/python-tests.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'backend/services/intent-classifier/**'
+      - 'backend/services/prompt-generator/**'
+
+jobs:
+  test-intent-classifier:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.10', '3.11']
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Cache pip packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    - name: Install dependencies
+      working-directory: backend/services/intent-classifier
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r requirements-test.txt
+    
+    - name: Run linting
+      working-directory: backend/services/intent-classifier
+      run: |
+        pip install flake8 black isort
+        flake8 app tests --max-line-length=120 --exclude=venv
+        black --check app tests
+        isort --check-only app tests
+    
+    - name: Run type checking
+      working-directory: backend/services/intent-classifier
+      run: |
+        pip install mypy
+        mypy app --ignore-missing-imports
+    
+    - name: Run tests with coverage
+      working-directory: backend/services/intent-classifier
+      run: |
+        pytest tests/ -v --cov=app --cov-report=xml --cov-report=term-missing --cov-fail-under=85
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        file: backend/services/intent-classifier/coverage.xml
+        flags: intent-classifier
+        name: intent-classifier-${{ matrix.python-version }}
+    
+    - name: Archive test results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: intent-classifier-test-results-${{ matrix.python-version }}
+        path: backend/services/intent-classifier/pytest-results.xml
+
+  test-prompt-generator:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.10', '3.11']
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Cache pip packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    - name: Install dependencies
+      working-directory: backend/services/prompt-generator
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov pytest-asyncio pytest-mock
+    
+    - name: Run linting
+      working-directory: backend/services/prompt-generator
+      run: |
+        pip install flake8 black isort
+        flake8 app tests --max-line-length=120 --exclude=venv
+        black --check app tests
+        isort --check-only app tests
+    
+    - name: Run type checking
+      working-directory: backend/services/prompt-generator
+      run: |
+        pip install mypy
+        mypy app --ignore-missing-imports
+    
+    - name: Run tests with coverage
+      working-directory: backend/services/prompt-generator
+      run: |
+        pytest tests/ -v --cov=app --cov-report=xml --cov-report=term-missing --cov-fail-under=85
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        file: backend/services/prompt-generator/coverage.xml
+        flags: prompt-generator
+        name: prompt-generator-${{ matrix.python-version }}
+    
+    - name: Archive test results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: prompt-generator-test-results-${{ matrix.python-version }}
+        path: backend/services/prompt-generator/pytest-results.xml
+
+  integration-tests:
+    needs: [test-intent-classifier, test-prompt-generator]
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+    
+    - name: Start services
+      run: |
+        docker-compose -f docker-compose.test.yml up -d
+        sleep 10  # Wait for services to start
+    
+    - name: Run integration tests
+      run: |
+        docker-compose -f docker-compose.test.yml exec -T test-runner pytest tests/integration/ -v
+    
+    - name: Stop services
+      if: always()
+      run: |
+        docker-compose -f docker-compose.test.yml down -v
+
+  security-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: 'backend/services'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+    
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: 'trivy-results.sarif'
+    
+    - name: Run bandit security linter
+      run: |
+        pip install bandit
+        bandit -r backend/services/intent-classifier/app -f json -o bandit-intent-classifier.json
+        bandit -r backend/services/prompt-generator/app -f json -o bandit-prompt-generator.json

@@ -28,7 +28,8 @@ RUN pip install --no-cache-dir -r requirements-serving.txt
 
 # Copy model artifacts and handlers
 COPY torchserve/handlers /home/model-server/handlers
-COPY scripts/package_models.py /home/model-server/scripts/
+COPY scripts /home/model-server/scripts/
+RUN chmod +x /home/model-server/scripts/*.sh || true
 
 # Create directories
 RUN mkdir -p /home/model-server/model-store \

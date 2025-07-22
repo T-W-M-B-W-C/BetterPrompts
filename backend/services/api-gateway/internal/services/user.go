@@ -52,12 +52,12 @@ func (s *UserService) CreateUser(ctx context.Context, req models.UserRegistratio
 		Email:            strings.ToLower(req.Email),
 		Username:         req.Username,
 		PasswordHash:     passwordHash,
-		FirstName:        req.FirstName,
-		LastName:         req.LastName,
+		FirstName:        sql.NullString{String: req.FirstName, Valid: req.FirstName != ""},
+		LastName:         sql.NullString{String: req.LastName, Valid: req.LastName != ""},
 		Roles:            []string{"user"}, // Default role
 		IsActive:         true,
-		IsEmailVerified:  false,
-		EmailVerifyToken: verifyToken,
+		IsVerified:  false,
+		EmailVerifyToken: sql.NullString{String: verifyToken, Valid: true},
 		Preferences:      make(map[string]interface{}),
 		CreatedAt:        time.Now(),
 		UpdatedAt:        time.Now(),
@@ -73,16 +73,16 @@ func (s *UserService) CreateUser(ctx context.Context, req models.UserRegistratio
 	query := `
 		INSERT INTO users (
 			id, email, username, password_hash, first_name, last_name,
-			roles, is_active, is_email_verified, email_verify_token,
+			roles, is_active, is_verified, email_verify_token,
 			preferences, created_at, updated_at
 		) VALUES (
 			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
 		)`
 
-	_, err = s.db.db.ExecContext(ctx, query,
+	_, err = s.db.DB.ExecContext(ctx, query,
 		user.ID, user.Email, user.Username, user.PasswordHash,
 		user.FirstName, user.LastName, pq.Array(user.Roles),
-		user.IsActive, user.IsEmailVerified, user.EmailVerifyToken,
+		user.IsActive, user.IsVerified, user.EmailVerifyToken,
 		prefsJSON, user.CreatedAt, user.UpdatedAt,
 	)
 
@@ -114,18 +114,18 @@ func (s *UserService) GetUserByID(ctx context.Context, userID string) (*models.U
 	query := `
 		SELECT 
 			id, email, username, password_hash, first_name, last_name,
-			roles, is_active, is_email_verified, email_verify_token,
-			password_reset_token, password_reset_expiry, last_login,
+			roles, is_active, is_verified, email_verify_token,
+			password_reset_token, password_reset_expires, last_login_at,
 			failed_login_attempts, locked_until, preferences,
 			created_at, updated_at
 		FROM users
 		WHERE id = $1`
 
-	err := s.db.db.QueryRowContext(ctx, query, userID).Scan(
+	err := s.db.DB.QueryRowContext(ctx, query, userID).Scan(
 		&user.ID, &user.Email, &user.Username, &user.PasswordHash,
 		&user.FirstName, &user.LastName, pq.Array(&user.Roles),
-		&user.IsActive, &user.IsEmailVerified, &user.EmailVerifyToken,
-		&user.PasswordResetToken, &user.PasswordResetExpiry, &user.LastLogin,
+		&user.IsActive, &user.IsVerified, &user.EmailVerifyToken,
+		&user.PasswordResetToken, &user.PasswordResetExpires, &user.LastLoginAt,
 		&user.FailedLoginAttempts, &user.LockedUntil, &prefsJSON,
 		&user.CreatedAt, &user.UpdatedAt,
 	)
@@ -153,18 +153,18 @@ func (s *UserService) GetUserByEmail(ctx context.Context, email string) (*models
 	query := `
 		SELECT 
 			id, email, username, password_hash, first_name, last_name,
-			roles, is_active, is_email_verified, email_verify_token,
-			password_reset_token, password_reset_expiry, last_login,
+			roles, is_active, is_verified, email_verify_token,
+			password_reset_token, password_reset_expires, last_login_at,
 			failed_login_attempts, locked_until, preferences,
 			created_at, updated_at
 		FROM users
 		WHERE LOWER(email) = LOWER($1)`
 
-	err := s.db.db.QueryRowContext(ctx, query, email).Scan(
+	err := s.db.DB.QueryRowContext(ctx, query, email).Scan(
 		&user.ID, &user.Email, &user.Username, &user.PasswordHash,
 		&user.FirstName, &user.LastName, pq.Array(&user.Roles),
-		&user.IsActive, &user.IsEmailVerified, &user.EmailVerifyToken,
-		&user.PasswordResetToken, &user.PasswordResetExpiry, &user.LastLogin,
+		&user.IsActive, &user.IsVerified, &user.EmailVerifyToken,
+		&user.PasswordResetToken, &user.PasswordResetExpires, &user.LastLoginAt,
 		&user.FailedLoginAttempts, &user.LockedUntil, &prefsJSON,
 		&user.CreatedAt, &user.UpdatedAt,
 	)
@@ -192,18 +192,18 @@ func (s *UserService) GetUserByUsername(ctx context.Context, username string) (*
 	query := `
 		SELECT 
 			id, email, username, password_hash, first_name, last_name,
-			roles, is_active, is_email_verified, email_verify_token,
-			password_reset_token, password_reset_expiry, last_login,
+			roles, is_active, is_verified, email_verify_token,
+			password_reset_token, password_reset_expires, last_login_at,
 			failed_login_attempts, locked_until, preferences,
 			created_at, updated_at
 		FROM users
 		WHERE LOWER(username) = LOWER($1)`
 
-	err := s.db.db.QueryRowContext(ctx, query, username).Scan(
+	err := s.db.DB.QueryRowContext(ctx, query, username).Scan(
 		&user.ID, &user.Email, &user.Username, &user.PasswordHash,
 		&user.FirstName, &user.LastName, pq.Array(&user.Roles),
-		&user.IsActive, &user.IsEmailVerified, &user.EmailVerifyToken,
-		&user.PasswordResetToken, &user.PasswordResetExpiry, &user.LastLogin,
+		&user.IsActive, &user.IsVerified, &user.EmailVerifyToken,
+		&user.PasswordResetToken, &user.PasswordResetExpires, &user.LastLoginAt,
 		&user.FailedLoginAttempts, &user.LockedUntil, &prefsJSON,
 		&user.CreatedAt, &user.UpdatedAt,
 	)
@@ -243,10 +243,10 @@ func (s *UserService) UpdateUser(ctx context.Context, userID string, req models.
 
 	// Update fields if provided
 	if req.FirstName != nil {
-		user.FirstName = *req.FirstName
+		user.FirstName = sql.NullString{String: *req.FirstName, Valid: *req.FirstName != ""}
 	}
 	if req.LastName != nil {
-		user.LastName = *req.LastName
+		user.LastName = sql.NullString{String: *req.LastName, Valid: *req.LastName != ""}
 	}
 	if req.Username != nil {
 		user.Username = *req.Username
@@ -269,7 +269,7 @@ func (s *UserService) UpdateUser(ctx context.Context, userID string, req models.
 			preferences = $5, updated_at = $6
 		WHERE id = $1`
 
-	_, err = s.db.db.ExecContext(ctx, query,
+	_, err = s.db.DB.ExecContext(ctx, query,
 		user.ID, user.Username, user.FirstName, user.LastName,
 		prefsJSON, user.UpdatedAt,
 	)
@@ -286,17 +286,17 @@ func (s *UserService) UpdateUser(ctx context.Context, userID string, req models.
 	return user, nil
 }
 
-// UpdateLastLogin updates the user's last login time
-func (s *UserService) UpdateLastLogin(ctx context.Context, userID string) error {
+// UpdateLastLoginAt updates the user's last login time
+func (s *UserService) UpdateLastLoginAt(ctx context.Context, userID string) error {
 	now := time.Now()
 	query := `
 		UPDATE users SET
-			last_login = $2,
+			last_login_at = $2,
 			failed_login_attempts = 0,
 			locked_until = NULL
 		WHERE id = $1`
 
-	_, err := s.db.db.ExecContext(ctx, query, userID, now)
+	_, err := s.db.DB.ExecContext(ctx, query, userID, now)
 	if err != nil {
 		return fmt.Errorf("failed to update last login: %w", err)
 	}
@@ -309,7 +309,7 @@ func (s *UserService) IncrementFailedLogin(ctx context.Context, userID string) e
 	// First, get current failed attempts
 	var failedAttempts int
 	query := `SELECT failed_login_attempts FROM users WHERE id = $1`
-	err := s.db.db.QueryRowContext(ctx, query, userID).Scan(&failedAttempts)
+	err := s.db.DB.QueryRowContext(ctx, query, userID).Scan(&failedAttempts)
 	if err != nil {
 		return fmt.Errorf("failed to get failed attempts: %w", err)
 	}
@@ -330,7 +330,7 @@ func (s *UserService) IncrementFailedLogin(ctx context.Context, userID string) e
 			locked_until = $3
 		WHERE id = $1`
 
-	_, err = s.db.db.ExecContext(ctx, updateQuery, userID, failedAttempts, lockUntil)
+	_, err = s.db.DB.ExecContext(ctx, updateQuery, userID, failedAttempts, lockUntil)
 	if err != nil {
 		return fmt.Errorf("failed to update failed login: %w", err)
 	}
@@ -364,7 +364,7 @@ func (s *UserService) ChangePassword(ctx context.Context, userID string, current
 
 	// Update password
 	query := `UPDATE users SET password_hash = $2, updated_at = $3 WHERE id = $1`
-	_, err = s.db.db.ExecContext(ctx, query, userID, newHash, time.Now())
+	_, err = s.db.DB.ExecContext(ctx, query, userID, newHash, time.Now())
 	if err != nil {
 		return fmt.Errorf("failed to update password: %w", err)
 	}
@@ -376,12 +376,12 @@ func (s *UserService) ChangePassword(ctx context.Context, userID string, current
 func (s *UserService) VerifyEmail(ctx context.Context, token string) error {
 	query := `
 		UPDATE users SET
-			is_email_verified = true,
+			is_verified = true,
 			email_verify_token = '',
 			updated_at = $2
-		WHERE email_verify_token = $1 AND is_email_verified = false`
+		WHERE email_verify_token = $1 AND is_verified = false`
 
-	result, err := s.db.db.ExecContext(ctx, query, token, time.Now())
+	result, err := s.db.DB.ExecContext(ctx, query, token, time.Now())
 	if err != nil {
 		return fmt.Errorf("failed to verify email: %w", err)
 	}
@@ -401,7 +401,7 @@ func (s *UserService) VerifyEmail(ctx context.Context, token string) error {
 // DeleteUser deletes a user
 func (s *UserService) DeleteUser(ctx context.Context, userID string) error {
 	query := `DELETE FROM users WHERE id = $1`
-	result, err := s.db.db.ExecContext(ctx, query, userID)
+	result, err := s.db.DB.ExecContext(ctx, query, userID)
 	if err != nil {
 		return fmt.Errorf("failed to delete user: %w", err)
 	}

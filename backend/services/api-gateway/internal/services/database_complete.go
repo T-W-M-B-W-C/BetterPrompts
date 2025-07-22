@@ -62,8 +62,8 @@ func (s *CompleteDatabaseService) CreateUser(ctx context.Context, user *models.U
 	if user.ID == "" {
 		user.ID = uuid.New().String()
 	}
-	if user.Role == "" {
-		user.Role = "user"
+	if user.Roles[0] == "" {
+		user.Roles[0] = "user"
 	}
 	if user.Tier == "" {
 		user.Tier = "free"
@@ -75,7 +75,7 @@ func (s *CompleteDatabaseService) CreateUser(ctx context.Context, user *models.U
 	_, err := s.db.ExecContext(ctx, query,
 		user.ID, user.Email, user.Username, user.PasswordHash,
 		user.FirstName, user.LastName, user.AvatarURL,
-		user.Role, user.Tier, prefsJSON, metaJSON,
+		user.Roles[0], user.Tier, prefsJSON, metaJSON,
 	)
 
 	return err
@@ -96,7 +96,7 @@ func (s *CompleteDatabaseService) GetUserByEmail(ctx context.Context, email stri
 	err := s.db.QueryRowContext(ctx, query, email).Scan(
 		&user.ID, &user.Email, &user.Username, &user.PasswordHash,
 		&user.FirstName, &user.LastName, &user.AvatarURL,
-		&user.IsActive, &user.IsVerified, &user.Role, &user.Tier,
+		&user.IsActive, &user.IsVerified, &user.Roles[0], &user.Tier,
 		&prefsJSON, &metaJSON, &user.CreatedAt, &user.UpdatedAt,
 		&user.LastLoginAt,
 	)
@@ -128,7 +128,7 @@ func (s *CompleteDatabaseService) GetUserByID(ctx context.Context, id string) (*
 	err := s.db.QueryRowContext(ctx, query, id).Scan(
 		&user.ID, &user.Email, &user.Username, &user.PasswordHash,
 		&user.FirstName, &user.LastName, &user.AvatarURL,
-		&user.IsActive, &user.IsVerified, &user.Role, &user.Tier,
+		&user.IsActive, &user.IsVerified, &user.Roles[0], &user.Tier,
 		&prefsJSON, &metaJSON, &user.CreatedAt, &user.UpdatedAt,
 		&user.LastLoginAt,
 	)
@@ -633,8 +633,8 @@ func (s *CompleteDatabaseService) SavePrompt(ctx context.Context, saved *models.
 	if saved.ID == "" {
 		saved.ID = uuid.New().String()
 	}
-	if saved.IsPublic && saved.ShareToken == "" {
-		saved.ShareToken = uuid.New().String()
+	if saved.IsPublic && !saved.ShareToken.Valid || saved.ShareToken.String == "" {
+		saved.ShareToken = sql.NullString{String: uuid.New().String(), Valid: true}
 	}
 
 	tags := pq.Array(saved.Tags)
@@ -700,8 +700,8 @@ func (s *CompleteDatabaseService) CreateCollection(ctx context.Context, collecti
 	if collection.ID == "" {
 		collection.ID = uuid.New().String()
 	}
-	if collection.IsPublic && collection.ShareToken == "" {
-		collection.ShareToken = uuid.New().String()
+	if collection.IsPublic && !collection.ShareToken.Valid || collection.ShareToken.String == "" {
+		collection.ShareToken = sql.NullString{String: uuid.New().String(), Valid: true}
 	}
 
 	_, err := s.db.ExecContext(ctx, query,

@@ -243,3 +243,7 @@ func (c *CacheService) InvalidateUserCache(ctx context.Context, userID string) e
 func (c *CacheService) HealthCheck(ctx context.Context) error {
 	return c.client.Ping(ctx).Err()
 }
+// Ping tests the cache connection
+func (c *CacheService) Ping(ctx context.Context) error {
+	return c.client.Ping(ctx).Err()
+}

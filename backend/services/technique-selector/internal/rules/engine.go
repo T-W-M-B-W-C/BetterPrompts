@@ -16,6 +16,30 @@ type Engine struct {
 	logger *logrus.Logger
 }
 
+// complexityStringToFloat converts string complexity to float value
+func complexityStringToFloat(complexity string) float64 {
+	switch complexity {
+	case "simple":
+		return 0.2
+	case "moderate":
+		return 0.5
+	case "complex":
+		return 0.8
+	default:
+		return 0.5 // default to moderate
+	}
+}
+
+// complexityFloatToString converts float complexity to string value
+func complexityFloatToString(complexity float64) string {
+	if complexity <= 0.33 {
+		return "simple"
+	} else if complexity <= 0.66 {
+		return "moderate"
+	}
+	return "complex"
+}
+
 // NewEngine creates a new technique selection engine
 func NewEngine(config *models.RulesConfig, logger *logrus.Logger) *Engine {
 	return &Engine{
@@ -32,13 +56,17 @@ func (e *Engine) SelectTechniques(req *models.SelectionRequest) (*models.Selecti
 		"text_len":   len(req.Text),
 	}).Debug("Selecting techniques")
 
-	// Calculate enhanced complexity if not provided
-	if req.Complexity == 0 {
-		req.Complexity = e.calculateComplexity(req.Text)
+	// Convert string complexity to float for internal calculations
+	complexityFloat := complexityStringToFloat(req.Complexity)
+	
+	// Calculate enhanced complexity if needed
+	if req.Complexity == "" {
+		complexityFloat = e.calculateComplexity(req.Text)
+		req.Complexity = complexityFloatToString(complexityFloat)
 	}
 
 	// Score all techniques
-	scoredTechniques := e.scoreTechniques(req)
+	scoredTechniques := e.scoreTechniques(req, complexityFloat)
 
 	// Filter and sort techniques
 	selectedTechniques := e.filterAndSort(scoredTechniques, req)
@@ -76,11 +104,11 @@ func (e *Engine) SelectTechniques(req *models.SelectionRequest) (*models.Selecti
 }
 
 // scoreTechniques scores all techniques based on the request
-func (e *Engine) scoreTechniques(req *models.SelectionRequest) []models.SelectedTechnique {
+func (e *Engine) scoreTechniques(req *models.SelectionRequest, complexityFloat float64) []models.SelectedTechnique {
 	var scoredTechniques []models.SelectedTechnique
 
 	for _, technique := range e.config.Techniques {
-		score, confidence, reasoning := e.scoreTechnique(technique, req)
+		score, confidence, reasoning := e.scoreTechnique(technique, req, complexityFloat)
 		
 		if score > 0 {
 			selected := models.SelectedTechnique{
@@ -102,7 +130,7 @@ func (e *Engine) scoreTechniques(req *models.SelectionRequest) []models.Selected
 }
 
 // scoreTechnique scores a single technique
-func (e *Engine) scoreTechnique(technique models.Technique, req *models.SelectionRequest) (float64, float64, string) {
+func (e *Engine) scoreTechnique(technique models.Technique, req *models.SelectionRequest, complexityFloat float64) (float64, float64, string) {
 	score := 0.0
 	confidence := 0.0
 	var reasons []string
@@ -126,20 +154,37 @@ func (e *Engine) scoreTechnique(technique models.Technique, req *models.Selectio
 		}
 	}
 
-	// Check complexity threshold
-	if conditions.ComplexityThreshold > 0 && req.Complexity >= conditions.ComplexityThreshold {
+	// Check complexity levels (new string-based approach)
+	if len(conditions.ComplexityLevels) > 0 {
+		complexityMatch := false
+		for _, level := range conditions.ComplexityLevels {
+			if level == req.Complexity {
+				complexityMatch = true
+				score += 20.0
+				reasons = append(reasons, fmt.Sprintf("matches complexity level '%s'", level))
+				break
+			}
+		}
+		if !complexityMatch {
+			// Complexity level doesn't match
+			return 0, 0, ""
+		}
+	}
+	
+	// Check complexity threshold (legacy float-based approach)
+	if conditions.ComplexityThreshold > 0 && complexityFloat >= conditions.ComplexityThreshold {
 		score += 20.0
-		reasons = append(reasons, fmt.Sprintf("complexity %.2f >= %.2f", req.Complexity, conditions.ComplexityThreshold))
-	} else if conditions.ComplexityThreshold > 0 && req.Complexity < conditions.ComplexityThreshold {
+		reasons = append(reasons, fmt.Sprintf("complexity %.2f >= %.2f", complexityFloat, conditions.ComplexityThreshold))
+	} else if conditions.ComplexityThreshold > 0 && complexityFloat < conditions.ComplexityThreshold {
 		// Complexity too low
 		return 0, 0, ""
 	}
 
 	// Check maximum complexity threshold
-	if conditions.ComplexityThresholdMax > 0 && req.Complexity <= conditions.ComplexityThresholdMax {
+	if conditions.ComplexityThresholdMax > 0 && complexityFloat <= conditions.ComplexityThresholdMax {
 		score += 10.0
-		reasons = append(reasons, fmt.Sprintf("complexity %.2f <= %.2f", req.Complexity, conditions.ComplexityThresholdMax))
-	} else if conditions.ComplexityThresholdMax > 0 && req.Complexity > conditions.ComplexityThresholdMax {
+		reasons = append(reasons, fmt.Sprintf("complexity %.2f <= %.2f", complexityFloat, conditions.ComplexityThresholdMax))
+	} else if conditions.ComplexityThresholdMax > 0 && complexityFloat > conditions.ComplexityThresholdMax {
 		// Complexity too high
 		return 0, 0, ""
 	}
@@ -183,7 +228,7 @@ func (e *Engine) scoreTechnique(technique models.Technique, req *models.Selectio
 		score += 15
 		reasons = append(reasons, "requires accuracy")
 	}
-	if conditions.SimpleRequest && req.Complexity < 0.3 {
+	if conditions.SimpleRequest && req.Complexity == "simple" {
 		score += 20
 		reasons = append(reasons, "simple request")
 	}
@@ -331,7 +376,7 @@ func (e *Engine) calculateOverallConfidence(techniques []models.SelectedTechniqu
 // generateReasoning generates human-readable reasoning for the selection
 func (e *Engine) generateReasoning(techniques []models.SelectedTechnique, req *models.SelectionRequest) string {
 	parts := []string{
-		fmt.Sprintf("Based on intent '%s' and complexity %.2f", req.Intent, req.Complexity),
+		fmt.Sprintf("Based on intent '%s' and complexity '%s'", req.Intent, req.Complexity),
 	}
 
 	if len(techniques) == 0 {

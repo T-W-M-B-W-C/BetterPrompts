@@ -10,6 +10,7 @@ import (
 	"github.com/betterprompts/api-gateway/internal/services"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
+	"database/sql"
 )
 
 // EnhanceRequest represents the request body for prompt enhancement
@@ -64,6 +65,7 @@ func EnhancePrompt(clients *services.ServiceClients) gin.HandlerFunc {
 
 		// Step 1: Analyze intent if not cached
 		if intentResult == nil {
+			var err error
 			intentResult, err = clients.IntentClassifier.ClassifyIntent(c.Request.Context(), req.Text)
 			if err != nil {
 				logger.WithError(err).Error("Intent classification failed")
@@ -81,12 +83,21 @@ func EnhancePrompt(clients *services.ServiceClients) gin.HandlerFunc {
 
 		// Step 2: Select techniques
 		techniqueRequest := models.TechniqueSelectionRequest{
+			Text:              req.Text,
 			Intent:            intentResult.Intent,
 			Complexity:        intentResult.Complexity,
 			PreferTechniques:  req.PreferTechniques,
 			ExcludeTechniques: req.ExcludeTechniques,
 			UserID:            userID,
 		}
+		
+		// Debug log what we're sending
+		logger.WithFields(logrus.Fields{
+			"text_len":   len(req.Text),
+			"text":       req.Text,
+			"intent":     techniqueRequest.Intent,
+			"complexity": techniqueRequest.Complexity,
+		}).Debug("Sending technique selection request")
 
 		techniques, err := clients.TechniqueSelector.SelectTechniques(c.Request.Context(), techniqueRequest)
 		if err != nil {
@@ -112,6 +123,13 @@ func EnhancePrompt(clients *services.ServiceClients) gin.HandlerFunc {
 			})
 			return
 		}
+		
+		// Debug log the response
+		logger.WithFields(logrus.Fields{
+			"enhanced_text": enhancedPrompt.Text,
+			"tokens_used":   enhancedPrompt.TokensUsed,
+			"model_version": enhancedPrompt.ModelVersion,
+		}).Debug("Prompt generation response")
 
 		// Step 4: Save to history if user is authenticated
 		sessionID := c.GetHeader("X-Session-ID")
@@ -120,14 +138,14 @@ func EnhancePrompt(clients *services.ServiceClients) gin.HandlerFunc {
 		}
 
 		historyEntry := models.PromptHistory{
-			UserID:         userID,
-			SessionID:      sessionID,
+			UserID:         sql.NullString{String: func() string { if uid, ok := userID.(string); ok { return uid } else { return "" } }(), Valid: userID != nil},
+			SessionID:      sql.NullString{String: sessionID, Valid: sessionID != ""},
 			OriginalInput:  req.Text,
 			EnhancedOutput: enhancedPrompt.Text,
-			Intent:         intentResult.Intent,
-			Complexity:     intentResult.Complexity,
+			Intent:         sql.NullString{String: intentResult.Intent, Valid: true},
+			Complexity:     sql.NullString{String: intentResult.Complexity, Valid: true},
 			TechniquesUsed: techniques,
-			Confidence:     intentResult.Confidence,
+			IntentConfidence: sql.NullFloat64{Float64: intentResult.Confidence, Valid: true},
 			Metadata: map[string]interface{}{
 				"processing_time_ms": time.Since(startTime).Milliseconds(),
 				"model_version":      enhancedPrompt.ModelVersion,
@@ -138,14 +156,6 @@ func EnhancePrompt(clients *services.ServiceClients) gin.HandlerFunc {
 		if err != nil {
 			logger.WithError(err).Warn("Failed to save prompt history")
 			// Don't fail the request if history save fails
-		}
-
-		// Step 5: Cache result
-		if clients.Cache != nil {
-			err = clients.Cache.CacheEnhancedPrompt(c.Request.Context(), textHash, techniques, response, 1*time.Hour)
-			if err != nil {
-				logger.WithError(err).Debug("Failed to cache enhanced prompt")
-			}
 		}
 
 		// Prepare response
@@ -162,6 +172,14 @@ func EnhancePrompt(clients *services.ServiceClients) gin.HandlerFunc {
 				"tokens_used":   enhancedPrompt.TokensUsed,
 				"model_version": enhancedPrompt.ModelVersion,
 			},
+		}
+
+		// Cache the enhanced result
+		if clients.Cache != nil {
+			err = clients.Cache.CacheEnhancedPrompt(c.Request.Context(), textHash, techniques, &response, 1*time.Hour)
+			if err != nil {
+				logger.WithError(err).Debug("Failed to cache enhanced prompt")
+			}
 		}
 
 		logger.WithFields(logrus.Fields{

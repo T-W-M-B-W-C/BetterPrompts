@@ -9,6 +9,7 @@ This implementation provides both basic and enhanced CoT capabilities:
 import re
 from typing import Dict, Any, Optional, List, Tuple
 from .base import BaseTechnique
+from ..utils import complexity_string_to_float, complexity_float_to_string
 
 
 class ChainOfThoughtTechnique(BaseTechnique):
@@ -156,15 +157,21 @@ Please provide detailed reasoning for each step before reaching your conclusion.
         try:
             # Extract parameters
             domain = context.get('domain') or self._detect_domain(text)
-            complexity = context.get('complexity', self._estimate_complexity(text))
-            show_substeps = context.get('show_substeps', complexity > 0.6)
+            complexity_str = context.get('complexity', 'moderate')
+            # Convert string complexity to float for calculations if needed
+            if isinstance(complexity_str, str):
+                complexity = complexity_string_to_float(complexity_str)
+            else:
+                complexity = complexity_str
+                complexity_str = complexity_float_to_string(complexity)
+            show_substeps = context.get('show_substeps', complexity_str in ['moderate', 'complex'])
             
             # Generate adaptive reasoning steps
-            reasoning_steps = self._generate_reasoning_steps(domain, complexity, text)
+            reasoning_steps = self._generate_reasoning_steps(domain, complexity_str, text)
             
             # Build enhanced prompt
             enhanced_prompt = self._build_enhanced_prompt(
-                text, reasoning_steps, domain, complexity, show_substeps
+                text, reasoning_steps, domain, complexity_str, show_substeps
             )
             
             self.logger.debug(

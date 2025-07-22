@@ -1,0 +1,205 @@
+# Docker Compose configuration for test environment
+# This setup provides isolated test databases, mock services, and test infrastructure
+version: '3.8'
+
+services:
+  # Test Databases
+  test-postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+      POSTGRES_DB: betterprompts_test
+      POSTGRES_EXTENSIONS: pgvector
+    ports:
+      - "5433:5432"
+    volumes:
+      - test-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test_user -d betterprompts_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  test-redis:
+    image: redis:7-alpine
+    ports:
+      - "6380:6379"
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Mock Services
+  mock-torchserve:
+    build:
+      context: ./tests/mocks/torchserve
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8080"
+    environment:
+      MOCK_LATENCY_MS: 100
+      MOCK_ERROR_RATE: 0
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  wiremock:
+    image: wiremock/wiremock:3.3.1
+    ports:
+      - "8082:8080"
+    volumes:
+      - ./tests/mocks/wiremock:/home/wiremock
+    command: --global-response-templating --verbose
+
+  # Test Infrastructure
+  test-runner:
+    build:
+      context: .
+      dockerfile: ./tests/Dockerfile.testrunner
+    depends_on:
+      test-postgres:
+        condition: service_healthy
+      test-redis:
+        condition: service_healthy
+      mock-torchserve:
+        condition: service_healthy
+    environment:
+      # Database Configuration
+      DB_HOST: test-postgres
+      DB_PORT: 5432
+      DB_USER: test_user
+      DB_PASSWORD: test_password
+      DB_NAME: betterprompts_test
+      
+      # Redis Configuration
+      REDIS_HOST: test-redis
+      REDIS_PORT: 6379
+      
+      # Service URLs
+      TORCHSERVE_URL: http://mock-torchserve:8080
+      API_GATEWAY_URL: http://api-gateway:8080
+      
+      # Test Configuration
+      TEST_ENV: docker
+      COVERAGE_ENABLED: "true"
+      PARALLEL_TESTS: "true"
+      TEST_TIMEOUT: "30m"
+    volumes:
+      - ./coverage:/app/coverage
+      - ./test-results:/app/test-results
+    command: ["./scripts/run-all-tests.sh"]
+
+  # Services Under Test (with test configuration)
+  api-gateway:
+    build:
+      context: ./backend/services/api-gateway
+      target: test
+    depends_on:
+      - test-postgres
+      - test-redis
+    environment:
+      DB_HOST: test-postgres
+      DB_PORT: 5432
+      DB_USER: test_user
+      DB_PASSWORD: test_password
+      DB_NAME: betterprompts_test
+      REDIS_HOST: test-redis
+      REDIS_PORT: 6379
+      JWT_SECRET: test_jwt_secret
+      ENV: test
+      LOG_LEVEL: debug
+      RATE_LIMIT_ENABLED: "false"
+    ports:
+      - "8083:8080"
+
+  intent-classifier:
+    build:
+      context: ./backend/services/intent-classifier
+      target: test
+    depends_on:
+      - mock-torchserve
+    environment:
+      TORCHSERVE_URL: http://mock-torchserve:8080
+      ENV: test
+      LOG_LEVEL: debug
+    ports:
+      - "8084:8001"
+
+  technique-selector:
+    build:
+      context: ./backend/services/technique-selector
+      target: test
+    environment:
+      ENV: test
+      LOG_LEVEL: debug
+    ports:
+      - "8085:8002"
+
+  prompt-generator:
+    build:
+      context: ./backend/services/prompt-generator
+      target: test
+    environment:
+      ENV: test
+      LOG_LEVEL: debug
+      MOCK_LLM_ENABLED: "true"
+    ports:
+      - "8086:8003"
+
+  # Frontend test server
+  frontend-test:
+    build:
+      context: ./frontend
+      target: test
+    environment:
+      NEXT_PUBLIC_API_URL: http://api-gateway:8080
+      NODE_ENV: test
+    ports:
+      - "3001:3000"
+    depends_on:
+      - api-gateway
+
+  # Playwright test runner
+  playwright:
+    build:
+      context: ./tests/e2e
+      dockerfile: Dockerfile.playwright
+    depends_on:
+      - frontend-test
+      - api-gateway
+    environment:
+      BASE_URL: http://frontend-test:3000
+      API_URL: http://api-gateway:8080
+      HEADLESS: "true"
+      WORKERS: "4"
+    volumes:
+      - ./tests/e2e/results:/app/test-results
+      - ./tests/e2e/playwright-report:/app/playwright-report
+    command: ["npx", "playwright", "test"]
+
+  # Performance test runner (k6)
+  k6:
+    image: grafana/k6:latest
+    depends_on:
+      - api-gateway
+    environment:
+      API_URL: http://api-gateway:8080
+      K6_VUS: "100"
+      K6_DURATION: "30m"
+    volumes:
+      - ./tests/performance:/scripts
+      - ./tests/performance/results:/results
+    command: ["run", "--out", "json=/results/k6-results.json", "/scripts/load-test.js"]
+
+volumes:
+  test-postgres-data:
+  
+networks:
+  default:
+    name: betterprompts-test
+    driver: bridge

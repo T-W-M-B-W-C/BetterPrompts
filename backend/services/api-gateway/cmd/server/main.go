@@ -29,6 +29,12 @@ func main() {
 		level = logrus.InfoLevel
 	}
 	logger.SetLevel(level)
+	
+	// Log environment info
+	logger.WithFields(logrus.Fields{
+		"log_level": logLevel,
+		"node_env":  os.Getenv("NODE_ENV"),
+	}).Info("Starting API Gateway")
 
 	// Initialize service clients
 	clients, err := services.InitializeClients(logger)
@@ -74,7 +80,7 @@ func main() {
 	public := router.Group("/api/v1")
 	{
 		// Health check
-		public.GET("/health", handlers.HealthCheck(clients))
+		public.GET("/health", handlers.HealthCheck)
 		public.GET("/ready", handlers.ReadinessCheck(clients))
 		
 		// Authentication routes

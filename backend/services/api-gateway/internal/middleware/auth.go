@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/betterprompts/api-gateway/internal/auth"
@@ -12,6 +13,30 @@ import (
 // AuthMiddleware creates an authentication middleware
 func AuthMiddleware(jwtManager *auth.JWTManager, logger *logrus.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// Log debug info for development mode
+		logger.WithFields(logrus.Fields{
+			"path":              c.Request.URL.Path,
+			"dev_mode":          isDevelopmentMode(),
+			"test_mode_header":  c.GetHeader("X-Test-Mode"),
+			"should_bypass":     shouldBypassAuth(c),
+		}).Debug("Auth middleware check")
+		
+		// Check for development mode bypass
+		if isDevelopmentMode() && shouldBypassAuth(c) {
+			logger.Warn("Development mode: Bypassing authentication for testing")
+			// Set test user information
+			c.Set("user_id", "dev-user-123")
+			c.Set("user_email", "dev@betterprompts.test")
+			c.Set("user_roles", []string{"developer", "user"})
+			c.Set("auth_claims", &auth.Claims{
+				UserID: "dev-user-123",
+				Email:  "dev@betterprompts.test",
+				Roles:  []string{"developer", "user"},
+			})
+			c.Next()
+			return
+		}
+
 		// Extract token from header
 		authHeader := c.GetHeader("Authorization")
 		token, err := auth.ExtractTokenFromHeader(authHeader)
@@ -305,4 +330,36 @@ func matchPermission(pattern, permission string) bool {
 	}
 
 	return true
+}
+
+// isDevelopmentMode checks if the application is running in development mode
+func isDevelopmentMode() bool {
+	env := strings.ToLower(os.Getenv("NODE_ENV"))
+	// Consider development mode if NODE_ENV is "development" or empty
+	return env == "development" || env == ""
+}
+
+// shouldBypassAuth checks if auth should be bypassed based on request headers
+func shouldBypassAuth(c *gin.Context) bool {
+	// Check for bypass header (using a simpler header name)
+	bypassHeader := c.GetHeader("X-Test-Mode")
+	if bypassHeader == "true" {
+		return true
+	}
+	
+	// Check for special query parameter
+	bypassQuery := c.Query("dev_bypass_auth")
+	if bypassQuery == "true" {
+		return true
+	}
+	
+	// Also bypass if we detect local development with specific pattern
+	// This allows testing without headers when in dev mode
+	path := c.Request.URL.Path
+	if path == "/api/v1/enhance" && isDevelopmentMode() {
+		// Auto-bypass enhance endpoint in dev mode
+		return true
+	}
+	
+	return false
 }

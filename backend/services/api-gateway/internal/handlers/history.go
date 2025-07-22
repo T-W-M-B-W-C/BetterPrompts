@@ -1,16 +1,16 @@
 package handlers
 
 import (
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"strconv"
 
-	"github.com/betterprompts/api-gateway/internal/middleware"
 	"github.com/betterprompts/api-gateway/internal/services"
 	"github.com/gin-gonic/gin"
 )
 
 // GetPromptHistory retrieves the user's prompt history
-func GetPromptHistory(clients *services.Clients) gin.HandlerFunc {
+func GetPromptHistory(clients *services.ServiceClients) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Get user ID from context (set by auth middleware)
 		userID, exists := c.Get("user_id")
@@ -39,7 +39,7 @@ func GetPromptHistory(clients *services.Clients) gin.HandlerFunc {
 		// Get history from database
 		history, err := clients.Database.GetUserPromptHistory(c.Request.Context(), userID.(string), limitNum, offset)
 		if err != nil {
-			clients.Logger.WithError(err).Error("Failed to get prompt history")
+			c.MustGet("logger").(*logrus.Entry).WithError(err).Error("Failed to get prompt history")
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve history"})
 			return
 		}
@@ -50,7 +50,7 @@ func GetPromptHistory(clients *services.Clients) gin.HandlerFunc {
 }
 
 // GetPromptHistoryItem retrieves a specific prompt history item
-func GetPromptHistoryItem(clients *services.Clients) gin.HandlerFunc {
+func GetPromptHistoryItem(clients *services.ServiceClients) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Get user ID from context
 		userID, exists := c.Get("user_id")
@@ -73,7 +73,7 @@ func GetPromptHistoryItem(clients *services.Clients) gin.HandlerFunc {
 				c.JSON(http.StatusNotFound, gin.H{"error": "history item not found"})
 				return
 			}
-			clients.Logger.WithError(err).Error("Failed to get prompt history item")
+			c.MustGet("logger").(*logrus.Entry).WithError(err).Error("Failed to get prompt history item")
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve history item"})
 			return
 		}
@@ -89,7 +89,7 @@ func GetPromptHistoryItem(clients *services.Clients) gin.HandlerFunc {
 }
 
 // DeletePromptHistoryItem deletes a specific prompt history item
-func DeletePromptHistoryItem(clients *services.Clients) gin.HandlerFunc {
+func DeletePromptHistoryItem(clients *services.ServiceClients) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Get user ID from context
 		userID, exists := c.Get("user_id")
@@ -112,7 +112,7 @@ func DeletePromptHistoryItem(clients *services.Clients) gin.HandlerFunc {
 				c.JSON(http.StatusNotFound, gin.H{"error": "history item not found"})
 				return
 			}
-			clients.Logger.WithError(err).Error("Failed to get prompt history item")
+			c.MustGet("logger").(*logrus.Entry).WithError(err).Error("Failed to get prompt history item")
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve history item"})
 			return
 		}
@@ -125,9 +125,9 @@ func DeletePromptHistoryItem(clients *services.Clients) gin.HandlerFunc {
 
 		// Delete the item
 		query := "DELETE FROM prompts.history WHERE id = $1"
-		_, err = clients.Database.ExecContext(c.Request.Context(), query, historyID)
+		_, err = clients.Database.DB.ExecContext(c.Request.Context(), query, historyID)
 		if err != nil {
-			clients.Logger.WithError(err).Error("Failed to delete prompt history item")
+			c.MustGet("logger").(*logrus.Entry).WithError(err).Error("Failed to delete prompt history item")
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete history item"})
 			return
 		}

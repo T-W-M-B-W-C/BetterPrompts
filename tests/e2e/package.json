@@ -10,7 +10,10 @@
     "test:codegen": "playwright codegen http://localhost/api/v1"
   },
   "devDependencies": {
-    "@playwright/test": "^1.40.0",
+    "@playwright/test": "^1.54.1",
     "@types/node": "^20.0.0"
+  },
+  "dependencies": {
+    "playwright": "^1.54.1"
   }
 }

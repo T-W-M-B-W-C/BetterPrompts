@@ -1,0 +1,62 @@
+# Optimized TorchServe Configuration for BetterPrompts
+# Focused on low-latency inference for development
+
+# Server Configuration
+inference_address=http://0.0.0.0:8080
+management_address=http://0.0.0.0:8081
+metrics_address=http://0.0.0.0:8082
+number_of_netty_threads=4
+job_queue_size=100
+
+# Model Store - FIXED PATH
+model_store=/home/model-server/model-store
+
+# Disable batch processing for low latency
+enable_envvars_config=true
+batch_size=1
+max_batch_delay=10
+
+# Worker Configuration - Reduced for faster startup
+default_workers_per_model=1
+default_response_timeout=10
+unregister_model_timeout=30
+
+# Model specific configuration
+models={\
+  "intent_classifier": {\
+    "1.0": {\
+        "defaultVersion": true,\
+        "marName": "intent_classifier.mar",\
+        "minWorkers": 1,\
+        "maxWorkers": 2,\
+        "batchSize": 1,\
+        "maxBatchDelay": 10,\
+        "responseTimeout": 10\
+    }\
+  }\
+}
+
+# CORS Configuration
+cors_allowed_origin=*
+cors_allowed_methods=GET, POST, PUT, OPTIONS
+cors_allowed_headers=*
+
+# Logging
+async_logging=true
+default_trace_mode=false
+
+# Metrics
+enable_metrics_api=true
+metrics_format=prometheus
+
+# Performance Tuning
+# Disable dynamic batching for mock model
+enable_dynamic_batching=false
+# Use direct memory for faster I/O
+use_native_io=true
+# Disable model warmup for faster startup
+model_warmup=false
+
+# JVM Tuning (via JAVA_OPTS in docker-compose)
+# -Xmx2g -Xms1g for lower memory usage
+# -XX:+UseG1GC for better latency

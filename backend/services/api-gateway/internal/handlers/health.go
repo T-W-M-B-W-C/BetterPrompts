@@ -19,7 +19,7 @@ func HealthCheck(c *gin.Context) {
 func ReadinessCheck(clients *services.ServiceClients) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Check database connection
-		if err := clients.Database.Ping(c.Request.Context()); err != nil {
+		if err := clients.Database.Ping(); err != nil {
 			c.JSON(http.StatusServiceUnavailable, gin.H{
 				"status": "not ready",
 				"error":  "database connection failed",

@@ -4,13 +4,32 @@ Shared test configuration and fixtures for intent classifier tests.
 
 import pytest
 import asyncio
-from typing import AsyncGenerator
-from unittest.mock import Mock, AsyncMock, patch
+from typing import AsyncGenerator, Generator, Any
+from unittest.mock import Mock, AsyncMock, patch, MagicMock
 import os
+import sys
+from pathlib import Path
+from datetime import datetime, timezone
+
+# Add the app directory to the Python path
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Set test environment
 os.environ["TESTING"] = "true"
 os.environ["USE_TORCHSERVE"] = "false"  # Default to local model for unit tests
+
+# Import after setting up the path
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import NullPool
+import fakeredis.aioredis
+from faker import Faker
+
+# Initialize Faker
+fake = Faker()
 
 
 @pytest.fixture(scope="session")
@@ -129,3 +148,193 @@ pytest.mark.e2e = pytest.mark.e2e
 pytest.mark.slow = pytest.mark.slow
 pytest.mark.torchserve = pytest.mark.torchserve
 pytest.mark.critical = pytest.mark.critical
+
+
+# Database fixtures
+@pytest.fixture
+async def test_db_engine():
+    """Create a test database engine."""
+    # Use in-memory SQLite for tests
+    engine = create_async_engine(
+        "sqlite+aiosqlite:///:memory:",
+        echo=False,
+        poolclass=NullPool,
+    )
+    
+    # Import Base after app modules are available
+    from app.db.database import Base
+    
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    
+    yield engine
+    
+    await engine.dispose()
+
+
+@pytest.fixture
+async def test_db_session(test_db_engine) -> AsyncGenerator[AsyncSession, None]:
+    """Create a test database session."""
+    async_session_maker = sessionmaker(
+        test_db_engine,
+        class_=AsyncSession,
+        expire_on_commit=False,
+    )
+    
+    async with async_session_maker() as session:
+        yield session
+
+
+# Redis fixtures
+@pytest.fixture
+async def test_redis_client() -> AsyncGenerator[Any, None]:
+    """Create a fake Redis client for testing."""
+    client = fakeredis.aioredis.FakeRedis()
+    yield client
+    await client.flushall()
+    await client.close()
+
+
+# Application fixtures
+@pytest.fixture
+def test_app(mock_torchserve_client, mock_cache_service, test_db_session) -> FastAPI:
+    """Create a test FastAPI application."""
+    from app.main import app
+    from app.db.database import get_db
+    from app.services.cache import get_cache_service
+    
+    # Override dependencies
+    app.dependency_overrides[get_db] = lambda: test_db_session
+    app.dependency_overrides[get_cache_service] = lambda: mock_cache_service
+    
+    # Mock TorchServe client if it exists
+    if hasattr(app.state, "ml_client"):
+        app.state.ml_client = mock_torchserve_client
+    
+    yield app
+    
+    # Clear overrides
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def test_client(test_app) -> TestClient:
+    """Create a test client."""
+    return TestClient(test_app)
+
+
+@pytest.fixture
+async def async_client(test_app) -> AsyncGenerator[AsyncClient, None]:
+    """Create an async test client."""
+    async with AsyncClient(app=test_app, base_url="http://test") as client:
+        yield client
+
+
+# Authentication fixtures
+@pytest.fixture
+def test_jwt_token() -> str:
+    """Create a test JWT token."""
+    return "Bearer test-jwt-token"
+
+
+@pytest.fixture
+def authenticated_client(test_client, test_jwt_token) -> TestClient:
+    """Create an authenticated test client."""
+    test_client.headers["Authorization"] = test_jwt_token
+    return test_client
+
+
+# Test data generation fixtures
+@pytest.fixture
+def sample_prompt() -> str:
+    """Generate a sample prompt for testing."""
+    return fake.sentence(nb_words=10)
+
+
+@pytest.fixture
+def sample_classification_request() -> dict:
+    """Generate a sample classification request."""
+    return {
+        "prompt": fake.sentence(nb_words=15),
+        "context": {
+            "user_id": fake.uuid4(),
+            "session_id": fake.uuid4(),
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+    }
+
+
+@pytest.fixture
+def sample_classification_response() -> dict:
+    """Generate a sample classification response."""
+    return {
+        "intent": fake.random_element([
+            "explain_concept", "generate_code", "debug_error",
+            "analyze_data", "create_content", "answer_question"
+        ]),
+        "confidence": fake.pyfloat(min_value=0.7, max_value=1.0, right_digits=2),
+        "sub_intent": fake.random_element(["technical", "creative", "analytical"]),
+        "complexity": fake.random_element(["simple", "intermediate", "complex"]),
+        "domain": fake.random_element(["programming", "science", "business", "general"]),
+        "suggested_techniques": [
+            fake.random_element([
+                "chain_of_thought", "few_shot", "tree_of_thoughts",
+                "self_consistency", "step_by_step"
+            ])
+            for _ in range(fake.random_int(min=1, max=3))
+        ]
+    }
+
+
+# Utility fixtures
+@pytest.fixture(autouse=True)
+async def reset_test_state():
+    """Reset test state before each test."""
+    # This fixture runs before each test automatically
+    yield
+    # Cleanup after test if needed
+
+
+# Performance testing fixtures
+@pytest.fixture
+def benchmark_data():
+    """Generate data for benchmark tests."""
+    return {
+        "small_prompt": fake.sentence(nb_words=5),
+        "medium_prompt": fake.sentence(nb_words=50),
+        "large_prompt": fake.text(max_nb_chars=1000),
+        "batch_prompts": [fake.sentence(nb_words=10) for _ in range(100)]
+    }
+
+
+# Test configuration
+def pytest_configure(config):
+    """Configure pytest with custom markers."""
+    config.addinivalue_line(
+        "markers", "unit: mark test as a unit test"
+    )
+    config.addinivalue_line(
+        "markers", "integration: mark test as an integration test"
+    )
+    config.addinivalue_line(
+        "markers", "torchserve: mark test as requiring TorchServe"
+    )
+    config.addinivalue_line(
+        "markers", "slow: mark test as slow"
+    )
+
+
+# Test collection modifiers
+def pytest_collection_modifyitems(config, items):
+    """Modify test collection to add markers based on test location."""
+    for item in items:
+        # Add markers based on test file location
+        if "unit" in str(item.fspath):
+            item.add_marker(pytest.mark.unit)
+        elif "integration" in str(item.fspath):
+            item.add_marker(pytest.mark.integration)
+        
+        # Skip TorchServe tests if not available
+        if "torchserve" in item.keywords and not os.environ.get("USE_TORCHSERVE", "false") == "true":
+            skip_torchserve = pytest.mark.skip(reason="TorchServe not available")
+            item.add_marker(skip_torchserve)

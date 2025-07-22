@@ -124,10 +124,10 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 
 	// Check if account is locked
-	if user.LockedUntil != nil && user.LockedUntil.After(time.Now()) {
+	if user.LockedUntil.Valid && user.LockedUntil.Time.After(time.Now()) {
 		c.JSON(http.StatusForbidden, gin.H{
 			"error": "Account is locked due to too many failed login attempts",
-			"locked_until": user.LockedUntil.Format(time.RFC3339),
+			"locked_until": user.LockedUntil.Time.Format(time.RFC3339),
 		})
 		return
 	}
@@ -157,7 +157,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 
 	// Update last login
-	if err := h.userService.UpdateLastLogin(c.Request.Context(), user.ID); err != nil {
+	if err := h.userService.UpdateLastLoginAt(c.Request.Context(), user.ID); err != nil {
 		h.logger.WithError(err).Warn("Failed to update last login")
 	}
 

@@ -10,6 +10,9 @@ techniques:
         - "reasoning"
         - "problem_solving"
         - "data_analysis"
+      complexity_levels:
+        - "moderate"
+        - "complex"
       complexity_threshold: 0.5
       keywords:
         - "explain"
@@ -41,6 +44,8 @@ techniques:
         - "problem_solving"
         - "task_planning"
         - "reasoning"
+      complexity_levels:
+        - "complex"
       complexity_threshold: 0.7
       keywords:
         - "options"

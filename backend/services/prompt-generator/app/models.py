@@ -24,11 +24,18 @@ class TechniqueType(str, Enum):
     ADVERSARIAL = "adversarial"
 
 
+class ComplexityLevel(str, Enum):
+    """Complexity level enumeration"""
+    SIMPLE = "simple"
+    MODERATE = "moderate"
+    COMPLEX = "complex"
+
+
 class PromptGenerationRequest(BaseModel):
     """Request model for prompt generation"""
     text: str = Field(..., min_length=1, max_length=5000, description="Original user input")
     intent: str = Field(..., description="Classified intent")
-    complexity: float = Field(..., ge=0.0, le=1.0, description="Complexity score")
+    complexity: str = Field(..., description="Complexity level", pattern="^(simple|moderate|complex)$")
     techniques: List[str] = Field(..., description="Selected techniques to apply")
     context: Optional[Dict[str, Any]] = Field(default=None, description="Additional context")
     parameters: Optional[Dict[str, Any]] = Field(default=None, description="Technique parameters")
@@ -75,7 +82,7 @@ class TechniqueConfig(BaseModel):
     examples: Optional[List[Dict[str, str]]] = None
     best_for: List[str] = Field(default_factory=list)
     not_recommended_for: List[str] = Field(default_factory=list)
-    min_complexity: float = Field(default=0.0, ge=0.0, le=1.0)
+    min_complexity: str = Field(default="simple", description="Minimum complexity level")
     max_tokens_overhead: int = Field(default=100)
     priority: int = Field(default=0)
     enabled: bool = Field(default=True)

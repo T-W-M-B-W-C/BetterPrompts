@@ -1,0 +1,56 @@
+{
+  "intents": [
+    "code_generation",
+    "explanation",
+    "debugging",
+    "analysis",
+    "documentation",
+    "general"
+  ],
+  "sample_responses": {
+    "code_generation": {
+      "keywords": ["write", "create", "implement", "code", "function", "class", "build"],
+      "base_confidence": 0.92,
+      "variance": 0.05
+    },
+    "explanation": {
+      "keywords": ["explain", "what", "how", "why", "describe", "understand"],
+      "base_confidence": 0.88,
+      "variance": 0.05
+    },
+    "debugging": {
+      "keywords": ["debug", "fix", "error", "issue", "problem", "bug", "troubleshoot"],
+      "base_confidence": 0.90,
+      "variance": 0.05
+    },
+    "analysis": {
+      "keywords": ["analyze", "review", "evaluate", "assess", "examine", "investigate"],
+      "base_confidence": 0.85,
+      "variance": 0.05
+    },
+    "documentation": {
+      "keywords": ["document", "readme", "docs", "guide", "manual", "wiki"],
+      "base_confidence": 0.87,
+      "variance": 0.05
+    },
+    "general": {
+      "keywords": [],
+      "base_confidence": 0.65,
+      "variance": 0.10
+    }
+  },
+  "error_responses": [
+    {
+      "status_code": 503,
+      "detail": "Model inference failed (simulated error)"
+    },
+    {
+      "status_code": 500,
+      "detail": "Internal server error (simulated)"
+    },
+    {
+      "status_code": 408,
+      "detail": "Request timeout (simulated)"
+    }
+  ]
+}

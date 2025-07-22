@@ -33,7 +33,7 @@ services:
       - "8001:8001"
     environment:
       - ENVIRONMENT=development
-      - DATABASE_URL=postgresql://betterprompts:betterprompts@postgres:5432/betterprompts
+      - DATABASE_URL=postgresql://betterprompts:betterprompts@postgres:5432/betterprompts?sslmode=disable
       - REDIS_URL=redis://redis:6379/0
       - MODEL_NAME=microsoft/deberta-v3-base
       - LOG_LEVEL=DEBUG
@@ -66,7 +66,7 @@ services:
       - "8002:8002"
     environment:
       - GIN_MODE=debug
-      - DATABASE_URL=postgresql://betterprompts:betterprompts@postgres:5432/betterprompts
+      - DATABASE_URL=postgresql://betterprompts:betterprompts@postgres:5432/betterprompts?sslmode=disable
       - REDIS_URL=redis://redis:6379/1
       - JWT_SECRET=dev-secret-change-in-production
       - LOG_LEVEL=DEBUG
@@ -94,7 +94,7 @@ services:
       - "8003:8003"
     environment:
       - ENVIRONMENT=development
-      - DATABASE_URL=postgresql://betterprompts:betterprompts@postgres:5432/betterprompts
+      - DATABASE_URL=postgresql://betterprompts:betterprompts@postgres:5432/betterprompts?sslmode=disable
       - REDIS_URL=redis://redis:6379/2
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
@@ -114,6 +114,45 @@ services:
       timeout: 10s
       retries: 3
 
+  # API Gateway Service
+  api-gateway:
+    build:
+      context: ./backend/services/api-gateway
+      dockerfile: Dockerfile
+    container_name: betterprompts-api-gateway
+    ports:
+      - "8000:8090"
+    environment:
+      - PORT=8090
+      - GIN_MODE=debug
+      - DATABASE_URL=postgresql://betterprompts:betterprompts@postgres:5432/betterprompts?sslmode=disable
+      - REDIS_URL=redis:6379
+      - JWT_SECRET_KEY=dev-secret-change-in-production
+      - JWT_REFRESH_SECRET_KEY=dev-refresh-secret-change-in-production
+      - LOG_LEVEL=DEBUG
+      - NODE_ENV=development
+      - INTENT_CLASSIFIER_URL=http://intent-classifier:8001
+      - TECHNIQUE_SELECTOR_URL=http://technique-selector:8002
+      - PROMPT_GENERATOR_URL=http://prompt-generator:8003
+    volumes:
+      # Don't mount source code in production mode - it overrides the built binary
+      # - ./backend/services/api-gateway:/app
+      - go-cache:/go/pkg/mod
+    networks:
+      - betterprompts-network
+    depends_on:
+      - postgres
+      - redis
+      - intent-classifier
+      - technique-selector
+      - prompt-generator
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8090/api/v1/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 40s
+
   # Nginx API Gateway
   nginx:
     build:
@@ -130,9 +169,7 @@ services:
       - betterprompts-network
     depends_on:
       - frontend
-      - intent-classifier
-      - technique-selector
-      - prompt-generator
+      - api-gateway
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "/usr/local/bin/healthcheck"]
@@ -229,8 +266,10 @@ services:
       - torchserve-models:/home/model-server/model-store
       - torchserve-logs:/home/model-server/logs
     environment:
-      - JAVA_OPTS=-Xmx4g -Xms2g -XX:+UseG1GC
+      # Reduced memory for development (production: -Xmx4g -Xms2g)
+      - JAVA_OPTS=-Xmx1g -Xms512m -XX:+UseG1GC -XX:MaxGCPauseMillis=100
       - TS_CONFIG_FILE=/home/model-server/config/config.properties
+      - ENVIRONMENT=${ENVIRONMENT:-development}
     networks:
       - betterprompts-network
     healthcheck:

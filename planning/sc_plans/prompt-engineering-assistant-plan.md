@@ -182,6 +182,39 @@ Create an AI-powered application that democratizes advanced prompt engineering t
 /sc:test e2e-workflows --play --comprehensive --persona-qa
 /sc:test ml-pipeline --validate --metrics --persona-analyzer
 ```
+
+Based on the test findings, here's the
+  recommended SuperClaude command to fix the
+  infrastructure issues:
+
+  /sc:troubleshoot "API Gateway routing returning
+   404 for /api/v1/* endpoints"
+  @docker-compose.yml @docker/nginx/nginx.conf
+  --persona-devops --seq --validate --fix
+
+  This command will:
+  - --persona-devops: Activate DevOps persona for
+   infrastructure expertise
+  - --seq: Use Sequential MCP for systematic
+  troubleshooting
+  - --validate: Verify the solution before
+  applying
+  - --fix: Automatically implement the fix
+
+  Alternative if you want to see the analysis
+  first:
+
+  /sc:analyze @docker-compose.yml @docker/nginx/
+  @backend/services/api-gateway/ --focus "routing
+   nginx api-gateway connectivity"
+  --persona-devops --think-hard --validate
+
+  Or for a comprehensive fix with testing:
+
+  /sc:implement --type fix "API Gateway nginx 
+  routing for /api/v1/* endpoints"
+  @docker-compose.yml @docker/nginx/nginx.conf
+  --persona-devops --seq --validate --test
 **Status**: Pending - Comprehensive testing needed
 
 ### 📋 Phase 8: Documentation
