@@ -8,7 +8,6 @@ import (
 	"github.com/betterprompts/api-gateway/internal/handlers"
 	"github.com/betterprompts/api-gateway/internal/middleware"
 	"github.com/betterprompts/api-gateway/internal/services"
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 )
@@ -67,14 +66,7 @@ func main() {
 	router.Use(middleware.SessionMiddleware(clients.Cache, logger))
 	
 	// CORS configuration
-	corsConfig := cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000", "http://localhost:3001"},
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "X-Session-ID"},
-		ExposeHeaders:    []string{"X-Request-ID", "X-Session-ID"},
-		AllowCredentials: true,
-	}
-	router.Use(cors.New(corsConfig))
+	router.Use(middleware.CORSConfig(logger))
 
 	// Public routes
 	public := router.Group("/api/v1")

@@ -134,6 +134,8 @@ services:
       - INTENT_CLASSIFIER_URL=http://intent-classifier:8001
       - TECHNIQUE_SELECTOR_URL=http://technique-selector:8002
       - PROMPT_GENERATOR_URL=http://prompt-generator:8003
+      - CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001,http://localhost
+      - PRODUCTION_ORIGIN=${PRODUCTION_ORIGIN:-}
     volumes:
       # Don't mount source code in production mode - it overrides the built binary
       # - ./backend/services/api-gateway:/app

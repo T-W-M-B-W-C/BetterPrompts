@@ -1,12 +1,30 @@
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from 'axios'
 import { useUserStore } from '@/store/useUserStore'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost/api/v1'
+// Determine API URL based on environment
+// In development, you can use direct API Gateway port or nginx proxy
+const getApiUrl = () => {
+  // Check for explicit environment variable first
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL
+  }
+  
+  // Use nginx proxy by default (recommended for CORS and consistency)
+  // This routes through nginx which proxies to API Gateway on port 8090
+  return 'http://localhost/api/v1'
+  
+  // Alternative: Direct API Gateway connection (may have CORS issues)
+  // return 'http://localhost:8000/api/v1'
+}
+
+const API_BASE_URL = getApiUrl()
 
 // Validate API URL configuration
 if (!API_BASE_URL) {
   console.error('API_BASE_URL is not configured. Please set NEXT_PUBLIC_API_URL environment variable.')
 }
+
+console.log('API Client initialized with base URL:', API_BASE_URL)
 
 class ApiClient {
   private client: AxiosInstance

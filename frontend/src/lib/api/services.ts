@@ -1,0 +1,224 @@
+import { apiClient } from './client'
+
+// Types
+export interface LoginRequest {
+  email: string
+  password: string
+}
+
+export interface RegisterRequest {
+  name: string
+  email: string
+  password: string
+}
+
+export interface RefreshTokenRequest {
+  refresh_token: string
+}
+
+export interface AuthResponse {
+  access_token: string
+  refresh_token: string
+  user: {
+    id: string
+    name: string
+    email: string
+    role: string
+  }
+}
+
+export interface EnhanceRequest {
+  text: string
+  intent?: string
+  complexity?: 'simple' | 'moderate' | 'complex'
+  target_model?: string
+  techniques?: string[]
+  context?: Record<string, any>
+}
+
+export interface EnhanceResponse {
+  enhanced_prompt: string
+  suggested_techniques: string[]
+  intent: string
+  complexity: string
+  confidence_score: number
+  metadata?: Record<string, any>
+}
+
+export interface AnalyzeRequest {
+  text: string
+  context?: Record<string, any>
+}
+
+export interface AnalyzeResponse {
+  intent: string
+  complexity: string
+  confidence: number
+  suggested_techniques: string[]
+  metadata?: Record<string, any>
+}
+
+export interface Technique {
+  id: string
+  name: string
+  description: string
+  category: string
+  effectiveness_score: number
+  use_cases: string[]
+}
+
+export interface PromptHistoryItem {
+  id: string
+  original_text: string
+  enhanced_text: string
+  techniques_used: string[]
+  intent: string
+  complexity: string
+  created_at: string
+  metadata?: Record<string, any>
+}
+
+export interface FeedbackRequest {
+  prompt_id: string
+  rating: number
+  feedback?: string
+  technique_effectiveness?: Record<string, number>
+}
+
+// Authentication Services
+export const authService = {
+  register: (data: RegisterRequest) => 
+    apiClient.post<AuthResponse>('/auth/register', data),
+  
+  login: (data: LoginRequest) => 
+    apiClient.post<AuthResponse>('/auth/login', data),
+  
+  refreshToken: (data: RefreshTokenRequest) => 
+    apiClient.post<AuthResponse>('/auth/refresh', data),
+  
+  verifyEmail: (token: string) => 
+    apiClient.post('/auth/verify-email', { token }),
+  
+  getProfile: () => 
+    apiClient.get('/auth/profile'),
+  
+  updateProfile: (data: Partial<{ name: string; email: string }>) => 
+    apiClient.put('/auth/profile', data),
+  
+  changePassword: (data: { current_password: string; new_password: string }) => 
+    apiClient.post('/auth/change-password', data),
+  
+  logout: () => 
+    apiClient.post('/auth/logout'),
+}
+
+// Main Enhancement Services
+export const promptService = {
+  // Public endpoint (optional auth)
+  analyze: (data: AnalyzeRequest) => 
+    apiClient.post<AnalyzeResponse>('/analyze', data),
+  
+  // Protected endpoint
+  enhance: (data: EnhanceRequest) => 
+    apiClient.post<EnhanceResponse>('/enhance', data),
+  
+  // Get available techniques
+  getTechniques: () => 
+    apiClient.get<Technique[]>('/techniques'),
+  
+  // Select best techniques for a prompt
+  selectTechniques: (data: { text: string; intent?: string; context?: any }) => 
+    apiClient.post<{ techniques: string[]; reasoning: string }>('/techniques/select', data),
+}
+
+// History Services
+export const historyService = {
+  getHistory: (params?: { limit?: number; offset?: number; search?: string }) => 
+    apiClient.get<{ items: PromptHistoryItem[]; total: number }>('/history', { params }),
+  
+  getHistoryItem: (id: string) => 
+    apiClient.get<PromptHistoryItem>(`/history/${id}`),
+  
+  deleteHistoryItem: (id: string) => 
+    apiClient.delete(`/history/${id}`),
+}
+
+// Feedback Service
+export const feedbackService = {
+  submitFeedback: (data: FeedbackRequest) => 
+    apiClient.post('/feedback', data),
+}
+
+// Admin Services
+export const adminService = {
+  // User management
+  getUsers: (params?: { limit?: number; offset?: number; search?: string }) => 
+    apiClient.get('/admin/users', { params }),
+  
+  getUser: (id: string) => 
+    apiClient.get(`/admin/users/${id}`),
+  
+  updateUser: (id: string, data: any) => 
+    apiClient.put(`/admin/users/${id}`, data),
+  
+  deleteUser: (id: string) => 
+    apiClient.delete(`/admin/users/${id}`),
+  
+  // Metrics
+  getSystemMetrics: () => 
+    apiClient.get('/admin/metrics'),
+  
+  getUsageMetrics: (params?: { start_date?: string; end_date?: string }) => 
+    apiClient.get('/admin/metrics/usage', { params }),
+  
+  // Cache management
+  clearCache: () => 
+    apiClient.post('/admin/cache/clear'),
+  
+  invalidateUserCache: (userId: string) => 
+    apiClient.post(`/admin/cache/invalidate/${userId}`),
+}
+
+// Developer API Services
+export const developerService = {
+  // API key management
+  createAPIKey: (data: { name: string; scopes?: string[] }) => 
+    apiClient.post('/dev/api-keys', data),
+  
+  getAPIKeys: () => 
+    apiClient.get('/dev/api-keys'),
+  
+  deleteAPIKey: (id: string) => 
+    apiClient.delete(`/dev/api-keys/${id}`),
+  
+  // Analytics
+  getDeveloperUsage: (params?: { start_date?: string; end_date?: string }) => 
+    apiClient.get('/dev/analytics/usage', { params }),
+  
+  getPerformanceMetrics: () => 
+    apiClient.get('/dev/analytics/performance'),
+}
+
+// Utility function to handle API errors consistently
+export const handleApiError = (error: any): string => {
+  if (error.message) {
+    return error.message
+  }
+  if (error.response?.data?.message) {
+    return error.response.data.message
+  }
+  if (error.response?.data?.error) {
+    return error.response.data.error
+  }
+  return 'An unexpected error occurred'
+}
+
+// Export all services as a single object for convenience
+export const api = {
+  auth: authService,
+  prompts: promptService,
+  history: historyService,
+  feedback: feedbackService,
+  admin: adminService,
+  developer: developerService,
+}
