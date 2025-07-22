@@ -110,9 +110,12 @@ class TechniqueRegistry:
             self.logger.warning(f"Technique is disabled: {technique_id}")
             return text
             
-        if not technique.validate_input(text, context):
+        self.logger.info(f"Validating technique {technique_id} with context: {context}")
+        validation_result = technique.validate_input(text, context)
+        if not validation_result:
             self.logger.warning(f"Input validation failed for technique: {technique_id}")
             return text
+        self.logger.info(f"Validation passed for technique: {technique_id}")
             
         try:
             result = technique.apply(text, context)

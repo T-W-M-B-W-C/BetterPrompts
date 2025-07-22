@@ -125,8 +125,15 @@ Please show your reasoning at each step."""
         # Check if enhanced mode should be used
         use_enhanced = (
             self.enhanced_mode and 
-            context.get('enhanced', True) and
+            context.get('enhanced', False) and  # Only use enhanced if explicitly requested
             not context.get('reasoning_steps')  # Custom steps use basic mode
+        )
+        
+        self.logger.info(
+            f"CoT apply: enhanced_mode={self.enhanced_mode}, "
+            f"context_enhanced={context.get('enhanced', False)}, "
+            f"has_reasoning_steps={bool(context.get('reasoning_steps'))}, "
+            f"use_enhanced={use_enhanced}"
         )
         
         if use_enhanced:
@@ -174,9 +181,10 @@ Please provide detailed reasoning for each step before reaching your conclusion.
                 text, reasoning_steps, domain, complexity_str, show_substeps
             )
             
-            self.logger.debug(
+            self.logger.info(
                 f"Applied enhanced CoT: domain={domain}, "
-                f"complexity={complexity:.2f}, steps={len(reasoning_steps)}"
+                f"complexity={complexity:.2f}, steps={len(reasoning_steps)}, "
+                f"enhanced_mode={self.enhanced_mode}"
             )
             
             return enhanced_prompt
@@ -191,9 +199,14 @@ Please provide detailed reasoning for each step before reaching your conclusion.
             self.logger.debug("Input too short for Chain of Thought")
             return False
         
+        self.logger.info(f"CoT validation: text_len={len(text)}, enhanced_mode={self.enhanced_mode}, context={context}")
+        
         # Enhanced validation if in enhanced mode
-        if self.enhanced_mode and context and context.get('enhanced', True):
-            return self._validate_enhanced(text, context)
+        # Only use enhanced validation if explicitly requested via context
+        if self.enhanced_mode and context and context.get('enhanced', False):
+            result = self._validate_enhanced(text, context)
+            self.logger.info(f"Enhanced validation result: {result}")
+            return result
         
         # Basic validation
         reasoning_keywords = [
@@ -230,16 +243,20 @@ Please provide detailed reasoning for each step before reaching your conclusion.
         
         # Complexity check
         complexity = self._estimate_complexity(text)
-        if complexity > 0.5:
+        if complexity > 0.3:
             validation_score += 0.3
         
         # Domain check
         domain = self._detect_domain(text)
         if domain != "general":
-            validation_score += 0.2
+            validation_score += 0.3
         
-        is_valid = validation_score >= 0.5
-        self.logger.debug(f"Enhanced validation score: {validation_score:.2f}")
+        # Length bonus
+        if len(text) > 50:
+            validation_score += 0.1
+        
+        is_valid = validation_score >= 0.4  # Lower threshold
+        self.logger.debug(f"Enhanced validation score: {validation_score:.2f}, domain: {domain}, is_valid: {is_valid}")
         
         return is_valid
     
@@ -288,8 +305,14 @@ Please provide detailed reasoning for each step before reaching your conclusion.
         
         return min(complexity_score, 1.0)
     
-    def _generate_reasoning_steps(self, domain: str, complexity: float, text: str) -> List[str]:
+    def _generate_reasoning_steps(self, domain: str, complexity: str, text: str) -> List[str]:
         """Generate adaptive reasoning steps based on domain and complexity."""
+        # Convert string complexity to float for comparison
+        if isinstance(complexity, str):
+            complexity_value = complexity_string_to_float(complexity)
+        else:
+            complexity_value = complexity
+            
         # Get domain-specific steps or use general ones
         if domain in self.reasoning_patterns:
             base_steps = self.reasoning_patterns[domain]["steps"]
@@ -303,9 +326,9 @@ Please provide detailed reasoning for each step before reaching your conclusion.
             ]
         
         # Adjust based on complexity
-        if complexity < self.complexity_thresholds["simple"]:
+        if complexity_value < self.complexity_thresholds["simple"]:
             return base_steps[:3]
-        elif complexity < self.complexity_thresholds["moderate"]:
+        elif complexity_value < self.complexity_thresholds["moderate"]:
             return base_steps
         else:
             # Complex problems get additional detail
@@ -319,14 +342,20 @@ Please provide detailed reasoning for each step before reaching your conclusion.
         text: str,
         steps: List[str],
         domain: str,
-        complexity: float,
+        complexity: str,
         show_substeps: bool
     ) -> str:
         """Build the enhanced CoT prompt."""
         # Complexity-based intro
-        if complexity > self.complexity_thresholds["complex"]:
+        # Convert string complexity to float for comparison
+        if isinstance(complexity, str):
+            complexity_value = complexity_string_to_float(complexity)
+        else:
+            complexity_value = complexity
+            
+        if complexity_value > self.complexity_thresholds["complex"]:
             intro = "This is a complex problem that requires careful analysis. Let's think through it systematically:"
-        elif complexity > self.complexity_thresholds["moderate"]:
+        elif complexity_value > self.complexity_thresholds["moderate"]:
             intro = "Let's approach this methodically:"
         else:
             intro = "Let's think through this step by step:"
