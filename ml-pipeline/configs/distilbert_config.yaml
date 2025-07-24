@@ -1,0 +1,204 @@
+# DistilBERT ML Pipeline Configuration
+# Optimized for faster training and inference
+
+project:
+  name: "BetterPrompts-DistilBERT"
+  description: "Lightweight Intent Classification with DistilBERT"
+  version: "1.0.0"
+  
+paths:
+  data_dir: "./data"
+  models_dir: "./models/distilbert"
+  logs_dir: "./logs/distilbert"
+  artifacts_dir: "./artifacts/distilbert"
+
+data:
+  raw_data_path: "./data/raw"
+  processed_data_path: "./data/processed"
+  external_data_path: "./data/external"
+  train_test_split: 0.8
+  validation_split: 0.1
+  random_seed: 42
+  max_samples: null  # Use all available data
+
+preprocessing:
+  max_length: 256  # Shorter sequences for faster processing
+  min_length: 10
+  remove_duplicates: true
+  lowercase: true  # DistilBERT uses lowercase
+  remove_special_chars: false
+  augmentation:
+    enabled: true
+    techniques:
+      - "paraphrase"
+      - "synonym_replacement"  # Simpler augmentation for DistilBERT
+    augmentation_factor: 1.5  # Less augmentation needed
+
+model:
+  distilbert_classifier:
+    architecture: "distilbert"
+    pretrained_model: "distilbert-base-uncased"
+    num_labels: 10
+    hidden_dropout_prob: 0.2  # Slightly higher dropout for DistilBERT
+    attention_dropout_prob: 0.1
+    max_position_embeddings: 512
+    use_complexity_features: true
+    complexity_hidden_size: 32  # Smaller hidden size
+    pooling_strategy: "cls"  # CLS token pooling works well with DistilBERT
+    freeze_base_model: false
+    freeze_layers: 0  # Can freeze up to 3 layers for faster training
+    classifier_hidden_size: 768
+    use_layer_norm: true
+    
+training:
+  batch_size: 64  # Larger batch size possible with DistilBERT
+  learning_rate: 5e-5  # Slightly higher LR for DistilBERT
+  num_epochs: 15  # More epochs since training is faster
+  warmup_steps: 300  # Less warmup needed
+  weight_decay: 0.01
+  gradient_accumulation_steps: 2  # Less accumulation needed
+  fp16: true  # Enable mixed precision training
+  evaluation_strategy: "steps"
+  eval_steps: 200  # More frequent evaluation
+  save_strategy: "steps"
+  save_steps: 500
+  load_best_model_at_end: true
+  metric_for_best_model: "f1_weighted"
+  greater_is_better: true
+  early_stopping_patience: 5
+  early_stopping_threshold: 0.001
+  
+hyperparameter_tuning:
+  enabled: true
+  n_trials: 30  # Fewer trials needed for DistilBERT
+  timeout: 1800  # 30 minutes (faster trials)
+  parameters:
+    learning_rate:
+      type: "float"
+      low: 2e-5
+      high: 1e-4
+    batch_size:
+      type: "categorical"
+      choices: [32, 64, 128]  # Can handle larger batches
+    warmup_ratio:
+      type: "float"
+      low: 0.0
+      high: 0.15
+    weight_decay:
+      type: "float"
+      low: 0.0
+      high: 0.1
+    dropout_prob:
+      type: "float"
+      low: 0.1
+      high: 0.3
+    pooling_strategy:
+      type: "categorical"
+      choices: ["cls", "mean", "attention"]
+
+# Optimization strategies for DistilBERT
+optimization:
+  knowledge_distillation:
+    enabled: false  # Already distilled
+    teacher_model: null
+  quantization:
+    enabled: true
+    method: "dynamic"  # dynamic, static, or qat
+    backend: "qnnpack"  # optimized for mobile
+  pruning:
+    enabled: false
+    sparsity: 0.1
+  onnx_export:
+    enabled: true
+    opset_version: 14
+    optimize_for_mobile: true
+
+evaluation:
+  metrics:
+    - "accuracy"
+    - "precision"
+    - "recall"
+    - "f1_weighted"
+    - "f1_macro"
+    - "confusion_matrix"
+    - "classification_report"
+    - "inference_time"  # Track speed metrics
+    - "model_size"  # Track model size
+  confidence_threshold: 0.7
+  speed_benchmarks:
+    batch_sizes: [1, 8, 32, 64]
+    sequence_lengths: [64, 128, 256]
+    warmup_runs: 10
+    benchmark_runs: 100
+  
+serving:
+  model_server: "torchserve"
+  batch_size: 32  # Larger batch size for DistilBERT
+  max_batch_delay: 50  # ms - faster response time
+  response_timeout: 500  # ms - lower timeout
+  workers: 8  # More workers possible
+  gpu_enabled: true
+  optimization:
+    torch_jit: true  # Enable TorchScript
+    onnx_runtime: true  # Enable ONNX Runtime
+    tensorrt: false  # Optional TensorRT optimization
+  
+monitoring:
+  drift_detection:
+    enabled: true
+    method: "kolmogorov_smirnov"
+    threshold: 0.1
+    window_size: 1000
+  performance_tracking:
+    enabled: true
+    metrics:
+      - "latency_p50"
+      - "latency_p95"
+      - "latency_p99"
+      - "throughput"
+      - "error_rate"
+      - "model_size_mb"
+      - "memory_usage_mb"
+  alerting:
+    enabled: true
+    channels:
+      - "email"
+      - "slack"
+    thresholds:
+      accuracy_drop: 0.03  # More sensitive to accuracy drops
+      latency_p95: 100  # ms - stricter latency requirement
+      error_rate: 0.01
+      memory_usage_mb: 500  # Alert if memory usage exceeds 500MB
+
+mlflow:
+  tracking_uri: "sqlite:///mlflow_distilbert.db"
+  experiment_name: "distilbert_intent_classification"
+  registry_uri: "sqlite:///mlflow_registry_distilbert.db"
+  
+dvc:
+  remote: "s3://betterprompts-ml-data/distilbert"
+  cache_dir: ".dvc/cache"
+  
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "./logs/distilbert_pipeline.log"
+
+# Deployment configurations
+deployment:
+  targets:
+    - name: "edge"
+      constraints:
+        max_model_size_mb: 100
+        max_latency_ms: 50
+        min_accuracy: 0.85
+    - name: "cloud"
+      constraints:
+        max_model_size_mb: 500
+        max_latency_ms: 200
+        min_accuracy: 0.90
+    - name: "mobile"
+      constraints:
+        max_model_size_mb: 50
+        max_latency_ms: 100
+        min_accuracy: 0.80
