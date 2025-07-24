@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   // Basic health check
-  const health = {
+  const health: any = {
     status: 'ok',
     service: 'frontend',
     timestamp: new Date().toISOString(),
@@ -12,7 +12,10 @@ export async function GET() {
 
   // Check if we can reach the API gateway
   try {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost/api/v1';
+    // Use nginx service name for server-side requests in Docker
+    const apiUrl = process.env.NODE_ENV === 'development' && process.env.DOCKERIZED 
+      ? 'http://nginx/api/v1'
+      : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost/api/v1');
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
     

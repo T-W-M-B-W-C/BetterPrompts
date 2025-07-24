@@ -62,7 +62,7 @@ class PromptFeedback(Base):
     # Additional metadata
     user_agent = Column(String, nullable=True)
     ip_address = Column(String, nullable=True)
-    metadata = Column(JSON, nullable=True)
+    extra_metadata = Column(JSON, nullable=True)
     
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -81,7 +81,7 @@ class PromptFeedback(Base):
             "technique_ratings": self.technique_ratings,
             "most_helpful_technique": self.most_helpful_technique,
             "least_helpful_technique": self.least_helpful_technique,
-            "metadata": self.metadata,
+            "metadata": self.extra_metadata,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
         }
@@ -117,7 +117,7 @@ class TechniqueEffectivenessMetrics(Base):
     period_end = Column(DateTime, nullable=False)
     
     # Metadata
-    metadata = Column(JSON, nullable=True)
+    extra_metadata = Column(JSON, nullable=True)
     
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -141,7 +141,7 @@ class TechniqueEffectivenessMetrics(Base):
             "confidence_interval": self.confidence_interval,
             "period_start": self.period_start.isoformat() if self.period_start else None,
             "period_end": self.period_end.isoformat() if self.period_end else None,
-            "metadata": self.metadata,
+            "metadata": self.extra_metadata,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
         }
@@ -182,7 +182,7 @@ def save_feedback(
     session_id: Optional[str] = None,
     user_agent: Optional[str] = None,
     ip_address: Optional[str] = None,
-    metadata: Optional[Dict[str, Any]] = None
+    extra_metadata: Optional[Dict[str, Any]] = None
 ) -> PromptFeedback:
     """Save feedback to database"""
     feedback = PromptFeedback(
@@ -197,7 +197,7 @@ def save_feedback(
         session_id=session_id,
         user_agent=user_agent,
         ip_address=ip_address,
-        metadata=metadata
+        extra_metadata=extra_metadata
     )
     
     db.add(feedback)
@@ -246,9 +246,9 @@ def calculate_technique_effectiveness(
     
     # Add filters if specified
     if intent:
-        query = query.filter(PromptFeedback.metadata["intent"].astext == intent)
+        query = query.filter(PromptFeedback.extra_metadata["intent"].astext == intent)
     if complexity:
-        query = query.filter(PromptFeedback.metadata["complexity"].astext == complexity)
+        query = query.filter(PromptFeedback.extra_metadata["complexity"].astext == complexity)
     
     # Filter for technique
     query = query.filter(

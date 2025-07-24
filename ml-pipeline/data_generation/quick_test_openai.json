@@ -1,0 +1,358 @@
+{
+  "metadata": {
+    "generated_at": "2025-07-24T15:29:46.386410",
+    "total_examples": 25,
+    "generation_time_seconds": 26.339621782302856,
+    "config": {
+      "examples_per_intent": 2,
+      "model": "gpt-3.5-turbo",
+      "temperature": 0.9,
+      "use_openai": true
+    },
+    "statistics": {
+      "by_intent": {
+        "question_answering": 3,
+        "creative_writing": 2,
+        "code_generation": 3,
+        "data_analysis": 2,
+        "reasoning": 2,
+        "summarization": 2,
+        "translation": 2,
+        "conversation": 3,
+        "task_planning": 2,
+        "problem_solving": 4
+      },
+      "by_audience": {
+        "general": 15,
+        "beginner": 10
+      },
+      "by_complexity": {
+        "moderate": 20,
+        "simple": 5
+      }
+    },
+    "estimated_cost": "$0.04"
+  },
+  "examples": [
+    {
+      "text": "Can you explain the difference between weather and climate, and how they are measured and monitored by scientists?",
+      "intent": "question_answering",
+      "audience": "general",
+      "complexity": "moderate",
+      "confidence": 0.85,
+      "metadata": {
+        "generation_method": "openai",
+        "model": "gpt-3.5-turbo",
+        "temperature": 0.9
+      },
+      "generated_at": "2025-07-24T15:29:22.012794"
+    },
+    {
+      "text": "Can you please explain how renewable energy sources like solar and wind power work to generate electricity?",
+      "intent": "question_answering",
+      "audience": "beginner",
+      "complexity": "moderate",
+      "confidence": 0.85,
+      "metadata": {
+        "generation_method": "openai",
+        "model": "gpt-3.5-turbo",
+        "temperature": 0.9
+      },
+      "generated_at": "2025-07-24T15:29:23.085564"
+    },
+    {
+      "text": "Can you write a short story about a mysterious old bookstore that appears overnight in a small town, and the curious adventures of the townspeople who visit it?",
+      "intent": "creative_writing",
+      "audience": "general",
+      "complexity": "moderate",
+      "confidence": 0.85,
+      "metadata": {
+        "generation_method": "openai",
+        "model": "gpt-3.5-turbo",
+        "temperature": 0.9
+      },
+      "generated_at": "2025-07-24T15:29:24.365514"
+    },
+    {
+      "text": "Can you write a short story about a young gardener who discovers a magical plant growing in their backyard and the adventures that unfold as a result? Feel free to explore themes of friendship, curiosity, and the power of nature in your writing.",
+      "intent": "creative_writing",
+      "audience": "beginner",
+      "complexity": "moderate",
+      "confidence": 0.85,
+      "metadata": {
+        "generation_method": "openai",
+        "model": "gpt-3.5-turbo",
+        "temperature": 0.9
+      },
+      "generated_at": "2025-07-24T15:29:25.767215"
+    },
+    {
+      "text": "Can you create a Python script that can analyze a text file to count the frequency of each word used and then display the top 5 most common words along with their frequencies?",
+      "intent": "code_generation",
+      "audience": "general",
+      "complexity": "moderate",
+      "confidence": 0.85,
+      "metadata": {
+        "generation_method": "openai",
+        "model": "gpt-3.5-turbo",
+        "temperature": 0.9
+      },
+      "generated_at": "2025-07-24T15:29:27.053515"
+    },
+    {
+      "text": "Can you write a Python program that takes a list of numbers as input and outputs the sum of all even numbers in the list?",
+      "intent": "code_generation",
+      "audience": "beginner",
+      "complexity": "moderate",
+      "confidence": 0.85,
+      "metadata": {
+        "generation_method": "openai",
+        "model": "gpt-3.5-turbo",
+        "temperature": 0.9
+      },
+      "generated_at": "2025-07-24T15:29:28.320754"
+    },
+    {
+      "text": "I have collected data on customer demographics and purchasing behavior. Can you analyze the data to identify any correlations between age, income levels, and types of products purchased?",
+      "intent": "data_analysis",
+      "audience": "general",
+      "complexity": "moderate",
+      "confidence": 0.85,
+      "metadata": {
+        "generation_method": "openai",
+        "model": "gpt-3.5-turbo",
+        "temperature": 0.9
+      },
+      "generated_at": "2025-07-24T15:29:29.527471"
+    },
+    {
+      "text": "Can you analyze the sales data from last quarter and identify any trends or patterns that could help us understand customer preferences better?",
+      "intent": "data_analysis",
+      "audience": "beginner",
+      "complexity": "moderate",
+      "confidence": 0.85,
+      "metadata": {
+        "generation_method": "openai",
+        "model": "gpt-3.5-turbo",
+        "temperature": 0.9
+      },
+      "generated_at": "2025-07-24T15:29:30.727901"
+    },
+    {
+      "text": "I'm planning a road trip and want to visit five different cities in a week. How can I optimize my route to ensure efficient travel time and maximize sightseeing opportunities?",
+      "intent": "reasoning",
+      "audience": "general",
+      "complexity": "moderate",
+      "confidence": 0.85,
+      "metadata": {
+        "generation_method": "openai",
+        "model": "gpt-3.5-turbo",
+        "temperature": 0.9
+      },
+      "generated_at": "2025-07-24T15:29:32.010547"
+    },
+    {
+      "text": "I have a small garden with limited sunlight. Can you suggest some vegetable plants that can thrive in shady conditions?",
+      "intent": "reasoning",
+      "audience": "beginner",
+      "complexity": "moderate",
+      "confidence": 0.85,
+      "metadata": {
+        "generation_method": "openai",
+        "model": "gpt-3.5-turbo",
+        "temperature": 0.9
+      },
+      "generated_at": "2025-07-24T15:29:33.283006"
+    },
+    {
+      "text": "Can you provide a concise summary of the key events leading up to the American Civil War, including the major factors contributing to the conflict and the pivotal moments that escalated tensions between the North and the South?",
+      "intent": "summarization",
+      "audience": "general",
+      "complexity": "moderate",
+      "confidence": 0.85,
+      "metadata": {
+        "generation_method": "openai",
+        "model": "gpt-3.5-turbo",
+        "temperature": 0.9
+      },
+      "generated_at": "2025-07-24T15:29:34.496292"
+    },
+    {
+      "text": "Can you provide a concise overview of the causes and effects of the Industrial Revolution in Europe during the 18th and 19th centuries?",
+      "intent": "summarization",
+      "audience": "beginner",
+      "complexity": "moderate",
+      "confidence": 0.85,
+      "metadata": {
+        "generation_method": "openai",
+        "model": "gpt-3.5-turbo",
+        "temperature": 0.9
+      },
+      "generated_at": "2025-07-24T15:29:35.686718"
+    },
+    {
+      "text": "I have a poem written in Spanish that I'd like to share with my English-speaking friends. Could you help me translate it while maintaining the beauty and emotion of the original text?",
+      "intent": "translation",
+      "audience": "general",
+      "complexity": "moderate",
+      "confidence": 0.85,
+      "metadata": {
+        "generation_method": "openai",
+        "model": "gpt-3.5-turbo",
+        "temperature": 0.9
+      },
+      "generated_at": "2025-07-24T15:29:37.154162"
+    },
+    {
+      "text": "I have a short story in Spanish that I'd like to translate into French. Can someone help me with this task?",
+      "intent": "translation",
+      "audience": "beginner",
+      "complexity": "moderate",
+      "confidence": 0.85,
+      "metadata": {
+        "generation_method": "openai",
+        "model": "gpt-3.5-turbo",
+        "temperature": 0.9
+      },
+      "generated_at": "2025-07-24T15:29:38.566289"
+    },
+    {
+      "text": "What are your thoughts on the impact of artificial intelligence in healthcare, particularly in terms of enhancing medical diagnoses and treatment outcomes?",
+      "intent": "conversation",
+      "audience": "general",
+      "complexity": "moderate",
+      "confidence": 0.85,
+      "metadata": {
+        "generation_method": "openai",
+        "model": "gpt-3.5-turbo",
+        "temperature": 0.9
+      },
+      "generated_at": "2025-07-24T15:29:39.647727"
+    },
+    {
+      "text": "What are some common myths about climate change that you've come across, and how do you think we can debunk them effectively?",
+      "intent": "conversation",
+      "audience": "beginner",
+      "complexity": "moderate",
+      "confidence": 0.85,
+      "metadata": {
+        "generation_method": "openai",
+        "model": "gpt-3.5-turbo",
+        "temperature": 0.9
+      },
+      "generated_at": "2025-07-24T15:29:41.162689"
+    },
+    {
+      "text": "I need help creating a detailed weekly meal plan that includes breakfast, lunch, and dinner for a family of four with varied dietary preferences and restrictions.",
+      "intent": "task_planning",
+      "audience": "general",
+      "complexity": "moderate",
+      "confidence": 0.85,
+      "metadata": {
+        "generation_method": "openai",
+        "model": "gpt-3.5-turbo",
+        "temperature": 0.9
+      },
+      "generated_at": "2025-07-24T15:29:42.320975"
+    },
+    {
+      "text": "I need help creating a weekly meal plan for my family of four, including breakfast, lunch, and dinner options.",
+      "intent": "task_planning",
+      "audience": "beginner",
+      "complexity": "moderate",
+      "confidence": 0.85,
+      "metadata": {
+        "generation_method": "openai",
+        "model": "gpt-3.5-turbo",
+        "temperature": 0.9
+      },
+      "generated_at": "2025-07-24T15:29:43.582697"
+    },
+    {
+      "text": "I'm trying to improve my time management skills, but I always end up getting distracted while working. Can you suggest some effective strategies to stay focused and avoid distractions throughout the day?",
+      "intent": "problem_solving",
+      "audience": "general",
+      "complexity": "moderate",
+      "confidence": 0.85,
+      "metadata": {
+        "generation_method": "openai",
+        "model": "gpt-3.5-turbo",
+        "temperature": 0.9
+      },
+      "generated_at": "2025-07-24T15:29:44.743513"
+    },
+    {
+      "text": "I am trying to set up my new smart home devices, but they are not connecting to my Wi-Fi network. Can you help me troubleshoot this issue and get everything working properly?",
+      "intent": "problem_solving",
+      "audience": "beginner",
+      "complexity": "moderate",
+      "confidence": 0.85,
+      "metadata": {
+        "generation_method": "openai",
+        "model": "gpt-3.5-turbo",
+        "temperature": 0.9
+      },
+      "generated_at": "2025-07-24T15:29:45.885268"
+    },
+    {
+      "text": "?",
+      "intent": "question_answering",
+      "confidence": 0.3,
+      "audience": "general",
+      "complexity": "simple",
+      "metadata": {
+        "generation_method": "edge_case",
+        "type": "ambiguous"
+      },
+      "generated_at": "2025-07-24T15:29:46.386315"
+    },
+    {
+      "text": "help",
+      "intent": "problem_solving",
+      "confidence": 0.4,
+      "audience": "general",
+      "complexity": "simple",
+      "metadata": {
+        "generation_method": "edge_case",
+        "type": "ambiguous"
+      },
+      "generated_at": "2025-07-24T15:29:46.386344"
+    },
+    {
+      "text": "I need something but I'm not sure what",
+      "intent": "conversation",
+      "confidence": 0.5,
+      "audience": "general",
+      "complexity": "simple",
+      "metadata": {
+        "generation_method": "edge_case",
+        "type": "ambiguous"
+      },
+      "generated_at": "2025-07-24T15:29:46.386349"
+    },
+    {
+      "text": "Can you help me with a thing that involves stuff?",
+      "intent": "problem_solving",
+      "confidence": 0.4,
+      "audience": "general",
+      "complexity": "simple",
+      "metadata": {
+        "generation_method": "edge_case",
+        "type": "ambiguous"
+      },
+      "generated_at": "2025-07-24T15:29:46.386353"
+    },
+    {
+      "text": "Write code to analyze data and create a summary",
+      "intent": "code_generation",
+      "confidence": 0.6,
+      "audience": "general",
+      "complexity": "simple",
+      "metadata": {
+        "generation_method": "edge_case",
+        "type": "ambiguous"
+      },
+      "generated_at": "2025-07-24T15:29:46.386356"
+    }
+  ]
+}

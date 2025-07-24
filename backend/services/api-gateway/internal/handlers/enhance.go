@@ -27,11 +27,14 @@ type EnhanceResponse struct {
 	ID               string                 `json:"id"`
 	OriginalText     string                 `json:"original_text"`
 	EnhancedText     string                 `json:"enhanced_text"`
+	EnhancedPrompt   string                 `json:"enhanced_prompt"` // Alias for enhanced_text
 	Intent           string                 `json:"intent"`
 	Complexity       string                 `json:"complexity"`
+	Techniques       []string               `json:"techniques"`      // Alias for techniques_used
 	TechniquesUsed   []string               `json:"techniques_used"`
 	Confidence       float64                `json:"confidence"`
 	ProcessingTime   float64                `json:"processing_time_ms"`
+	Enhanced         bool                   `json:"enhanced"`        // Flag to indicate enhancement
 	Metadata         map[string]interface{} `json:"metadata,omitempty"`
 }
 
@@ -105,6 +108,28 @@ func EnhancePrompt(clients *services.ServiceClients) gin.HandlerFunc {
 			// Fall back to suggested techniques from intent classifier
 			techniques = intentResult.SuggestedTechniques
 		}
+		
+		// Ensure we have at least some techniques
+		if len(techniques) == 0 {
+			// Apply default techniques based on intent and complexity
+			switch intentResult.Intent {
+			case "explanation", "education":
+				techniques = []string{"step_by_step", "analogical"}
+			case "reasoning", "problem_solving":
+				techniques = []string{"chain_of_thought"}
+			case "task_planning":
+				techniques = []string{"step_by_step", "structured_output"}
+			case "creative_writing":
+				techniques = []string{"role_play", "emotional_appeal"}
+			default:
+				techniques = []string{"step_by_step"}
+			}
+			logger.WithFields(logrus.Fields{
+				"intent": intentResult.Intent,
+				"complexity": intentResult.Complexity,
+				"default_techniques": techniques,
+			}).Info("Applied default techniques due to empty selection")
+		}
 
 		// Step 3: Generate enhanced prompt
 		// Ensure context includes enhanced flag
@@ -172,11 +197,14 @@ func EnhancePrompt(clients *services.ServiceClients) gin.HandlerFunc {
 			ID:             historyID,
 			OriginalText:   req.Text,
 			EnhancedText:   enhancedPrompt.Text,
+			EnhancedPrompt: enhancedPrompt.Text, // Alias for compatibility
 			Intent:         intentResult.Intent,
 			Complexity:     intentResult.Complexity,
+			Techniques:     techniques,          // Alias for compatibility
 			TechniquesUsed: techniques,
 			Confidence:     intentResult.Confidence,
 			ProcessingTime: float64(time.Since(startTime).Milliseconds()),
+			Enhanced:       true,                // Always true for successful enhancement
 			Metadata: map[string]interface{}{
 				"tokens_used":   enhancedPrompt.TokensUsed,
 				"model_version": enhancedPrompt.ModelVersion,

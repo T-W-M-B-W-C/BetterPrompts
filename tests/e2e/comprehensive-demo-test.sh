@@ -74,8 +74,8 @@ run_test "Intent Classifier Health" \
     "healthy"
 
 run_test "Prompt Generator Health" \
-    "curl -s http://localhost:8003/health | jq -r '.status' | grep -q 'healthy'" \
-    "healthy"
+    "curl -s http://localhost:8003/health/ready | jq -r '.status' | grep -q 'ready'" \
+    "ready"
 
 run_test "Technique Selector Health" \
     "curl -s http://localhost:8002/health | jq -r '.status' | grep -q 'healthy'" \

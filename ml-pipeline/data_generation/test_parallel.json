@@ -1,0 +1,540 @@
+{
+  "metadata": {
+    "generated_at": "2025-07-24T16:02:42.233810",
+    "total_examples": 40,
+    "generation_time_seconds": 9.853416919708252,
+    "config": {
+      "examples_per_intent": 2,
+      "model": "gpt-3.5-turbo",
+      "temperature": 0.9,
+      "use_openai": true,
+      "parallel_workers": 5,
+      "rate_limiting": "automatic"
+    },
+    "statistics": {
+      "by_intent": {
+        "question_answering": 4,
+        "creative_writing": 4,
+        "code_generation": 4,
+        "data_analysis": 3,
+        "reasoning": 4,
+        "summarization": 3,
+        "translation": 4,
+        "conversation": 5,
+        "task_planning": 4,
+        "problem_solving": 5
+      },
+      "by_audience": {
+        "beginner": 10,
+        "general": 30
+      },
+      "by_complexity": {
+        "moderate": 20,
+        "simple": 20
+      }
+    },
+    "estimated_cost": "$0.06"
+  },
+  "examples": [
+    {
+      "text": "Can you explain how renewable energy sources like wind and solar power are harnessed to generate electricity on a large scale?",
+      "intent": "question_answering",
+      "audience": "beginner",
+      "complexity": "moderate",
+      "confidence": 0.85,
+      "metadata": {
+        "generation_method": "openai",
+        "model": "gpt-3.5-turbo",
+        "temperature": 0.9
+      },
+      "generated_at": "2025-07-24T16:02:33.656678"
+    },
+    {
+      "text": "Can you explain the concept of blockchain technology in simple terms and provide examples of how it is being used in different industries today?",
+      "intent": "question_answering",
+      "audience": "general",
+      "complexity": "moderate",
+      "confidence": 0.85,
+      "metadata": {
+        "generation_method": "openai",
+        "model": "gpt-3.5-turbo",
+        "temperature": 0.9
+      },
+      "generated_at": "2025-07-24T16:02:33.688427"
+    },
+    {
+      "text": "Can you write a short story about a shy librarian who discovers a magical book that allows them to travel through time and visit different historical eras?",
+      "intent": "creative_writing",
+      "audience": "beginner",
+      "complexity": "moderate",
+      "confidence": 0.85,
+      "metadata": {
+        "generation_method": "openai",
+        "model": "gpt-3.5-turbo",
+        "temperature": 0.9
+      },
+      "generated_at": "2025-07-24T16:02:34.357650"
+    },
+    {
+      "text": "Can you write a short story about a character who discovers a hidden portal to a magical realm in their own backyard? Explore how this discovery changes their life and the adventures that follow.",
+      "intent": "creative_writing",
+      "audience": "general",
+      "complexity": "moderate",
+      "confidence": 0.85,
+      "metadata": {
+        "generation_method": "openai",
+        "model": "gpt-3.5-turbo",
+        "temperature": 0.9
+      },
+      "generated_at": "2025-07-24T16:02:34.369031"
+    },
+    {
+      "text": "Can you create a Python program that reads a CSV file, calculates the average of a specific column, and then writes the result to a new CSV file?",
+      "intent": "code_generation",
+      "audience": "general",
+      "complexity": "moderate",
+      "confidence": 0.85,
+      "metadata": {
+        "generation_method": "openai",
+        "model": "gpt-3.5-turbo",
+        "temperature": 0.9
+      },
+      "generated_at": "2025-07-24T16:02:34.966830"
+    },
+    {
+      "text": "Can you write a Python program that takes a list of numbers as input and returns the average of the even numbers in the list? Remember to handle cases where the list is empty or contains no even numbers.",
+      "intent": "code_generation",
+      "audience": "beginner",
+      "complexity": "moderate",
+      "confidence": 0.85,
+      "metadata": {
+        "generation_method": "openai",
+        "model": "gpt-3.5-turbo",
+        "temperature": 0.9
+      },
+      "generated_at": "2025-07-24T16:02:35.277299"
+    },
+    {
+      "text": "Can you analyze the quarterly sales data for our top five products and identify any trends or patterns that could help us improve our marketing strategies?",
+      "intent": "data_analysis",
+      "audience": "general",
+      "complexity": "moderate",
+      "confidence": 0.85,
+      "metadata": {
+        "generation_method": "openai",
+        "model": "gpt-3.5-turbo",
+        "temperature": 0.9
+      },
+      "generated_at": "2025-07-24T16:02:35.956315"
+    },
+    {
+      "text": "I have collected sales data for the past year and I'm interested in understanding the trends. Could you analyze the monthly sales figures and highlight any patterns or fluctuations that stand out?",
+      "intent": "data_analysis",
+      "audience": "beginner",
+      "complexity": "moderate",
+      "confidence": 0.85,
+      "metadata": {
+        "generation_method": "openai",
+        "model": "gpt-3.5-turbo",
+        "temperature": 0.9
+      },
+      "generated_at": "2025-07-24T16:02:37.162767"
+    },
+    {
+      "text": "Can you help me figure out the best route to take for a road trip from New York City to Los Angeles, considering scenic views, rest stops, and avoiding heavy traffic as much as possible?",
+      "intent": "reasoning",
+      "audience": "general",
+      "complexity": "moderate",
+      "confidence": 0.85,
+      "metadata": {
+        "generation_method": "openai",
+        "model": "gpt-3.5-turbo",
+        "temperature": 0.9
+      },
+      "generated_at": "2025-07-24T16:02:37.918444"
+    },
+    {
+      "text": "I'm planning a road trip from New York to California and I want to visit as many national parks as possible along the way. Can you help me create an optimized route that covers popular parks like Yellowstone, Grand Canyon, and Zion, while also considering driving time and accommodation options?",
+      "intent": "reasoning",
+      "audience": "beginner",
+      "complexity": "moderate",
+      "confidence": 0.85,
+      "metadata": {
+        "generation_method": "openai",
+        "model": "gpt-3.5-turbo",
+        "temperature": 0.9
+      },
+      "generated_at": "2025-07-24T16:02:38.152321"
+    },
+    {
+      "text": "Can you give me a simple summary of the main factors influencing climate change and their impact on the environment?",
+      "intent": "summarization",
+      "audience": "beginner",
+      "complexity": "moderate",
+      "confidence": 0.85,
+      "metadata": {
+        "generation_method": "openai",
+        "model": "gpt-3.5-turbo",
+        "temperature": 0.9
+      },
+      "generated_at": "2025-07-24T16:02:38.718152"
+    },
+    {
+      "text": "Can you provide a concise summary of the key findings and implications of the latest scientific research on the effects of climate change on marine biodiversity?",
+      "intent": "summarization",
+      "audience": "general",
+      "complexity": "moderate",
+      "confidence": 0.85,
+      "metadata": {
+        "generation_method": "openai",
+        "model": "gpt-3.5-turbo",
+        "temperature": 0.9
+      },
+      "generated_at": "2025-07-24T16:02:38.784729"
+    },
+    {
+      "text": "I need help translating a handwritten letter in Spanish to English. It's quite important as it's from my great grandmother and I want to understand it fully.",
+      "intent": "translation",
+      "audience": "beginner",
+      "complexity": "moderate",
+      "confidence": 0.85,
+      "metadata": {
+        "generation_method": "openai",
+        "model": "gpt-3.5-turbo",
+        "temperature": 0.9
+      },
+      "generated_at": "2025-07-24T16:02:39.435230"
+    },
+    {
+      "text": "I have a handwritten letter in French that I need translated into English. It's quite lengthy, so I'm looking for someone who can provide an accurate and detailed translation. Can anyone help with this?",
+      "intent": "translation",
+      "audience": "general",
+      "complexity": "moderate",
+      "confidence": 0.85,
+      "metadata": {
+        "generation_method": "openai",
+        "model": "gpt-3.5-turbo",
+        "temperature": 0.9
+      },
+      "generated_at": "2025-07-24T16:02:39.548245"
+    },
+    {
+      "text": "What are some common sustainability practices individuals can adopt in their daily lives to reduce their environmental impact?",
+      "intent": "conversation",
+      "audience": "beginner",
+      "complexity": "moderate",
+      "confidence": 0.85,
+      "metadata": {
+        "generation_method": "openai",
+        "model": "gpt-3.5-turbo",
+        "temperature": 0.9
+      },
+      "generated_at": "2025-07-24T16:02:40.104370"
+    },
+    {
+      "text": "What are your thoughts on the impact of artificial intelligence on the future of work and job automation?",
+      "intent": "conversation",
+      "audience": "general",
+      "complexity": "moderate",
+      "confidence": 0.85,
+      "metadata": {
+        "generation_method": "openai",
+        "model": "gpt-3.5-turbo",
+        "temperature": 0.9
+      },
+      "generated_at": "2025-07-24T16:02:40.239057"
+    },
+    {
+      "text": "I have a few important deadlines coming up at work and I'm feeling a bit overwhelmed. Can you help me create a simple plan to prioritize my tasks and stay organized?",
+      "intent": "task_planning",
+      "audience": "beginner",
+      "complexity": "moderate",
+      "confidence": 0.85,
+      "metadata": {
+        "generation_method": "openai",
+        "model": "gpt-3.5-turbo",
+        "temperature": 0.9
+      },
+      "generated_at": "2025-07-24T16:02:41.086826"
+    },
+    {
+      "text": "I have a busy week ahead with work, errands, and social events. Can you help me create a detailed schedule to ensure I stay on track and balance everything effectively?",
+      "intent": "task_planning",
+      "audience": "general",
+      "complexity": "moderate",
+      "confidence": 0.85,
+      "metadata": {
+        "generation_method": "openai",
+        "model": "gpt-3.5-turbo",
+        "temperature": 0.9
+      },
+      "generated_at": "2025-07-24T16:02:41.517960"
+    },
+    {
+      "text": "I'm having trouble staying focused at work with so many distractions around me. Can you suggest some effective strategies to improve my concentration and productivity?",
+      "intent": "problem_solving",
+      "audience": "general",
+      "complexity": "moderate",
+      "confidence": 0.85,
+      "metadata": {
+        "generation_method": "openai",
+        "model": "gpt-3.5-turbo",
+        "temperature": 0.9
+      },
+      "generated_at": "2025-07-24T16:02:42.152605"
+    },
+    {
+      "text": "I'm new to gardening and struggling with identifying plant diseases. Can you help me understand how to diagnose and treat common fungal infections affecting tomato plants?",
+      "intent": "problem_solving",
+      "audience": "beginner",
+      "complexity": "moderate",
+      "confidence": 0.85,
+      "metadata": {
+        "generation_method": "openai",
+        "model": "gpt-3.5-turbo",
+        "temperature": 0.9
+      },
+      "generated_at": "2025-07-24T16:02:42.233177"
+    },
+    {
+      "text": "?",
+      "intent": "question_answering",
+      "confidence": 0.3,
+      "audience": "general",
+      "complexity": "simple",
+      "metadata": {
+        "generation_method": "edge_case",
+        "type": "ambiguous"
+      },
+      "generated_at": "2025-07-24T16:02:42.233662"
+    },
+    {
+      "text": "help",
+      "intent": "problem_solving",
+      "confidence": 0.4,
+      "audience": "general",
+      "complexity": "simple",
+      "metadata": {
+        "generation_method": "edge_case",
+        "type": "ambiguous"
+      },
+      "generated_at": "2025-07-24T16:02:42.233672"
+    },
+    {
+      "text": "I need something but I'm not sure what",
+      "intent": "conversation",
+      "confidence": 0.5,
+      "audience": "general",
+      "complexity": "simple",
+      "metadata": {
+        "generation_method": "edge_case",
+        "type": "ambiguous"
+      },
+      "generated_at": "2025-07-24T16:02:42.233676"
+    },
+    {
+      "text": "Can you help me with a thing that involves stuff?",
+      "intent": "problem_solving",
+      "confidence": 0.4,
+      "audience": "general",
+      "complexity": "simple",
+      "metadata": {
+        "generation_method": "edge_case",
+        "type": "ambiguous"
+      },
+      "generated_at": "2025-07-24T16:02:42.233679"
+    },
+    {
+      "text": "Write code to analyze data and create a summary",
+      "intent": "code_generation",
+      "confidence": 0.6,
+      "audience": "general",
+      "complexity": "simple",
+      "metadata": {
+        "generation_method": "edge_case",
+        "type": "ambiguous"
+      },
+      "generated_at": "2025-07-24T16:02:42.233682"
+    },
+    {
+      "text": "Translate this and then summarize it",
+      "intent": "translation",
+      "confidence": 0.6,
+      "audience": "general",
+      "complexity": "simple",
+      "metadata": {
+        "generation_method": "edge_case",
+        "type": "ambiguous"
+      },
+      "generated_at": "2025-07-24T16:02:42.233685"
+    },
+    {
+      "text": "What's the weather like today and can you plan my schedule?",
+      "intent": "task_planning",
+      "confidence": 0.5,
+      "audience": "general",
+      "complexity": "simple",
+      "metadata": {
+        "generation_method": "edge_case",
+        "type": "ambiguous"
+      },
+      "generated_at": "2025-07-24T16:02:42.233688"
+    },
+    {
+      "text": "Tell me a story about why AI is important",
+      "intent": "creative_writing",
+      "confidence": 0.7,
+      "audience": "general",
+      "complexity": "simple",
+      "metadata": {
+        "generation_method": "edge_case",
+        "type": "ambiguous"
+      },
+      "generated_at": "2025-07-24T16:02:42.233692"
+    },
+    {
+      "text": "How do I solve this: x^2 + 5x + 6 = 0?",
+      "intent": "reasoning",
+      "confidence": 0.9,
+      "audience": "general",
+      "complexity": "simple",
+      "metadata": {
+        "generation_method": "edge_case",
+        "type": "ambiguous"
+      },
+      "generated_at": "2025-07-24T16:02:42.233695"
+    },
+    {
+      "text": "Analyze the trends in my sales data and create a report",
+      "intent": "data_analysis",
+      "confidence": 0.8,
+      "audience": "general",
+      "complexity": "simple",
+      "metadata": {
+        "generation_method": "edge_case",
+        "type": "ambiguous"
+      },
+      "generated_at": "2025-07-24T16:02:42.233698"
+    },
+    {
+      "text": "helo world",
+      "intent": "conversation",
+      "confidence": 0.4,
+      "audience": "general",
+      "complexity": "simple",
+      "metadata": {
+        "generation_method": "edge_case",
+        "type": "ambiguous"
+      },
+      "generated_at": "2025-07-24T16:02:42.233701"
+    },
+    {
+      "text": "What is the meaning of life, the universe, and everything?",
+      "intent": "question_answering",
+      "confidence": 0.8,
+      "audience": "general",
+      "complexity": "simple",
+      "metadata": {
+        "generation_method": "edge_case",
+        "type": "ambiguous"
+      },
+      "generated_at": "2025-07-24T16:02:42.233704"
+    },
+    {
+      "text": "Generate a function that creates more functions",
+      "intent": "code_generation",
+      "confidence": 0.7,
+      "audience": "general",
+      "complexity": "simple",
+      "metadata": {
+        "generation_method": "edge_case",
+        "type": "ambiguous"
+      },
+      "generated_at": "2025-07-24T16:02:42.233707"
+    },
+    {
+      "text": "Explain this to me like I'm five and also write a poem about it",
+      "intent": "creative_writing",
+      "confidence": 0.5,
+      "audience": "general",
+      "complexity": "simple",
+      "metadata": {
+        "generation_method": "edge_case",
+        "type": "ambiguous"
+      },
+      "generated_at": "2025-07-24T16:02:42.233710"
+    },
+    {
+      "text": "Is this a question or a statement",
+      "intent": "reasoning",
+      "confidence": 0.4,
+      "audience": "general",
+      "complexity": "simple",
+      "metadata": {
+        "generation_method": "edge_case",
+        "type": "ambiguous"
+      },
+      "generated_at": "2025-07-24T16:02:42.233713"
+    },
+    {
+      "text": "Summarize translate and analyze this",
+      "intent": "summarization",
+      "confidence": 0.5,
+      "audience": "general",
+      "complexity": "simple",
+      "metadata": {
+        "generation_method": "edge_case",
+        "type": "ambiguous"
+      },
+      "generated_at": "2025-07-24T16:02:42.233716"
+    },
+    {
+      "text": "Plan a task to solve a problem by reasoning through data",
+      "intent": "task_planning",
+      "confidence": 0.4,
+      "audience": "general",
+      "complexity": "simple",
+      "metadata": {
+        "generation_method": "edge_case",
+        "type": "ambiguous"
+      },
+      "generated_at": "2025-07-24T16:02:42.233719"
+    },
+    {
+      "text": "I don't know what I want but I need help with something technical",
+      "intent": "problem_solving",
+      "confidence": 0.3,
+      "audience": "general",
+      "complexity": "simple",
+      "metadata": {
+        "generation_method": "edge_case",
+        "type": "ambiguous"
+      },
+      "generated_at": "2025-07-24T16:02:42.233721"
+    },
+    {
+      "text": "Convert this to Spanish and then explain what it means",
+      "intent": "translation",
+      "confidence": 0.6,
+      "audience": "general",
+      "complexity": "simple",
+      "metadata": {
+        "generation_method": "edge_case",
+        "type": "ambiguous"
+      },
+      "generated_at": "2025-07-24T16:02:42.233724"
+    },
+    {
+      "text": "Can you do multiple things at once for me please",
+      "intent": "conversation",
+      "confidence": 0.4,
+      "audience": "general",
+      "complexity": "simple",
+      "metadata": {
+        "generation_method": "edge_case",
+        "type": "ambiguous"
+      },
+      "generated_at": "2025-07-24T16:02:42.233727"
+    }
+  ]
+}

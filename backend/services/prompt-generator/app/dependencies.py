@@ -11,13 +11,13 @@ import jwt
 import structlog
 
 from .database import SessionLocal
-from .services.effectiveness_tracker import EffectivenessTracker, EffectivenessTrackingConfig
+# from .services.effectiveness_tracker import EffectivenessTracker, EffectivenessTrackingConfig  # Temporarily disabled
 from .config import settings
 
 logger = structlog.get_logger()
 
 # Global instances
-_effectiveness_tracker: Optional[EffectivenessTracker] = None
+# _effectiveness_tracker: Optional[EffectivenessTracker] = None  # Temporarily disabled
 
 
 def get_db():
@@ -29,25 +29,28 @@ def get_db():
         db.close()
 
 
-def get_effectiveness_tracker() -> EffectivenessTracker:
+def get_effectiveness_tracker():  # -> EffectivenessTracker:
     """Dependency to get effectiveness tracker instance."""
-    global _effectiveness_tracker
+    # Temporarily disabled - effectiveness tracking
+    return None
     
-    if _effectiveness_tracker is None:
-        # Initialize configuration
-        config = EffectivenessTrackingConfig(
-            enabled=settings.EFFECTIVENESS_TRACKING_ENABLED,
-            sample_rate=settings.EFFECTIVENESS_SAMPLE_RATE,
-            retention_days=settings.EFFECTIVENESS_RETENTION_DAYS,
-            async_processing=settings.EFFECTIVENESS_ASYNC_PROCESSING
-        )
-        
-        # Create tracker instance
-        _effectiveness_tracker = EffectivenessTracker(config)
-        
-        logger.info("Initialized effectiveness tracker", config=config.dict())
-    
-    return _effectiveness_tracker
+    # global _effectiveness_tracker
+    # 
+    # if _effectiveness_tracker is None:
+    #     # Initialize configuration
+    #     config = EffectivenessTrackingConfig(
+    #         enabled=settings.EFFECTIVENESS_TRACKING_ENABLED,
+    #         sample_rate=settings.EFFECTIVENESS_SAMPLE_RATE,
+    #         retention_days=settings.EFFECTIVENESS_RETENTION_DAYS,
+    #         async_processing=settings.EFFECTIVENESS_ASYNC_PROCESSING
+    #     )
+    #     
+    #     # Create tracker instance
+    #     _effectiveness_tracker = EffectivenessTracker(config)
+    #     
+    #     logger.info("Initialized effectiveness tracker", config=config.dict())
+    # 
+    # return _effectiveness_tracker
 
 
 async def get_current_user(authorization: Optional[str] = Header(None)) -> Optional[Dict[str, Any]]:
