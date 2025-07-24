@@ -83,3 +83,71 @@ class IntentBatchResponse(BaseModel):
         ...,
         description="Total processing time in seconds",
     )
+
+
+class IntentFeedback(BaseModel):
+    """Feedback model for intent classification corrections."""
+    
+    text: str = Field(
+        ...,
+        description="The original user input text",
+        min_length=1,
+        max_length=5000,
+    )
+    original_intent: str = Field(
+        ...,
+        description="The originally classified intent",
+    )
+    correct_intent: str = Field(
+        ...,
+        description="The correct intent provided by user",
+    )
+    original_confidence: float = Field(
+        ...,
+        description="The original confidence score",
+        ge=0.0,
+        le=1.0,
+    )
+    correct_complexity: Optional[str] = Field(
+        default=None,
+        description="The correct complexity level if provided",
+        pattern="^(simple|moderate|complex)$",
+    )
+    correct_techniques: Optional[List[str]] = Field(
+        default=None,
+        description="The correct techniques if provided",
+    )
+    user_id: Optional[str] = Field(
+        default=None,
+        description="User ID who provided the feedback",
+    )
+    feedback_type: str = Field(
+        default="correction",
+        description="Type of feedback (correction, confirmation)",
+        pattern="^(correction|confirmation)$",
+    )
+    timestamp: Optional[str] = Field(
+        default=None,
+        description="Timestamp when feedback was provided",
+    )
+
+
+class IntentFeedbackResponse(BaseModel):
+    """Response model for feedback submission."""
+    
+    status: str = Field(
+        ...,
+        description="Feedback submission status",
+    )
+    message: str = Field(
+        ...,
+        description="Response message",
+    )
+    feedback_id: str = Field(
+        ...,
+        description="Unique identifier for the feedback",
+    )
+    cache_updated: bool = Field(
+        ...,
+        description="Whether the cache was updated",
+    )
