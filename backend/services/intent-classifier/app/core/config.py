@@ -109,6 +109,25 @@ class Settings(BaseSettings):
     JWT_SECRET: str = "your-secret-key-change-this"
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRATION_HOURS: int = 24
+    
+    # Wave 6: Adaptive Routing Configuration
+    ENABLE_ADAPTIVE_ROUTING: bool = True
+    AB_TEST_PERCENTAGE: float = 0.1  # 10% of traffic for A/B testing
+    
+    # Model confidence thresholds
+    RULES_CONFIDENCE_THRESHOLD: float = 0.85
+    ZERO_SHOT_CONFIDENCE_THRESHOLD: float = 0.70
+    DISTILBERT_CONFIDENCE_THRESHOLD: float = 0.0  # Always accept
+    
+    # Latency targets (milliseconds)
+    LATENCY_TARGET_CRITICAL: int = 50
+    LATENCY_TARGET_STANDARD: int = 200
+    LATENCY_TARGET_RELAXED: int = 500
+    
+    # Initial accuracy estimates
+    RULES_ACCURACY_ESTIMATE: float = 0.75
+    ZERO_SHOT_ACCURACY_ESTIMATE: float = 0.85
+    DISTILBERT_ACCURACY_ESTIMATE: float = 0.92
 
 
 # Create settings instance

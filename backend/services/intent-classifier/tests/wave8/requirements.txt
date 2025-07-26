@@ -1,0 +1,22 @@
+# Wave 8 Test Dependencies
+
+# Core testing
+requests>=2.31.0
+pytest>=7.4.0
+
+# Data analysis
+numpy>=1.24.0
+scipy>=1.11.0
+
+# Visualization
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# System monitoring
+psutil>=5.9.0
+
+# Docker integration
+docker>=6.1.0
+
+# Standard library extensions
+python-dateutil>=2.8.0

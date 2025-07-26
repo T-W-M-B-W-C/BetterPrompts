@@ -21,6 +21,7 @@ from app.models import classifier
 from app.core.logging import setup_logging
 from app.services.cache import CacheService
 from app.core.config import settings
+from app.core.feature_flags import feature_flags
 from app.models.torchserve_client import (
     TorchServeError,
     TorchServeConnectionError,
@@ -63,15 +64,28 @@ async def classify_intent(
     start_time = time.time()
     
     try:
-        # Check cache if enabled
-        if settings.ENABLE_CACHING:
+        # Check feature flags for user
+        user_flags = feature_flags.get_user_flags(request.user_id if hasattr(request, 'user_id') else None)
+        
+        # Check cache if enabled by feature flag
+        if user_flags.get("caching", True) and settings.ENABLE_CACHING:
             cached_result = await cache.get_intent(request.text)
             if cached_result:
                 intent_requests.labels(status="cache_hit").inc()
                 return IntentResponse(**cached_result)
         
-        # Classify intent
-        result = await classifier.classify(request.text)
+        # Determine latency requirement based on feature flags
+        latency_requirement = "standard"
+        if user_flags.get("performance_mode", False):
+            latency_requirement = "critical"
+        elif user_flags.get("quality_mode", False):
+            latency_requirement = "relaxed"
+        
+        # Classify intent with adaptive routing if enabled
+        result = await classifier.classify(
+            request.text,
+            latency_requirement=latency_requirement
+        )
         
         # Prepare response
         response = IntentResponse(
@@ -86,8 +100,8 @@ async def classify_intent(
             }
         )
         
-        # Cache result if enabled
-        if settings.ENABLE_CACHING:
+        # Cache result if enabled by feature flag
+        if user_flags.get("caching", True) and settings.ENABLE_CACHING:
             await cache.set_intent(request.text, response.model_dump())
         
         # Record metrics
@@ -339,4 +353,64 @@ async def get_feedback_stats(
         raise HTTPException(
             status_code=500,
             detail="Failed to retrieve feedback statistics"
+        )
+
+
+@router.get("/intents/routing/stats", response_model=Dict[str, Any])
+async def get_routing_stats() -> Dict[str, Any]:
+    """Get Wave 6 adaptive routing statistics."""
+    try:
+        stats = classifier.get_routing_stats()
+        
+        # Add wave 6 metadata
+        stats["wave6_metadata"] = {
+            "enabled": hasattr(classifier, 'adaptive_router') and classifier.adaptive_router is not None,
+            "ab_testing_enabled": True,
+            "ab_test_percentage": 10,  # 10% of traffic
+            "routing_strategies": ["control", "aggressive_rules", "balanced", "quality_first"],
+        }
+        
+        return stats
+        
+    except Exception as e:
+        logger.error(f"Failed to get routing stats: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to retrieve routing statistics"
+        )
+
+
+@router.post("/intents/routing/config", response_model=Dict[str, Any])
+async def update_routing_config(
+    model_type: str,
+    confidence_threshold: Optional[float] = None,
+    accuracy_estimate: Optional[float] = None,
+) -> Dict[str, Any]:
+    """Update Wave 6 adaptive routing configuration."""
+    try:
+        classifier.update_routing_config(
+            model_type=model_type,
+            confidence_threshold=confidence_threshold,
+            accuracy_estimate=accuracy_estimate
+        )
+        
+        return {
+            "status": "success",
+            "message": f"Updated routing config for {model_type}",
+            "updates": {
+                "model_type": model_type,
+                "confidence_threshold": confidence_threshold,
+                "accuracy_estimate": accuracy_estimate,
+            }
+        }
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except Exception as e:
+        logger.error(f"Failed to update routing config: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to update routing configuration"
         )

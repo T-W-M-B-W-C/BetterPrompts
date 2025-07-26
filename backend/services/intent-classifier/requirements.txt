@@ -49,3 +49,6 @@ isort==5.13.2
 mypy==1.7.1
 pre-commit==3.6.0
 protobuf>=3.20.0
+
+# Demo and visualization
+colorama==0.4.6

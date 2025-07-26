@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_client import make_asgi_app
 
-from app.api.v1 import health, intents
+from app.api.v1 import health, intents, feature_flags
 from app.core.config import settings
 from app.core.logging import setup_logging
 from app.db.database import engine
@@ -55,6 +55,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Add monitoring middleware
+from app.middleware.monitoring import HealthCheckMiddleware
+app.add_middleware(HealthCheckMiddleware)
+
 # Mount Prometheus metrics
 metrics_app = make_asgi_app()
 app.mount("/metrics", metrics_app)
@@ -62,6 +66,7 @@ app.mount("/metrics", metrics_app)
 # Include routers
 app.include_router(health.router, tags=["health"])
 app.include_router(intents.router, prefix="/api/v1", tags=["intents"])
+app.include_router(feature_flags.router, prefix="/api/v1", tags=["feature-flags"])
 
 
 @app.get("/", response_model=Dict[str, Any])
