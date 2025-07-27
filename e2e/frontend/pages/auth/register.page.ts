@@ -7,27 +7,24 @@ import { BasePage } from '../base.page';
  */
 export class RegisterPage extends BasePage {
   // Form field locators
-  private readonly nameInput = 'input[name="name"]';
+  private readonly firstNameInput = 'input[name="firstName"]';
+  private readonly lastNameInput = 'input[name="lastName"]';
+  private readonly usernameInput = 'input[name="username"]';
   private readonly emailInput = 'input[name="email"]';
   private readonly passwordInput = 'input[name="password"]';
   private readonly confirmPasswordInput = 'input[name="confirmPassword"]';
-  private readonly termsCheckbox = 'input[type="checkbox"][name="terms"]';
-  private readonly marketingCheckbox = 'input[type="checkbox"][name="marketing"]';
-  private readonly submitButton = 'button[type="submit"]:has-text("Sign Up")';
+  private readonly termsCheckbox = 'input[type="checkbox"]';
+  private readonly submitButton = 'button[type="submit"]:has-text("Create account")';
   
   // Link locators
-  private readonly loginLink = 'a:has-text("Log in")';
+  private readonly loginLink = 'a:has-text("Sign in")';
   private readonly termsLink = 'a:has-text("Terms of Service")';
   private readonly privacyLink = 'a:has-text("Privacy Policy")';
   
   // Message locators
-  private readonly errorMessage = '[data-testid="error-message"]';
-  private readonly successMessage = '[data-testid="success-message"]';
-  private readonly fieldError = '[data-testid="field-error"]';
-  
-  // OAuth buttons
-  private readonly googleButton = 'button:has-text("Sign up with Google")';
-  private readonly githubButton = 'button:has-text("Sign up with GitHub")';
+  private readonly errorMessage = '.text-red-500';
+  private readonly generalError = '[role="alert"]';
+  private readonly passwordStrengthText = '.text-xs.text-muted-foreground:has-text("Password strength")';
 
   constructor(page: Page) {
     super(page);
@@ -45,24 +42,27 @@ export class RegisterPage extends BasePage {
    * Fill registration form
    */
   async fillRegistrationForm(data: {
-    name: string;
+    firstName?: string;
+    lastName?: string;
+    username: string;
     email: string;
     password: string;
     confirmPassword?: string;
     acceptTerms?: boolean;
-    acceptMarketing?: boolean;
   }) {
-    await this.fillInput(this.nameInput, data.name);
+    if (data.firstName) {
+      await this.fillInput(this.firstNameInput, data.firstName);
+    }
+    if (data.lastName) {
+      await this.fillInput(this.lastNameInput, data.lastName);
+    }
+    await this.fillInput(this.usernameInput, data.username);
     await this.fillInput(this.emailInput, data.email);
     await this.fillInput(this.passwordInput, data.password);
     await this.fillInput(this.confirmPasswordInput, data.confirmPassword || data.password);
     
     if (data.acceptTerms !== false) {
-      await this.page.check(this.termsCheckbox);
-    }
-    
-    if (data.acceptMarketing) {
-      await this.page.check(this.marketingCheckbox);
+      await this.page.click('label[for="acceptTerms"]');
     }
   }
 
@@ -77,10 +77,12 @@ export class RegisterPage extends BasePage {
    * Complete registration flow
    */
   async register(data: {
-    name: string;
+    username: string;
     email: string;
     password: string;
     confirmPassword?: string;
+    firstName?: string;
+    lastName?: string;
   }) {
     await this.fillRegistrationForm({
       ...data,
@@ -136,8 +138,11 @@ export class RegisterPage extends BasePage {
    * Get field error message
    */
   async getFieldError(fieldName: string): Promise<string> {
-    const fieldContainer = this.page.locator(`input[name="${fieldName}"]`).locator('..');
-    const error = fieldContainer.locator(this.fieldError);
+    // Errors are shown as <p> elements after the input field
+    const field = this.page.locator(`input[name="${fieldName}"]`);
+    const error = field.locator('~ p.text-red-500').first();
+    const isVisible = await error.isVisible().catch(() => false);
+    if (!isVisible) return '';
     return await error.textContent() || '';
   }
 
@@ -145,8 +150,12 @@ export class RegisterPage extends BasePage {
    * Check password strength indicator
    */
   async getPasswordStrength(): Promise<string> {
-    const strengthIndicator = this.page.locator('[data-testid="password-strength"]');
-    return await strengthIndicator.getAttribute('data-strength') || 'weak';
+    const strengthText = await this.page.locator(this.passwordStrengthText).textContent();
+    if (!strengthText) return 'weak';
+    
+    // Extract strength from "Password strength: Strong" text
+    const match = strengthText.match(/Password strength: (\w+)/);
+    return match ? match[1].toLowerCase() : 'weak';
   }
 
   /**
@@ -157,15 +166,15 @@ export class RegisterPage extends BasePage {
     await this.submitRegistration();
     
     // Check for required field errors
-    const nameError = await this.getFieldError('name');
+    const usernameError = await this.getFieldError('username');
     const emailError = await this.getFieldError('email');
     const passwordError = await this.getFieldError('password');
-    const termsError = await this.page.locator(this.termsCheckbox).locator('..').locator(this.fieldError).isVisible();
+    const termsError = await this.page.locator('p.text-red-500:has-text("accept the terms")').isVisible();
     
     return {
-      nameRequired: nameError.includes('required'),
-      emailRequired: emailError.includes('required'),
-      passwordRequired: passwordError.includes('required'),
+      usernameRequired: usernameError.includes('3 characters') || usernameError.includes('required'),
+      emailRequired: emailError.includes('valid') || emailError.includes('required'),
+      passwordRequired: passwordError.includes('8 characters') || passwordError.includes('required'),
       termsRequired: termsError,
     };
   }
@@ -186,7 +195,7 @@ export class RegisterPage extends BasePage {
   async verifyPasswordMatch(password: string, confirmPassword: string) {
     await this.fillInput(this.passwordInput, password);
     await this.fillInput(this.confirmPasswordInput, confirmPassword);
-    await this.page.locator(this.termsCheckbox).click(); // Trigger blur
+    await this.page.click('body'); // Click elsewhere to trigger blur
     const error = await this.getFieldError('confirmPassword');
     return error.includes('match');
   }
@@ -203,7 +212,7 @@ export class RegisterPage extends BasePage {
    * Verify page loaded
    */
   async verifyPageLoaded() {
-    await this.expectToBeVisible(this.nameInput);
+    await this.expectToBeVisible(this.usernameInput);
     await this.expectToBeVisible(this.emailInput);
     await this.expectToBeVisible(this.passwordInput);
     await this.expectToBeVisible(this.confirmPasswordInput);
