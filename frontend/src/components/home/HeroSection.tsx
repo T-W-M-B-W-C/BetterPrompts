@@ -16,7 +16,7 @@ const techniques = [
 
 export default function HeroSection() {
   return (
-    <section className="relative overflow-hidden py-20 sm:py-32">
+    <section data-testid="hero-section" className="relative overflow-hidden py-20 sm:py-32">
       <Container>
         <div className="mx-auto max-w-4xl text-center">
           <motion.div

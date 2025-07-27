@@ -7,7 +7,7 @@ import Container from '@/components/layout/Container'
 
 export default function CTASection() {
   return (
-    <section className="py-20 sm:py-32">
+    <section data-testid="cta-section" className="py-20 sm:py-32">
       <Container>
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
@@ -15,7 +15,7 @@ export default function CTASection() {
           viewport={{ once: true }}
         >
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 to-purple-600 px-8 py-16 text-center text-white sm:px-16 sm:py-20">
-            <h2 className="mb-4 text-3xl font-bold sm:text-4xl">
+            <h2 data-testid="cta-title" className="mb-4 text-3xl font-bold sm:text-4xl">
               Ready to Transform Your Prompts?
             </h2>
             <p className="mx-auto mb-8 max-w-2xl text-lg text-blue-100">
@@ -23,6 +23,7 @@ export default function CTASection() {
             </p>
             <Link
               href="/enhance"
+              data-testid="cta-button"
               className="inline-flex items-center rounded-lg bg-white px-8 py-3 text-base font-medium text-blue-600 transition-colors hover:bg-gray-100"
             >
               Get Started Free

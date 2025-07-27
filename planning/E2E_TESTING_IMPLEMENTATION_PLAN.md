@@ -2,20 +2,20 @@
 
 ## Overview
 
-This document outlines the comprehensive 8-wave plan for implementing end-to-end testing across the entire BetterPrompts system, ensuring quality, reliability, and performance at scale.
+This document outlines an incremental E2E testing implementation plan for BetterPrompts, organized by individual user stories that build momentum from simple to complex scenarios.
 
-**Target**: 95% test coverage, <5% test flake rate, <200ms p95 latency, 99.9% uptime
+**Target**: 95% test coverage through incremental story implementation, <5% test flake rate, <200ms p95 latency
 
 ## Executive Summary
 
-The E2E testing implementation follows an 8-wave approach over 16 weeks, building from user story mapping through production monitoring. Each wave adds layers of testing sophistication while maintaining backward compatibility and continuous integration.
+The E2E testing implementation follows a story-driven approach where each phase validates specific user journeys, building from basic functionality to complex workflows. Each story is self-contained but creates foundations for subsequent stories.
 
-### Key Objectives
-1. **Comprehensive Coverage**: Test all user journeys from UI to database
-2. **Performance Validation**: Ensure system meets 10,000 RPS target
-3. **Reliability Assurance**: Validate 99.9% uptime SLA
-4. **Security Verification**: OWASP Top 10 compliance
-5. **Continuous Testing**: Automated regression and monitoring
+### Implementation Philosophy
+1. **Story-First Testing**: Each phase tests complete user stories end-to-end
+2. **Incremental Complexity**: Start with simplest flows, progressively add complexity
+3. **Momentum Building**: Each story enables and simplifies the next
+4. **Immediate Value**: Every story delivers working tests for real user scenarios
+5. **Fail Fast**: Discover integration issues early through focused testing
 
 ## User Stories and Personas
 
@@ -103,11 +103,13 @@ The E2E testing implementation follows an 8-wave approach over 16 weeks, buildin
 - Historical performance data available
 - Export metrics to CSV/JSON
 
-## Implementation Waves
+## Story-Driven Implementation Phases
 
-### Wave 1: User Story Mapping & Test Architecture ⬜ PENDING
+### Phase 0: Foundation & Architecture ✅ COMPLETED
 **Duration**: 2 weeks  
 **Objective**: Establish comprehensive test strategy and architecture
+
+**Status**: Completed on 2025-01-26
 
 **Command:**
 ```bash
@@ -126,11 +128,21 @@ The E2E testing implementation follows an 8-wave approach over 16 weeks, buildin
   --output "e2e/wave1-test-architecture.md"
 ```
 
-**Deliverables:**
+**Completed Deliverables:**
 1. **Complete User Story Inventory**
-   - 15 detailed user stories with acceptance criteria
-   - User journey maps for each persona
-   - Test scenario matrix (50+ scenarios)
+   - ✅ 20 detailed user stories with acceptance criteria (exceeded target)
+   - ✅ User journey maps for all 5 personas
+   - ✅ Test scenario matrix with 60+ scenarios (exceeded target)
+
+2. **Architecture Documents Created:**
+   - `e2e/wave1-test-architecture.md` - Comprehensive 7,800+ line architecture document
+   - `e2e/wave1-executive-summary.md` - Executive summary with key recommendations
+
+**Key Achievements:**
+- Recommended tool stack: Playwright + K6 + Pact + OWASP ZAP (all open source)
+- Designed 3-layer test architecture with parallel execution support
+- Created CI/CD pipeline supporting 15 parallel test streams
+- Established 8-week implementation roadmap
 
 2. **Test Architecture Design**
    ```yaml
@@ -167,1554 +179,865 @@ The E2E testing implementation follows an 8-wave approach over 16 weeks, buildin
 - Tool selection validated with POCs
 - CI/CD pipeline design complete
 
-### Wave 2: Frontend UI Test Framework Setup ⬜ PENDING
-**Duration**: 2 weeks  
-**Objective**: Implement comprehensive UI testing with Playwright
+### Phase 1: Basic Anonymous Enhancement (US-001) ⬜ READY
+**Duration**: 3 days  
+**Story**: "As a non-technical user, I want to enhance a prompt without logging in"  
+**Complexity**: Simple - Single service, no auth, basic UI
+
+**Why Start Here**: 
+- Simplest complete user journey
+- No authentication complexity
+- Tests core value proposition
+- Creates foundation for all other tests
 
 **Command:**
 ```bash
 /sc:implement --think --validate \
-  "Setup Playwright E2E testing framework for BetterPrompts frontend" \
-  --context "Next.js app, TypeScript, need cross-browser testing" \
+  "Test US-001: Anonymous prompt enhancement flow" \
+  --context "Test simplest user journey: enter prompt → get enhancement" \
   --requirements '
-  1. Playwright configuration with multi-browser support
-  2. Page Object Model implementation
-  3. 50+ UI test cases covering all user journeys
-  4. Visual regression testing setup
-  5. Accessibility testing integration
-  6. Test data factories and fixtures
+  1. Homepage loads and shows prompt input
+  2. User can enter text up to 2000 characters
+  3. Clicking enhance triggers API call
+  4. Enhanced prompt displays with technique explanation
+  5. Response time <2 seconds
+  6. Works on mobile and desktop
   ' \
-  --persona-frontend --persona-qa \
   --steps '
-  1. Install and configure Playwright with TypeScript
-  2. Create Page Object Models for all pages
-  3. Implement core UI test suites
-  4. Setup visual regression with Percy/Chromatic
-  5. Add accessibility tests with axe-core
-  6. Create test helpers and utilities
+  1. Create test for homepage navigation
+  2. Test prompt input validation (empty, valid, max length)
+  3. Test enhancement API integration
+  4. Test loading states and error handling
+  5. Test response display
+  6. Add performance assertions
   ' \
-  --output-dir "e2e/frontend"
+  --deliverables '
+  - e2e/tests/us-001-anonymous-enhancement.spec.ts
+  - Page objects: HomePage, EnhanceSection
+  - Test data: 10 sample prompts
+  - Performance baseline metrics
+  ' \
+  --output-dir "e2e/phase1"
 ```
 
-**Deliverables:**
-1. **Playwright Framework Setup**
-   ```typescript
-   // playwright.config.ts
-   export default {
-     testDir: './e2e',
-     timeout: 30000,
-     retries: 2,
-     workers: 4,
-     use: {
-       baseURL: process.env.BASE_URL || 'http://localhost:3000',
-       trace: 'on-failure',
-       screenshot: 'only-on-failure',
-       video: 'retain-on-failure'
-     },
-     projects: [
-       { name: 'Chrome', use: { ...devices['Desktop Chrome'] } },
-       { name: 'Firefox', use: { ...devices['Desktop Firefox'] } },
-       { name: 'Safari', use: { ...devices['Desktop Safari'] } },
-       { name: 'Mobile', use: { ...devices['iPhone 12'] } }
-     ]
-   };
-   ```
+**Success Metrics**:
+- Homepage loads in <3s
+- Enhancement API responds in <2s
+- All validations work correctly
+- Cross-browser compatibility confirmed
 
-2. **Page Object Models**
-   ```typescript
-   // pages/EnhancePage.ts
-   export class EnhancePage {
-     constructor(private page: Page) {}
-     
-     async enterPrompt(text: string) {
-       await this.page.fill('[data-testid="prompt-input"]', text);
-     }
-     
-     async clickEnhance() {
-       await this.page.click('[data-testid="enhance-button"]');
-     }
-     
-     async getEnhancedPrompt() {
-       return await this.page.textContent('[data-testid="enhanced-output"]');
-     }
-     
-     async getTechniqueName() {
-       return await this.page.textContent('[data-testid="technique-name"]');
-     }
-   }
-   ```
+**Enables Next Phase**: Creates foundation page objects and API integration patterns
 
-3. **Core UI Test Suite (50+ tests)**
-   - Authentication flows
-   - Prompt enhancement journey
-   - Technique selection and display
-   - Error handling and validation
-   - Responsive design verification
-   - Accessibility compliance (WCAG 2.1)
+### Phase 2: User Registration Flow (US-012) ⬜ READY
+**Duration**: 3 days  
+**Story**: "As a new user, I want to create an account to save my prompts"  
+**Complexity**: Medium - Adds auth, database, email verification
 
-4. **Visual Regression Testing**
-   - Percy/Chromatic integration
-   - Baseline screenshots
-   - Cross-browser visual validation
-
-**Success Criteria:**
-- 95% UI component coverage
-- All critical user journeys tested
-- <5% test flake rate
-- Visual regression catches 100% of UI changes
-
-### Wave 3: API Integration Test Suite ⬜ PENDING
-**Duration**: 2 weeks  
-**Objective**: Comprehensive API testing across all services
+**Why This Next**: 
+- Builds on Phase 1 UI patterns
+- Introduces authentication layer
+- Required for most other stories
+- Tests critical business flow
 
 **Command:**
 ```bash
 /sc:implement --think --validate \
-  "Create comprehensive API integration test suite for all BetterPrompts services" \
-  --context "4 microservices: api-gateway, intent-classifier, technique-selector, prompt-generator" \
+  "Test US-012: User registration and email verification flow" \
+  --context "Test user can register, verify email, and access account" \
   --requirements '
-  1. Jest + Supertest framework setup
-  2. Contract testing with Pact
-  3. Service integration tests
-  4. API performance baselines
-  5. Mock service dependencies
-  6. Test database management
+  1. Registration form with name, email, password
+  2. Client-side validation (email format, password strength)
+  3. Server-side validation and error handling
+  4. Email verification process (can mock SMTP)
+  5. Successful registration redirects to dashboard
+  6. Duplicate email prevention
   ' \
-  --persona-backend --persona-qa \
   --steps '
-  1. Setup Jest test framework for each service
-  2. Implement API endpoint tests (100% coverage)
-  3. Create Pact consumer/provider contracts
-  4. Add integration tests between services
-  5. Implement TestContainers for databases
-  6. Establish performance benchmarks
+  1. Create RegisterPage object with form interactions
+  2. Test field validations (empty, invalid, valid)
+  3. Test successful registration flow
+  4. Test duplicate email handling
+  5. Mock email service for verification
+  6. Test post-verification redirect
   ' \
-  --parallel-services \
-  --output-dir "e2e/api"
+  --deliverables '
+  - e2e/tests/us-012-user-registration.spec.ts
+  - Page objects: RegisterPage, VerificationPage
+  - Mock email service helper
+  - Test user generator utility
+  ' \
+  --output-dir "e2e/phase2"
 ```
 
-**Deliverables:**
-1. **API Test Framework**
-   ```typescript
-   // tests/api/enhance.test.ts
-   describe('Enhancement API', () => {
-     it('should enhance a simple prompt', async () => {
-       const response = await request(app)
-         .post('/api/v1/enhance')
-         .set('Authorization', `Bearer ${token}`)
-         .send({ text: 'explain quantum computing' });
-       
-       expect(response.status).toBe(200);
-       expect(response.body).toHaveProperty('enhanced_prompt');
-       expect(response.body).toHaveProperty('technique');
-       expect(response.body.technique).toBe('explain_like_im_five');
-     });
-   });
-   ```
+**Success Metrics**:
+- Registration completes in <5s
+- Email verification works
+- Proper error messages displayed
+- User data persisted correctly
 
-2. **Contract Testing with Pact**
-   ```typescript
-   // Consumer contract
-   describe('Intent Classifier Consumer', () => {
-     it('classifies intent correctly', () => {
-       return provider.addInteraction({
-         state: 'intent classifier is available',
-         uponReceiving: 'a classification request',
-         withRequest: {
-           method: 'POST',
-           path: '/api/v1/intents/classify',
-           body: { text: 'explain quantum physics' }
-         },
-         willRespondWith: {
-           status: 200,
-           body: {
-             intent: 'question_answering',
-             confidence: like(0.95)
-           }
-         }
-       });
-     });
-   });
-   ```
+**Enables Next Phase**: User authentication system for protected features
 
-3. **Service Integration Tests**
-   - API Gateway → Intent Classifier
-   - Intent Classifier → Technique Selector
-   - Technique Selector → Prompt Generator
-   - All services → Redis/PostgreSQL
+### Phase 3: Login & Session Management (US-013) ⬜ DEPENDS ON PHASE 2
+**Duration**: 2 days  
+**Story**: "As a registered user, I want to login and access my saved prompts"  
+**Complexity**: Medium - Session management, JWT tokens, protected routes
 
-4. **API Performance Baselines**
-   - Response time benchmarks
-   - Throughput measurements
-   - Resource utilization tracking
-
-**Success Criteria:**
-- 100% API endpoint coverage
-- All service contracts validated
-- Integration points tested
-- Performance baselines established
-
-### Wave 4: Cross-Service Workflow Testing ⬜ PENDING
-**Duration**: 2 weeks  
-**Objective**: Validate complete user workflows across all services
-
-**Command:**
-```bash
-/sc:implement --think-hard --validate \
-  "Build end-to-end workflow tests spanning all BetterPrompts services" \
-  --context "Test complete user journeys from UI through all backend services" \
-  --requirements '
-  1. Full workflow tests from UI to database
-  2. Distributed tracing validation
-  3. Error propagation testing
-  4. Data consistency verification
-  5. Transaction integrity checks
-  6. Service failure scenarios
-  ' \
-  --persona-architect --persona-qa \
-  --steps '
-  1. Map critical user workflows (10+ scenarios)
-  2. Implement E2E workflow test framework
-  3. Add OpenTelemetry trace validation
-  4. Create service failure injection tests
-  5. Implement data consistency checks
-  6. Add circuit breaker validation
-  ' \
-  --wave-mode --systematic-waves \
-  --output-dir "e2e/workflows"
-```
-
-**Deliverables:**
-1. **End-to-End Workflow Tests**
-   ```typescript
-   // e2e/workflows/enhancement-flow.test.ts
-   describe('Complete Enhancement Workflow', () => {
-     it('should process prompt through all services', async () => {
-       // 1. User submits prompt via UI
-       await enhancePage.enterPrompt('explain machine learning');
-       await enhancePage.clickEnhance();
-       
-       // 2. Verify API gateway receives request
-       const gatewayLogs = await getServiceLogs('api-gateway');
-       expect(gatewayLogs).toContain('POST /api/v1/enhance');
-       
-       // 3. Verify intent classification
-       const classifierLogs = await getServiceLogs('intent-classifier');
-       expect(classifierLogs).toContain('intent: question_answering');
-       
-       // 4. Verify technique selection
-       const selectorLogs = await getServiceLogs('technique-selector');
-       expect(selectorLogs).toContain('selected: explain_like_im_five');
-       
-       // 5. Verify prompt generation
-       const generatorLogs = await getServiceLogs('prompt-generator');
-       expect(generatorLogs).toContain('technique applied successfully');
-       
-       // 6. Verify UI displays result
-       const enhanced = await enhancePage.getEnhancedPrompt();
-       expect(enhanced).toContain('Explain machine learning like I\'m five');
-     });
-   });
-   ```
-
-2. **Distributed Tracing Validation**
-   - OpenTelemetry integration tests
-   - Trace continuity verification
-   - Performance bottleneck identification
-
-3. **Error Propagation Tests**
-   - Service failure scenarios
-   - Timeout handling
-   - Circuit breaker validation
-   - Graceful degradation
-
-4. **Data Consistency Tests**
-   - Transaction integrity
-   - Cache coherency
-   - Database state validation
-
-**Success Criteria:**
-- All critical workflows tested E2E
-- 100% trace continuity
-- Error handling validated
-- Data consistency maintained
-
-### Wave 5: Performance & Load Testing ⬜ PENDING
-**Duration**: 2 weeks  
-**Objective**: Validate system performance under load
+**Why This Next**: 
+- Completes basic auth flow
+- Enables testing protected features
+- Required for personalization stories
+- Tests security boundaries
 
 **Command:**
 ```bash
 /sc:implement --think --validate \
-  "Create comprehensive performance and load testing suite using K6" \
-  --context "Target: 10,000 RPS, <200ms p95 latency, 99.9% uptime" \
+  "Test US-013: User login and session management" \
+  --context "Test login, logout, session persistence, protected routes" \
   --requirements '
-  1. K6 load test scenarios (5+ types)
-  2. Performance benchmarking suite
-  3. Infrastructure stress testing
-  4. Auto-scaling validation
-  5. Database connection pooling tests
-  6. CDN and caching effectiveness
+  1. Login form with email/password
+  2. Remember me functionality
+  3. JWT token management
+  4. Protected route redirects
+  5. Logout clears session
+  6. Session timeout handling
   ' \
-  --persona-performance --persona-devops \
   --steps '
-  1. Setup K6 framework with TypeScript
-  2. Create load test scenarios (baseline, spike, stress)
-  3. Implement infrastructure testing
-  4. Add Kubernetes HPA validation
-  5. Create performance monitoring dashboards
-  6. Establish SLA compliance tests
+  1. Create LoginPage object
+  2. Test successful login flow
+  3. Test invalid credentials
+  4. Test session persistence
+  5. Test protected route access
+  6. Test logout functionality
   ' \
-  --performance-mode \
-  --output-dir "e2e/performance"
+  --deliverables '
+  - e2e/tests/us-013-login-session.spec.ts
+  - Page objects: LoginPage, AuthHelpers
+  - JWT token test utilities
+  - Protected route test helpers
+  ' \
+  --output-dir "e2e/phase3"
 ```
 
-**Deliverables:**
-1. **K6 Load Test Suite**
-   ```javascript
-   // load-tests/spike-test.js
-   import http from 'k6/http';
-   import { check, sleep } from 'k6';
-   
-   export let options = {
-     stages: [
-       { duration: '2m', target: 100 },   // Ramp up
-       { duration: '5m', target: 1000 },  // Stay at 1000 users
-       { duration: '2m', target: 5000 },  // Spike to 5000
-       { duration: '5m', target: 5000 },  // Stay at 5000
-       { duration: '2m', target: 0 },     // Ramp down
-     ],
-     thresholds: {
-       http_req_duration: ['p(95)<200'], // 95% of requests under 200ms
-       http_req_failed: ['rate<0.01'],   // Error rate under 1%
-     },
-   };
-   
-   export default function() {
-     let payload = JSON.stringify({
-       text: 'explain artificial intelligence'
-     });
-     
-     let params = {
-       headers: {
-         'Content-Type': 'application/json',
-         'Authorization': `Bearer ${__ENV.API_TOKEN}`
-       },
-     };
-     
-     let res = http.post('http://api.betterprompts.com/v1/enhance', payload, params);
-     
-     check(res, {
-       'status is 200': (r) => r.status === 200,
-       'response time < 200ms': (r) => r.timings.duration < 200,
-       'has enhanced prompt': (r) => JSON.parse(r.body).enhanced_prompt !== undefined,
-     });
-     
-     sleep(1);
-   }
-   ```
+**Success Metrics**:
+- Login completes in <2s
+- Sessions persist correctly
+- Protected routes enforced
+- Tokens refresh properly
 
-2. **Performance Test Scenarios**
-   - Baseline: 100 concurrent users
-   - Normal load: 1000 concurrent users
-   - Peak load: 5000 concurrent users
-   - Sustained load: 1000 users for 24 hours
-   - Spike test: 0 → 5000 → 0 users
+**Enables Next Phase**: Testing user-specific features like saved prompts
 
-3. **Infrastructure Testing**
-   - Kubernetes HPA validation
-   - Database connection pooling
-   - Redis cluster performance
-   - CDN effectiveness
+### Phase 4: Authenticated Enhancement with History (US-002 + US-007) ⬜ DEPENDS ON PHASE 3
+**Duration**: 3 days  
+**Story**: "As a logged-in user, I want my enhancements saved to history"  
+**Complexity**: Medium - Combines auth, enhancement, and persistence
 
-4. **Performance Monitoring**
-   - Grafana dashboards
-   - Alert threshold validation
-   - SLA compliance verification
+**Why This Next**: 
+- Builds on Phases 1-3 foundations
+- Tests core value for registered users
+- Validates data persistence
+- Introduces user-specific features
 
-**Success Criteria:**
-- 10,000 RPS sustained
+**Command:**
+```bash
+/sc:implement --think --validate \
+  "Test US-002 + US-007: Authenticated enhancement with history" \
+  --context "Logged-in users get enhancements saved to their history" \
+  --requirements '
+  1. Login → Enhance → Save to history flow
+  2. History page shows past enhancements
+  3. Can view details of past enhancements
+  4. Can re-run previous prompts
+  5. History pagination (10 per page)
+  6. Search/filter history
+  ' \
+  --steps '
+  1. Test authenticated enhancement flow
+  2. Verify history persistence
+  3. Test history page navigation
+  4. Test enhancement details view
+  5. Test re-run functionality
+  6. Test search and filters
+  ' \
+  --deliverables '
+  - e2e/tests/us-002-007-auth-enhancement-history.spec.ts
+  - Page objects: HistoryPage, EnhancementDetails
+  - History data generators
+  - Search/filter test utilities
+  ' \
+  --output-dir "e2e/phase4"
+```
+
+**Success Metrics**:
+- Enhancement saves to history
+- History loads in <2s
+- Search works correctly
+- Data integrity maintained
+
+**Enables Next Phase**: Advanced features like batch processing
+
+### Phase 5: Technique Education & Tooltips (US-006) ⬜ READY
+**Duration**: 2 days  
+**Story**: "As a technical beginner, I want to understand why techniques were chosen"  
+**Complexity**: Low - UI interactions, no new backend integration
+
+**Why This Next**: 
+- Pure frontend feature
+- Can run in parallel with other phases
+- Improves user education
+- Tests interactive UI elements
+
+**Command:**
+```bash
+/sc:implement --think --validate \
+  "Test US-006: Technique education tooltips and explanations" \
+  --context "Test educational UI elements that explain techniques" \
+  --requirements '
+  1. Technique name displayed after enhancement
+  2. "Why this technique?" tooltip/modal
+  3. "Learn more" links to documentation
+  4. Alternative technique suggestions
+  5. Technique comparison feature
+  6. Mobile-friendly tooltips
+  ' \
+  --steps '
+  1. Test technique display after enhancement
+  2. Test tooltip interactions (hover/click)
+  3. Test modal content and navigation
+  4. Test documentation links
+  5. Test alternative suggestions
+  6. Test mobile touch interactions
+  ' \
+  --deliverables '
+  - e2e/tests/us-006-technique-education.spec.ts
+  - Tooltip/Modal test helpers
+  - Educational content fixtures
+  - Mobile gesture utilities
+  ' \
+  --output-dir "e2e/phase5"
+```
+
+**Success Metrics**:
+- Tooltips appear within 100ms
+- All educational content loads
+- Links navigate correctly
+- Mobile gestures work properly
+
+**Enables Next Phase**: More complex UI interactions
+
+### Phase 6: Batch Processing Upload (US-003) ⬜ DEPENDS ON PHASE 4
+**Duration**: 4 days  
+**Story**: "As a content creator, I want to process multiple prompts at once"  
+**Complexity**: High - File upload, async processing, progress tracking
+
+**Why This Next**: 
+- Builds on authenticated features
+- Tests async workflows
+- Validates file handling
+- Performance-critical feature
+
+**Command:**
+```bash
+/sc:implement --think --validate \
+  "Test US-003: Batch prompt processing via CSV upload" \
+  --context "Test file upload, async processing, progress tracking" \
+  --requirements '
+  1. CSV file upload (up to 1000 prompts)
+  2. File validation (format, size, content)
+  3. Async processing with progress bar
+  4. Email notification when complete
+  5. Download results as CSV/JSON
+  6. Handle processing errors gracefully
+  ' \
+  --steps '
+  1. Test file upload mechanics
+  2. Test CSV validation rules
+  3. Test progress tracking UI
+  4. Test completion notifications
+  5. Test result downloads
+  6. Test error scenarios
+  ' \
+  --deliverables '
+  - e2e/tests/us-003-batch-processing.spec.ts
+  - Page objects: BatchUploadPage, ProgressTracker
+  - CSV test file generator
+  - Async polling utilities
+  - Download verification helpers
+  ' \
+  --output-dir "e2e/phase6"
+```
+
+**Success Metrics**:
+- 100 prompts process in <60s
+- Progress updates every 2s
+- Downloads work correctly
+- Errors handled gracefully
+
+**Enables Next Phase**: Performance testing at scale
+
+### Phase 7: API Integration for Enterprise (US-004) ⬜ READY
+**Duration**: 3 days  
+**Story**: "As an enterprise user, I want to integrate via API"  
+**Complexity**: Medium - API authentication, rate limiting, documentation
+
+**Why This Next**: 
+- Opens B2B opportunities
+- Can run parallel to UI stories
+- Tests API contract stability
+- Validates developer experience
+
+**Command:**
+```bash
+/sc:implement --think --validate \
+  "Test US-004: Enterprise API integration" \
+  --context "Test API authentication, endpoints, rate limiting" \
+  --requirements '
+  1. API key generation and management
+  2. RESTful endpoint testing
+  3. Rate limiting (1000 req/min)
+  4. API documentation accuracy
+  5. Error response consistency
+  6. Webhook notifications
+  ' \
+  --steps '
+  1. Test API key lifecycle
+  2. Test all API endpoints
+  3. Test rate limiting behavior
+  4. Validate OpenAPI spec
+  5. Test error scenarios
+  6. Test webhook delivery
+  ' \
+  --deliverables '
+  - e2e/tests/us-004-api-integration.spec.ts
+  - API client test helpers
+  - Rate limiting test utilities
+  - OpenAPI validation tests
+  - Webhook mock server
+  ' \
+  --output-dir "e2e/phase7"
+```
+
+**Success Metrics**:
+- All endpoints documented
+- Rate limiting accurate
+- <200ms API response time
+- Webhooks deliver reliably
+
+**Enables Next Phase**: Performance testing under load
+
+### Phase 8: Performance Under Load (US-005 + PS-01) ⬜ DEPENDS ON PHASE 7
+**Duration**: 4 days  
+**Story**: "As a data scientist, I want to see performance metrics"  
+**Complexity**: High - Load testing, metrics collection, dashboards
+
+**Why This Next**: 
+- Validates scalability
+- Uses API from Phase 7
+- Critical for SLA compliance
+- Provides optimization data
+
+**Command:**
+```bash
+/sc:implement --think --validate \
+  "Test US-005 + PS-01: Performance metrics and load testing" \
+  --context "Test system performance under various load conditions" \
+  --requirements '
+  1. Response time metrics display
+  2. Technique accuracy scores
+  3. Load testing (100-1000 users)
+  4. Performance dashboard
+  5. Export metrics to CSV/JSON
+  6. Real-time metrics updates
+  ' \
+  --steps '
+  1. Test metrics collection
+  2. Test dashboard displays
+  3. Setup K6 load tests
+  4. Test under increasing load
+  5. Test metrics export
+  6. Validate SLA compliance
+  ' \
+  --deliverables '
+  - e2e/tests/us-005-performance-metrics.spec.ts
+  - K6 load test scenarios
+  - Performance dashboard tests
+  - Metrics export validators
+  - SLA compliance reports
+  ' \
+  --output-dir "e2e/phase8"
+```
+
+**Success Metrics**:
+- Sustain 1000 concurrent users
 - <200ms p95 latency
-- <1% error rate
-- Auto-scaling within 30 seconds
+- Metrics update within 5s
+- Zero data loss under load
 
-### Wave 6: Security & Edge Case Testing ⬜ PENDING
-**Duration**: 2 weeks  
-**Objective**: Comprehensive security validation and edge case handling
+**Enables Next Phase**: Security and edge case testing
+
+### Phase 9: Input Validation & Edge Cases (EC-01 to EC-05) ⬜ READY
+**Duration**: 3 days  
+**Story**: "As a user, I want the system to handle edge cases gracefully"  
+**Complexity**: Medium - Various input scenarios, error handling
+
+**Why This Next**: 
+- Can run independently
+- Improves system robustness
+- Catches common issues
+- Quick wins for stability
+
+**Command:**
+```bash
+/sc:implement --think --validate \
+  "Test edge cases EC-01 to EC-05: Input validation and error handling" \
+  --context "Test system behavior with invalid, extreme, or malicious inputs" \
+  --requirements '
+  1. EC-01: 2000 character limit enforcement
+  2. EC-02: Special characters and emojis
+  3. EC-03: Multiple languages (UTF-8)
+  4. EC-04: Empty and whitespace inputs
+  5. EC-05: Script injection attempts
+  6. Proper error messages for each case
+  ' \
+  --steps '
+  1. Test character limit validation
+  2. Test special character handling
+  3. Test multilingual inputs
+  4. Test empty input scenarios
+  5. Test XSS prevention
+  6. Verify error message clarity
+  ' \
+  --deliverables '
+  - e2e/tests/ec-01-05-input-validation.spec.ts
+  - Edge case data generators
+  - Input sanitization validators
+  - Error message validators
+  ' \
+  --output-dir "e2e/phase9"
+```
+
+**Success Metrics**:
+- All inputs handled safely
+- Clear error messages
+- No security vulnerabilities
+- Consistent behavior
+
+**Enables Next Phase**: More complex edge cases
+
+### Phase 10: Rate Limiting & Concurrent Access (US-015 + EC-06) ⬜ DEPENDS ON PHASE 7
+**Duration**: 2 days  
+**Story**: "As a system admin, I want to prevent API abuse"  
+**Complexity**: Medium - Rate limiting, concurrent request handling
+
+**Why This Next**: 
+- Builds on API testing
+- Critical for stability
+- Prevents abuse
+- Tests fairness
+
+**Command:**
+```bash
+/sc:implement --think --validate \
+  "Test US-015 + EC-06: Rate limiting and concurrent access" \
+  --context "Test rate limiting accuracy and concurrent request handling" \
+  --requirements '
+  1. Rate limiting per user (1000/min)
+  2. Rate limiting per IP (5000/min)
+  3. Concurrent request queuing
+  4. Rate limit headers (X-RateLimit-*)
+  5. 429 error responses
+  6. Rate limit reset behavior
+  ' \
+  --steps '
+  1. Test per-user rate limits
+  2. Test per-IP rate limits
+  3. Test concurrent bursts
+  4. Test rate limit headers
+  5. Test retry behavior
+  6. Test limit reset timing
+  ' \
+  --deliverables '
+  - e2e/tests/us-015-rate-limiting.spec.ts
+  - Rate limit test utilities
+  - Concurrent request helpers
+  - Header validation utils
+  ' \
+  --output-dir "e2e/phase10"
+```
+
+**Success Metrics**:
+- Rate limits enforced accurately
+- Headers provide clear info
+- Fair queuing for users
+- Graceful degradation
+
+**Enables Next Phase**: Security testing
+
+### Phase 11: Security Testing (SS-01 to SS-05) ⬜ DEPENDS ON PHASES 1-10
+**Duration**: 4 days  
+**Story**: "As a security officer, I want assurance against common vulnerabilities"  
+**Complexity**: High - OWASP Top 10, authentication, data protection
+
+**Why This Next**: 
+- Required for production
+- Builds on all previous phases
+- Validates security posture
+- Compliance requirement
 
 **Command:**
 ```bash
 /sc:implement --ultrathink --validate --safe-mode \
-  "Implement security testing and edge case validation for BetterPrompts" \
-  --context "OWASP Top 10 compliance, SOC 2 requirements, edge case handling" \
+  "Test security scenarios SS-01 to SS-05" \
+  --context "OWASP Top 10 compliance, authentication security, data protection" \
   --requirements '
-  1. OWASP ZAP security scanning setup
-  2. Penetration testing scenarios
-  3. Authentication/authorization tests
-  4. Input validation and sanitization
-  5. Rate limiting and DDoS protection
-  6. Edge case test suite (100+ cases)
+  1. SS-01: SQL injection prevention
+  2. SS-02: XSS protection
+  3. SS-03: Authentication security
+  4. SS-04: Session management
+  5. SS-05: Data encryption (transit/rest)
+  6. Security headers validation
   ' \
   --persona-security --persona-qa \
   --steps '
-  1. Configure OWASP ZAP automated scanning
-  2. Create penetration test scenarios
-  3. Implement authentication bypass tests
-  4. Add input fuzzing and injection tests
-  5. Create edge case test matrix
-  6. Validate compliance requirements
+  1. Run OWASP ZAP baseline scan
+  2. Test injection vulnerabilities
+  3. Test authentication bypasses
+  4. Test session security
+  5. Validate encryption
+  6. Check security headers
   ' \
-  --focus security \
-  --output-dir "e2e/security"
+  --deliverables '
+  - e2e/tests/ss-01-05-security.spec.ts
+  - OWASP ZAP configuration
+  - Security test utilities
+  - Vulnerability reports
+  ' \
+  --output-dir "e2e/phase11"
 ```
 
-**Deliverables:**
-1. **Security Test Suite**
-   ```yaml
-   # owasp-zap-config.yaml
-   context:
-     name: BetterPrompts Security Scan
-     urls:
-       - https://app.betterprompts.com
-       - https://api.betterprompts.com
-   
-   jobs:
-     - type: spider
-       parameters:
-         maxDuration: 60
-         maxDepth: 10
-     
-     - type: passiveScan
-       parameters:
-         maxAlertsPerRule: 10
-     
-     - type: activeScan
-       policies:
-         - SQL Injection
-         - Cross Site Scripting
-         - Security Misconfiguration
-         - XML External Entity
-         - Broken Access Control
-   ```
-
-2. **Penetration Testing**
-   - Authentication bypass attempts
-   - JWT token manipulation
-   - SQL injection testing
-   - XSS vulnerability scanning
-   - API rate limit bypass attempts
-
-3. **Edge Case Testing**
-   ```typescript
-   describe('Edge Cases', () => {
-     it('handles maximum input length', async () => {
-       const longPrompt = 'a'.repeat(10000);
-       const response = await enhanceAPI(longPrompt);
-       expect(response.status).toBe(413);
-     });
-     
-     it('handles special characters', async () => {
-       const specialPrompt = '�������� <script>alert("xss")</script>';
-       const response = await enhanceAPI(specialPrompt);
-       expect(response.enhanced_prompt).not.toContain('<script>');
-     });
-     
-     it('handles concurrent requests from same user', async () => {
-       const promises = Array(100).fill(null).map(() => 
-         enhanceAPI('test prompt')
-       );
-       const results = await Promise.all(promises);
-       const successCount = results.filter(r => r.status === 200).length;
-       expect(successCount).toBeGreaterThan(90); // Allow some rate limiting
-     });
-   });
-   ```
-
-4. **Compliance Validation**
-   - GDPR data handling
-   - SOC 2 requirements
-   - OWASP Top 10 coverage
-   - PCI DSS if payment processing
-
-**Success Criteria:**
+**Success Metrics**:
 - Zero critical vulnerabilities
-- All OWASP Top 10 covered
-- Rate limiting effective
-- Data encryption validated
+- All OWASP controls pass
+- Proper encryption verified
+- Security headers present
 
-### Wave 7: Monitoring & Observability Validation ⬜ PENDING
-**Duration**: 1 week  
-**Objective**: Ensure comprehensive monitoring and alerting
+**Enables Next Phase**: Production readiness
+
+### Phase 12: Mobile & Accessibility (US-019 + US-020) ⬜ READY
+**Duration**: 3 days  
+**Story**: "As a mobile/disabled user, I want full access to all features"  
+**Complexity**: Medium - Responsive design, WCAG compliance, touch interactions
+
+**Why This Next**: 
+- Can run in parallel
+- Legal compliance
+- Expands user base
+- Improves UX for all
 
 **Command:**
 ```bash
 /sc:implement --think --validate \
-  "Setup monitoring validation and synthetic tests for BetterPrompts" \
-  --context "Datadog monitoring, need synthetic tests and alert validation" \
+  "Test US-019 + US-020: Mobile experience and accessibility" \
+  --context "Test responsive design, touch interactions, screen readers" \
   --requirements '
-  1. Synthetic monitoring test suite
-  2. Alert validation framework
-  3. Log aggregation testing
-  4. Metrics accuracy validation
-  5. Dashboard functionality tests
-  6. Incident response validation
+  1. Mobile viewport testing (320px-768px)
+  2. Touch gesture support
+  3. WCAG 2.1 AA compliance
+  4. Screen reader compatibility
+  5. Keyboard navigation
+  6. Color contrast validation
   ' \
-  --persona-devops --persona-qa \
   --steps '
-  1. Create Datadog synthetic tests
-  2. Implement alert testing framework
-  3. Validate log correlation across services
-  4. Test custom metrics accuracy
-  5. Verify dashboard functionality
-  6. Test PagerDuty integration
+  1. Test responsive breakpoints
+  2. Test touch interactions
+  3. Run axe-core accessibility scan
+  4. Test with screen reader
+  5. Test keyboard navigation
+  6. Validate color contrast
   ' \
-  --output-dir "e2e/monitoring"
+  --deliverables '
+  - e2e/tests/us-019-020-mobile-a11y.spec.ts
+  - Mobile viewport helpers
+  - Accessibility validators
+  - Screen reader test utils
+  ' \
+  --output-dir "e2e/phase12"
 ```
 
-**Deliverables:**
-1. **Synthetic Monitoring Tests**
-   ```javascript
-   // synthetic-tests/user-journey.js
-   const synthetics = require('datadog-synthetics');
-   
-   synthetics.test({
-     name: 'Critical User Journey',
-     type: 'browser',
-     frequency: 300, // Every 5 minutes
-     locations: ['us-east-1', 'eu-west-1', 'ap-southeast-1'],
-     steps: [
-       { type: 'navigate', url: 'https://app.betterprompts.com' },
-       { type: 'click', selector: '[data-testid="login-button"]' },
-       { type: 'fill', selector: '#email', value: 'test@example.com' },
-       { type: 'fill', selector: '#password', value: '${SYNTH_PASSWORD}' },
-       { type: 'click', selector: '[type="submit"]' },
-       { type: 'waitForElement', selector: '[data-testid="prompt-input"]' },
-       { type: 'fill', selector: '[data-testid="prompt-input"]', value: 'test prompt' },
-       { type: 'click', selector: '[data-testid="enhance-button"]' },
-       { type: 'waitForElement', selector: '[data-testid="enhanced-output"]' },
-       { type: 'assertText', selector: '[data-testid="enhanced-output"]', contains: 'enhanced' }
-     ],
-     assertions: [
-       { type: 'statusCode', operator: 'is', target: 200 },
-       { type: 'responseTime', operator: 'lessThan', target: 3000 }
-     ]
-   });
-   ```
+**Success Metrics**:
+- Works on all viewports
+- WCAG 2.1 AA compliant
+- Screen reader friendly
+- Full keyboard access
 
-2. **Alert Validation**
-   - Trigger each alert condition
-   - Verify notification delivery
-   - Validate escalation policies
-   - Test PagerDuty integration
+**Enables Next Phase**: Final integration
 
-3. **Log Analysis Tests**
-   - Log aggregation verification
-   - Search functionality testing
-   - Log retention validation
-   - Correlation across services
+### Phase 13: End-to-End User Journey (All Stories) ⬜ DEPENDS ON ALL
+**Duration**: 3 days  
+**Story**: "Complete user journeys from registration to batch processing"  
+**Complexity**: High - Integrates all previous phases
 
-4. **Metrics Validation**
-   - Custom metric accuracy
-   - Dashboard functionality
-   - Historical data queries
-   - Anomaly detection
+**Why This Next**: 
+- Validates complete system
+- Tests story interactions
+- Finds integration issues
+- Final validation
 
-**Success Criteria:**
-- 100% critical paths monitored
-- All alerts fire correctly
-- <5 minute detection time
-- Zero false positives in 24h
+**Command:**
+```bash
+/sc:implement --think-hard --validate \
+  "Test complete user journeys integrating all implemented stories" \
+  --context "End-to-end validation of all user stories working together" \
+  --requirements '
+  1. New user: Register → Login → Enhance → View history
+  2. Power user: Login → Batch upload → Track progress → Download
+  3. Developer: Generate API key → Make API calls → Handle rate limits
+  4. Mobile user: Complete journey on mobile device
+  5. All journeys under load (100 concurrent)
+  6. Journey completion metrics
+  ' \
+  --steps '
+  1. Create journey test scenarios
+  2. Test new user complete flow
+  3. Test power user workflow
+  4. Test developer API flow
+  5. Run journeys under load
+  6. Collect journey metrics
+  ' \
+  --deliverables '
+  - e2e/tests/complete-user-journeys.spec.ts
+  - Journey orchestration helpers
+  - Concurrent journey runner
+  - Journey metrics collector
+  ' \
+  --output-dir "e2e/phase13"
+```
 
-### Wave 8: Production Smoke Tests & Continuous Testing ⬜ PENDING
-**Duration**: 1 week  
-**Objective**: Establish continuous testing in production
+**Success Metrics**:
+- All journeys complete successfully
+- No story integration issues
+- Performance maintained under load
+- Consistent user experience
+
+**Enables Next Phase**: Production deployment
+
+### Phase 14: Production Smoke Tests ⬜ DEPENDS ON PHASE 13
+**Duration**: 2 days  
+**Story**: "Continuous validation in production environment"  
+**Complexity**: Low - Read-only tests, monitoring integration
+
+**Why This Next**: 
+- Final safety net
+- Continuous validation
+- Early issue detection
+- SLA monitoring
 
 **Command:**
 ```bash
 /sc:implement --validate --safe-mode \
-  "Create production smoke tests and continuous testing pipeline" \
-  --context "Production environment, need safe read-only tests" \
+  "Create production-safe smoke tests" \
+  --context "Read-only tests that run every 30 minutes in production" \
   --requirements '
-  1. Production-safe smoke test suite
-  2. Continuous testing pipeline (GitHub Actions)
-  3. A/B testing framework
-  4. Chaos engineering setup
-  5. Visual regression in production
-  6. Zero-impact test design
+  1. Health check endpoints
+  2. Anonymous enhancement flow
+  3. Login flow (test account)
+  4. API availability
+  5. Response time checks
+  6. Zero side effects
   ' \
-  --persona-devops --persona-qa \
   --steps '
-  1. Design production-safe test suite
-  2. Implement smoke tests with metrics
-  3. Setup GitHub Actions workflows
-  4. Create chaos experiment framework
-  5. Add production visual regression
-  6. Implement test result monitoring
+  1. Create read-only test suite
+  2. Setup test accounts
+  3. Implement health checks
+  4. Add performance checks
+  5. Configure monitoring alerts
+  6. Schedule recurring runs
   ' \
-  --production-safe \
-  --output-dir "e2e/production"
-```
-
-**Deliverables:**
-1. **Production Smoke Test Suite**
-   ```typescript
-   // smoke-tests/production.test.ts
-   describe('Production Smoke Tests', () => {
-     const PROD_URL = 'https://api.betterprompts.com';
-     
-     beforeAll(() => {
-       // Use read-only test account
-       authenticate(process.env.SMOKE_TEST_TOKEN);
-     });
-     
-     it('health check passes', async () => {
-       const response = await fetch(`${PROD_URL}/health`);
-       expect(response.status).toBe(200);
-       const data = await response.json();
-       expect(data.status).toBe('healthy');
-     });
-     
-     it('can enhance a prompt', async () => {
-       const response = await fetch(`${PROD_URL}/v1/enhance`, {
-         method: 'POST',
-         headers: {
-           'Content-Type': 'application/json',
-           'Authorization': `Bearer ${process.env.SMOKE_TEST_TOKEN}`
-         },
-         body: JSON.stringify({ text: 'production smoke test' })
-       });
-       
-       expect(response.status).toBe(200);
-       const data = await response.json();
-       expect(data).toHaveProperty('enhanced_prompt');
-       expect(data).toHaveProperty('technique');
-       
-       // Send metrics
-       await sendMetric('smoke_test.success', 1);
-     });
-   });
-   ```
-
-2. **Continuous Testing Pipeline**
-   ```yaml
-   # .github/workflows/continuous-testing.yml
-   name: Continuous E2E Testing
-   
-   on:
-     schedule:
-       - cron: '*/30 * * * *'  # Every 30 minutes
-     workflow_dispatch:
-   
-   jobs:
-     smoke-tests:
-       runs-on: ubuntu-latest
-       steps:
-         - uses: actions/checkout@v3
-         - name: Run Smoke Tests
-           run: npm run test:smoke
-           env:
-             SMOKE_TEST_TOKEN: ${{ secrets.SMOKE_TEST_TOKEN }}
-         
-         - name: Report Results
-           if: always()
-           uses: datadog/github-action@v1
-           with:
-             api-key: ${{ secrets.DATADOG_API_KEY }}
-             events: |
-               - title: "Smoke Test Results"
-                 text: "Smoke tests ${{ job.status }}"
-                 alert_type: "${{ job.status == 'success' && 'success' || 'error' }}"
-     
-     visual-regression:
-       runs-on: ubuntu-latest
-       steps:
-         - uses: actions/checkout@v3
-         - name: Percy Visual Tests
-           run: npm run test:visual
-           env:
-             PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
-   ```
-
-3. **A/B Testing Framework**
-   - Feature flag testing
-   - Conversion tracking
-   - Statistical significance
-   - Rollback procedures
-
-4. **Chaos Engineering**
-   - Scheduled chaos experiments
-   - Service failure injection
-   - Network delay simulation
-   - Recovery validation
-
-**Success Criteria:**
-- Smoke tests run every 30 min
-- Visual regression daily
-- Zero production incidents from testing
-- 99.9% smoke test success rate
-
-## Test Architecture
-
-### Tool Stack
-
-```yaml
-ui-testing:
-  framework: Playwright
-  language: TypeScript
-  pattern: Page Object Model
-  visual-regression: Percy
-  accessibility: axe-core
-
-api-testing:
-  framework: Jest + Supertest
-  language: TypeScript
-  contract-testing: Pact
-  load-testing: K6
-  mocking: MSW (Mock Service Worker)
-
-integration-testing:
-  framework: Jest
-  containers: TestContainers
-  databases: PostgreSQL, Redis
-  message-queues: Redis Pub/Sub
-
-security-testing:
-  scanner: OWASP ZAP
-  dependency-scan: Snyk
-  secrets-scan: GitGuardian
-  compliance: OWASP Top 10
-
-monitoring:
-  synthetic: Datadog Synthetics
-  apm: Datadog APM
-  logs: Datadog Logs
-  custom-metrics: StatsD
-
-ci-cd:
-  platform: GitHub Actions
-  artifact-storage: GitHub Packages
-  test-parallelization: GitHub Matrix
-  reporting: Allure
-```
-
-### Test Data Strategy
-
-```typescript
-// test-data/generator.ts
-export class TestDataGenerator {
-  static generateUser(overrides?: Partial<User>): User {
-    return {
-      id: faker.datatype.uuid(),
-      email: faker.internet.email(),
-      name: faker.name.fullName(),
-      role: 'user',
-      createdAt: faker.date.past(),
-      ...overrides
-    };
-  }
-  
-  static generatePrompt(intent?: string): Prompt {
-    const intents = [
-      'question_answering',
-      'creative_writing',
-      'code_generation',
-      'summarization',
-      'translation'
-    ];
-    
-    return {
-      id: faker.datatype.uuid(),
-      text: faker.lorem.sentence(),
-      intent: intent || faker.random.arrayElement(intents),
-      userId: faker.datatype.uuid(),
-      createdAt: new Date()
-    };
-  }
-  
-  static async seedDatabase() {
-    const users = Array(100).fill(null).map(() => this.generateUser());
-    const prompts = Array(1000).fill(null).map(() => this.generatePrompt());
-    
-    await db.user.createMany({ data: users });
-    await db.prompt.createMany({ data: prompts });
-  }
-}
-```
-
-### Test Environment Management
-
-```yaml
-# environments/test-environments.yaml
-environments:
-  local:
-    url: http://localhost:3000
-    api: http://localhost/api/v1
-    database: postgresql://localhost:5432/betterprompts_test
-    redis: redis://localhost:6379
-  
-  ci:
-    url: http://betterprompts-ci:3000
-    api: http://api-gateway-ci/api/v1
-    database: postgresql://postgres-ci:5432/betterprompts_test
-    redis: redis://redis-ci:6379
-  
-  staging:
-    url: https://staging.betterprompts.com
-    api: https://api-staging.betterprompts.com/v1
-    database: ${{ secrets.STAGING_DATABASE_URL }}
-    redis: ${{ secrets.STAGING_REDIS_URL }}
-  
-  production:
-    url: https://app.betterprompts.com
-    api: https://api.betterprompts.com/v1
-    read_only: true
-    synthetic_only: true
-```
-
-## Success Metrics & KPIs
-
-### Coverage Metrics
-- **Code Coverage**: >95% for critical paths
-- **User Story Coverage**: 100% of acceptance criteria tested
-- **API Coverage**: 100% of endpoints tested
-- **UI Coverage**: 100% of user-facing components tested
-
-### Quality Metrics
-- **Test Reliability**: <5% flake rate
-- **Test Execution Time**: <30 minutes for full suite
-- **Defect Escape Rate**: <2% to production
-- **MTTR**: <30 minutes for test failures
-
-### Performance Metrics
-- **API Response Time**: p95 <200ms
-- **UI Load Time**: <3s on 3G
-- **Throughput**: 10,000 RPS sustained
-- **Error Rate**: <0.1% in production
-
-### Security Metrics
-- **Vulnerability Count**: Zero critical, <5 medium
-- **Security Test Coverage**: 100% OWASP Top 10
-- **Compliance**: SOC 2 Type II ready
-- **Incident Response**: <15 min detection
-
-## Timeline & Resources
-
-### Timeline Summary
-- **Total Duration**: 16 weeks
-- **Wave 1-2**: 4 weeks (Foundation)
-- **Wave 3-4**: 4 weeks (Integration)
-- **Wave 5-6**: 4 weeks (Performance & Security)
-- **Wave 7-8**: 2 weeks (Production Readiness)
-- **Buffer**: 2 weeks (Contingency)
-
-### Resource Requirements
-
-#### Team Composition
-1. **Test Lead** (1.0 FTE)
-   - Overall strategy and coordination
-   - Architecture decisions
-   - Stakeholder communication
-
-2. **UI Test Engineer** (1.0 FTE)
-   - Playwright implementation
-   - Visual regression testing
-   - Accessibility testing
-
-3. **API Test Engineer** (1.0 FTE)
-   - API integration tests
-   - Contract testing
-   - Performance testing
-
-4. **DevOps/SRE** (0.5 FTE)
-   - CI/CD pipeline
-   - Monitoring setup
-   - Infrastructure testing
-
-#### Budget Estimate
-- **Personnel**: $280,000 (16 weeks × 3.5 FTE × $125/hr)
-- **Tools & Licenses**: $30,000
-  - Datadog: $15,000/year
-  - Percy: $5,000/year
-  - Additional tools: $10,000
-- **Infrastructure**: $20,000
-  - Test environments
-  - CI/CD resources
-  - Load testing infrastructure
-- **Training & Consulting**: $25,000
-- **Total**: ~$355,000
-
-## CI/CD Integration Strategy
-
-### Pipeline Architecture
-
-```yaml
-# .github/workflows/e2e-test-pipeline.yml
-name: E2E Test Pipeline
-
-on:
-  pull_request:
-    branches: [main, develop]
-  push:
-    branches: [main]
-  schedule:
-    - cron: '0 */6 * * *'  # Every 6 hours
-
-jobs:
-  unit-tests:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        service: [api-gateway, intent-classifier, technique-selector, prompt-generator]
-    steps:
-      - uses: actions/checkout@v3
-      - name: Run Unit Tests
-        run: |
-          cd services/${{ matrix.service }}
-          npm test
-      - name: Upload Coverage
-        uses: codecov/codecov-action@v3
-
-  integration-tests:
-    needs: unit-tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Start Test Environment
-        run: docker-compose -f docker-compose.test.yml up -d
-      - name: Run Integration Tests
-        run: npm run test:integration
-      - name: Upload Test Results
-        uses: actions/upload-artifact@v3
-        with:
-          name: integration-test-results
-          path: test-results/
-
-  ui-tests:
-    needs: integration-tests
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        browser: [chromium, firefox, webkit]
-    steps:
-      - uses: actions/checkout@v3
-      - name: Install Playwright
-        run: npx playwright install --with-deps ${{ matrix.browser }}
-      - name: Run UI Tests
-        run: npm run test:ui -- --project=${{ matrix.browser }}
-      - name: Upload Screenshots
-        if: failure()
-        uses: actions/upload-artifact@v3
-        with:
-          name: ui-test-failures-${{ matrix.browser }}
-          path: test-results/screenshots/
-
-  performance-tests:
-    needs: integration-tests
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' || github.event_name == 'schedule'
-    steps:
-      - uses: actions/checkout@v3
-      - name: Run Performance Tests
-        run: |
-          npm run test:performance
-      - name: Comment PR with Results
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const results = require('./performance-results.json');
-            const comment = `## Performance Test Results
-            - p95 Latency: ${results.p95}ms
-            - Throughput: ${results.throughput} RPS
-            - Error Rate: ${results.errorRate}%`;
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: comment
-            });
-
-  security-scan:
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' || github.event_name == 'schedule'
-    steps:
-      - uses: actions/checkout@v3
-      - name: Run OWASP ZAP Scan
-        uses: zaproxy/action-full-scan@v0.4.0
-        with:
-          target: 'https://staging.betterprompts.com'
-      - name: Run Snyk Security Scan
-        uses: snyk/actions/node@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-
-  deploy-staging:
-    needs: [ui-tests, integration-tests]
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy to Staging
-        run: |
-          kubectl apply -f k8s/staging/
-      - name: Run Smoke Tests
-        run: npm run test:smoke:staging
-      - name: Notify Slack
-        uses: 8398a7/action-slack@v3
-        with:
-          status: ${{ job.status }}
-          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
-```
-
-### Test Reporting
-
-```typescript
-// test-reporter.ts
-export class TestReporter {
-  static async generateReport(results: TestResults) {
-    const report = {
-      summary: {
-        total: results.total,
-        passed: results.passed,
-        failed: results.failed,
-        skipped: results.skipped,
-        duration: results.duration
-      },
-      coverage: {
-        lines: results.coverage.lines,
-        branches: results.coverage.branches,
-        functions: results.coverage.functions,
-        statements: results.coverage.statements
-      },
-      performance: {
-        p50: results.performance.p50,
-        p95: results.performance.p95,
-        p99: results.performance.p99
-      },
-      failures: results.failures.map(f => ({
-        test: f.test,
-        error: f.error,
-        screenshot: f.screenshot,
-        video: f.video
-      }))
-    };
-    
-    // Generate HTML report
-    await this.generateHTMLReport(report);
-    
-    // Send to Datadog
-    await this.sendToDatadog(report);
-    
-    // Update GitHub Status
-    await this.updateGitHubStatus(report);
-    
-    return report;
-  }
-}
-```
-
-## Production Validation Approach
-
-### Staged Rollout Strategy
-
-```yaml
-rollout-stages:
-  canary:
-    traffic: 5%
-    duration: 2 hours
-    success-criteria:
-      error-rate: <0.1%
-      p95-latency: <200ms
-    rollback: automatic
-  
-  beta:
-    traffic: 25%
-    duration: 24 hours
-    success-criteria:
-      error-rate: <0.5%
-      p95-latency: <250ms
-    rollback: manual
-  
-  general-availability:
-    traffic: 100%
-    monitoring: enhanced
-    alerts: pagerduty
-```
-
-### Production Testing Safety
-
-```typescript
-// production-test-safety.ts
-export class ProductionTestSafety {
-  static async runSafeTest(test: () => Promise<void>) {
-    const testAccount = await this.getTestAccount();
-    const rateLimiter = new RateLimiter({ 
-      maxRequests: 10, 
-      perMinutes: 1 
-    });
-    
-    try {
-      // Set test context
-      setTestHeaders({
-        'X-Test-Request': 'true',
-        'X-Test-Account': testAccount.id
-      });
-      
-      // Apply rate limiting
-      await rateLimiter.acquire();
-      
-      // Run test with timeout
-      await withTimeout(test(), 30000);
-      
-      // Clean up test data
-      await this.cleanupTestData(testAccount);
-      
-    } catch (error) {
-      // Log but don't alert for test failures
-      logger.info('Production test failed', { 
-        error, 
-        isTest: true 
-      });
-      
-      // Send to test metrics, not production alerts
-      await sendTestMetric('production_test.failure', 1);
-    }
-  }
-}
-```
-
-## Risk Mitigation
-
-### Technical Risks
-
-1. **Test Flakiness**
-   - Mitigation: Retry mechanisms, proper waits, test isolation
-   - Monitoring: Track flake rate per test
-   - Target: <5% flake rate
-
-2. **Test Environment Drift**
-   - Mitigation: Infrastructure as Code, regular sync
-   - Monitoring: Environment comparison tests
-   - Target: 100% parity checks passing
-
-3. **Test Data Management**
-   - Mitigation: Automated cleanup, data generation
-   - Monitoring: Database size monitoring
-   - Target: <1GB test data growth/month
-
-4. **CI/CD Pipeline Complexity**
-   - Mitigation: Modular pipeline design, documentation
-   - Monitoring: Pipeline failure rate
-   - Target: <2% pipeline failure rate
-
-### Process Risks
-
-1. **Skill Gaps**
-   - Mitigation: Training budget, pair programming
-   - Monitoring: Team velocity tracking
-   - Target: Full team proficiency by Wave 3
-
-2. **Scope Creep**
-   - Mitigation: Clear acceptance criteria, change control
-   - Monitoring: Requirement changes per wave
-   - Target: <10% scope change per wave
-
-## Success Criteria
-
-### Wave Completion Criteria
-- [ ] All planned tests implemented
-- [ ] Documentation complete
-- [ ] CI/CD integration working
-- [ ] Success metrics achieved
-- [ ] Team trained on new tools/processes
-
-### Overall Project Success
-- [ ] 95% test coverage achieved
-- [ ] <5% test flake rate
-- [ ] All user stories have E2E tests
-- [ ] Performance targets validated
-- [ ] Security scan passing
-- [ ] Production monitoring active
-- [ ] Team self-sufficient in test maintenance
-
-## Appendix
-
-### Sample Test Cases
-
-#### UI Test Example
-```typescript
-// e2e/specs/enhance-prompt.spec.ts
-import { test, expect } from '@playwright/test';
-import { EnhancePage } from '../pages/EnhancePage';
-import { LoginPage } from '../pages/LoginPage';
-
-test.describe('Prompt Enhancement', () => {
-  let enhancePage: EnhancePage;
-  let loginPage: LoginPage;
-  
-  test.beforeEach(async ({ page }) => {
-    enhancePage = new EnhancePage(page);
-    loginPage = new LoginPage(page);
-    
-    await loginPage.login('test@example.com', 'password123');
-  });
-  
-  test('should enhance a simple prompt', async ({ page }) => {
-    await enhancePage.goto();
-    await enhancePage.enterPrompt('explain quantum computing');
-    await enhancePage.clickEnhance();
-    
-    const enhanced = await enhancePage.getEnhancedPrompt();
-    expect(enhanced).toContain('Explain quantum computing');
-    
-    const technique = await enhancePage.getTechniqueName();
-    expect(technique).toBe('Explain Like I\'m Five');
-  });
-  
-  test('should show loading state', async ({ page }) => {
-    await enhancePage.goto();
-    await enhancePage.enterPrompt('complex scientific concept');
-    
-    const enhancePromise = enhancePage.clickEnhance();
-    await expect(page.locator('[data-testid="loading-spinner"]')).toBeVisible();
-    await enhancePromise;
-    
-    await expect(page.locator('[data-testid="loading-spinner"]')).not.toBeVisible();
-  });
-});
-```
-
-#### API Test Example
-```typescript
-// tests/api/enhancement-api.test.ts
-import request from 'supertest';
-import { app } from '../../src/app';
-import { generateTestUser, generateAuthToken } from '../helpers';
-
-describe('Enhancement API', () => {
-  let authToken: string;
-  let testUser: User;
-  
-  beforeAll(async () => {
-    testUser = await generateTestUser();
-    authToken = generateAuthToken(testUser);
-  });
-  
-  describe('POST /api/v1/enhance', () => {
-    it('should enhance a prompt successfully', async () => {
-      const response = await request(app)
-        .post('/api/v1/enhance')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          text: 'explain machine learning',
-          options: {
-            audience: 'beginner',
-            style: 'simple'
-          }
-        });
-      
-      expect(response.status).toBe(200);
-      expect(response.body).toMatchObject({
-        enhanced_prompt: expect.stringContaining('machine learning'),
-        technique: expect.any(String),
-        confidence: expect.any(Number),
-        metadata: {
-          processing_time: expect.any(Number),
-          model_used: expect.any(String)
-        }
-      });
-    });
-    
-    it('should handle rate limiting', async () => {
-      const requests = Array(100).fill(null).map(() =>
-        request(app)
-          .post('/api/v1/enhance')
-          .set('Authorization', `Bearer ${authToken}`)
-          .send({ text: 'test' })
-      );
-      
-      const responses = await Promise.all(requests);
-      const rateLimited = responses.filter(r => r.status === 429);
-      
-      expect(rateLimited.length).toBeGreaterThan(0);
-      expect(rateLimited[0].body).toMatchObject({
-        error: 'Rate limit exceeded',
-        retry_after: expect.any(Number)
-      });
-    });
-  });
-});
-```
-
-### Monitoring Dashboard Example
-
-```typescript
-// monitoring/e2e-dashboard.ts
-export const E2EDashboard = {
-  name: 'E2E Testing Dashboard',
-  refresh: '30s',
-  panels: [
-    {
-      title: 'Test Execution Status',
-      type: 'graph',
-      targets: [
-        'sum(e2e.test.passed)',
-        'sum(e2e.test.failed)',
-        'sum(e2e.test.skipped)'
-      ]
-    },
-    {
-      title: 'Test Duration Trends',
-      type: 'graph',
-      targets: [
-        'avg(e2e.test.duration) by (test_suite)',
-        'p95(e2e.test.duration) by (test_suite)'
-      ]
-    },
-    {
-      title: 'Flake Rate',
-      type: 'singlestat',
-      targets: [
-        'sum(e2e.test.flaky) / sum(e2e.test.total) * 100'
-      ],
-      thresholds: [
-        { value: 5, color: 'green' },
-        { value: 10, color: 'yellow' },
-        { value: 15, color: 'red' }
-      ]
-    },
-    {
-      title: 'API Performance',
-      type: 'heatmap',
-      targets: [
-        'histogram_quantile(0.95, e2e.api.latency)'
-      ]
-    }
-  ],
-  alerts: [
-    {
-      name: 'High Test Failure Rate',
-      condition: 'sum(e2e.test.failed) > 10',
-      duration: '5m',
-      notification: 'pagerduty'
-    },
-    {
-      name: 'Test Suite Timeout',
-      condition: 'max(e2e.test.duration) > 1800',
-      duration: '1m',
-      notification: 'slack'
-    }
-  ]
-};
-```
-
-## Comprehensive Command Reference
-
-### Pre-Wave Setup Commands
-
-#### Environment Setup
-```bash
-/sc:build --validate \
-  "Setup E2E testing environment for BetterPrompts" \
-  --requirements "Docker, Node.js 18+, PostgreSQL, Redis" \
-  --steps '
-  1. Create e2e directory structure
-  2. Initialize test projects
-  3. Setup test databases
-  4. Configure test environments
-  ' \
-  --output-dir "e2e"
-```
-
-#### Team Knowledge Transfer
-```bash
-/sc:document --comprehensive \
-  "Create E2E testing knowledge base and training materials" \
-  --persona-mentor --persona-scribe \
   --deliverables '
-  - Testing best practices guide
-  - Tool-specific tutorials
-  - Code review checklists
-  - Troubleshooting guide
+  - e2e/tests/production-smoke.spec.ts
+  - Production test config
+  - Monitoring integration
+  - Alert configurations
   ' \
-  --output-dir "e2e/docs"
+  --output-dir "e2e/phase14"
 ```
 
-### Cross-Wave Integration Commands
+**Success Metrics**:
+- 99.9% test success rate
+- <30s total execution
+- Zero production impact
+- Immediate alerting
 
-#### Test Data Generation
+## Implementation Roadmap
+
+### Execution Strategy
+
+The phases are designed to be implemented incrementally with some parallelization opportunities:
+
+```
+Week 1-2: Foundation
+├── Phase 0: Architecture ✅ COMPLETED
+└── Phase 1: Anonymous Enhancement (3 days) - START HERE
+
+Week 3-4: Authentication & Core Features  
+├── Phase 2: Registration (3 days)
+├── Phase 3: Login (2 days)
+└── Phase 4: Auth Enhancement + History (3 days)
+
+Week 5-6: Advanced Features (Parallel Tracks)
+├── Track A: UI Features
+│   ├── Phase 5: Tooltips (2 days)
+│   └── Phase 12: Mobile/A11y (3 days)
+├── Track B: Power Features
+│   ├── Phase 6: Batch Processing (4 days)
+│   └── Phase 7: API Integration (3 days)
+└── Track C: Quality
+    └── Phase 9: Edge Cases (3 days)
+
+Week 7-8: Performance & Security
+├── Phase 8: Performance Testing (4 days)
+├── Phase 10: Rate Limiting (2 days)
+└── Phase 11: Security Testing (4 days)
+
+Week 9: Integration & Production
+├── Phase 13: Complete Journeys (3 days)
+└── Phase 14: Production Smoke (2 days)
+```
+
+### Parallelization Opportunities
+
+**Independent Phases** (can run anytime after Phase 1):
+- Phase 5: Technique Tooltips
+- Phase 9: Input Edge Cases
+- Phase 12: Mobile & Accessibility
+
+**Dependent Chains**:
+1. **Auth Chain**: Phase 2 → 3 → 4 → 6
+2. **API Chain**: Phase 7 → 8 → 10
+3. **Final Chain**: All → Phase 13 → 14
+
+### Resource Allocation
+
+**Single Developer Path** (9 weeks):
+- Follow phases sequentially
+- Complete one phase before starting next
+- Focus on critical path first
+
+**Two Developer Path** (5 weeks):
+- Developer A: Auth chain (Phases 2-4, 6)
+- Developer B: API/Quality (Phases 5, 7-11)
+- Both: Integration (Phases 13-14)
+
+**Three Developer Path** (4 weeks):
+- Developer A: Frontend stories (1, 2, 3, 5, 12)
+- Developer B: Backend stories (4, 6, 7, 8, 10)
+- Developer C: Quality stories (9, 11, 13, 14)
+
+### Quick Start Commands
+
+**Day 1 - Start Testing**:
 ```bash
-/sc:implement --think \
-  "Create comprehensive test data generation system" \
-  --context "Need realistic data for all test scenarios" \
-  --requirements '
-  1. User data factory with personas
-  2. Prompt variations (1000+ examples)
-  3. API request/response fixtures
-  4. Database seed scripts
-  5. File upload test data
-  ' \
-  --output-dir "e2e/test-data"
+# Start with simplest story
+/sc:implement --think --validate \
+  "Test US-001: Anonymous prompt enhancement flow" \
+  --output-dir "e2e/phase1"
 ```
 
-#### CI/CD Pipeline Setup
+**After Auth UI Exists**:
 ```bash
-/sc:implement --validate \
-  "Setup GitHub Actions CI/CD pipeline for E2E tests" \
-  --context "Need parallel execution, test sharding, reporting" \
-  --requirements '
-  1. Multi-stage pipeline configuration
-  2. Test parallelization strategy
-  3. Artifact management
-  4. Test result reporting
-  5. Slack/Discord notifications
-  ' \
-  --output ".github/workflows/e2e-tests.yml"
+# Run auth phases in sequence
+/sc:implement "Test US-012: User registration flow" --output-dir "e2e/phase2"
+/sc:implement "Test US-013: Login and session management" --output-dir "e2e/phase3"
 ```
 
-### Maintenance and Optimization Commands
-
-#### Test Flakiness Analysis
+**Parallel Quality Track**:
 ```bash
-/sc:analyze --think \
-  "Identify and fix flaky E2E tests" \
-  --context "Some tests failing intermittently" \
-  --focus "timing-issues race-conditions test-isolation" \
-  --steps '
-  1. Analyze test failure patterns
-  2. Identify root causes
-  3. Implement fixes
-  4. Add retry mechanisms
-  ' \
-  --output "e2e/flakiness-report.md"
+# Can run these anytime
+/sc:implement "Test edge cases EC-01 to EC-05" --output-dir "e2e/phase9"
+/sc:implement "Test mobile and accessibility" --output-dir "e2e/phase12"
 ```
 
-#### Performance Optimization
+## Success Metrics by Phase
+
+### Coverage Progression
+- **Phase 1**: Core functionality (10%)
+- **Phases 2-4**: Authentication flows (35%)
+- **Phases 5-7**: Feature completeness (60%)
+- **Phases 8-11**: Quality & performance (85%)
+- **Phases 12-14**: Full coverage (95%+)
+
+### Critical Success Factors
+1. **Incremental Value**: Each phase delivers working tests
+2. **Early Failure Detection**: Find integration issues quickly
+3. **Parallel Execution**: Multiple tracks reduce timeline
+4. **Clear Dependencies**: Known blockers and prerequisites
+5. **Measurable Progress**: Story completion = progress
+
+## Troubleshooting Guide
+
+### Common Issues
+
+**Authentication Not Implemented**:
 ```bash
-/sc:improve --performance \
-  "Optimize E2E test execution time" \
-  --context "Test suite taking too long (>30 min)" \
-  --focus "parallel-execution test-sharding selective-testing" \
-  --deliverables '
-  - Optimized test configuration
-  - Parallel execution strategy
-  - Test prioritization matrix
-  - Performance benchmarks
-  '
+# Option 1: Implement auth UI
+/sc:implement "Create authentication pages for BetterPrompts frontend"
+
+# Option 2: Mock auth for testing
+/sc:implement "Create mock authentication system for E2E testing"
 ```
 
-### Integration Commands
-
-#### Connect to Existing Services
+**API Services Not Connected**:
 ```bash
-/sc:implement --validate \
-  "Integrate E2E tests with existing BetterPrompts services" \
-  --context "Services running in Docker, need test hooks" \
-  --requirements '
-  1. Service discovery mechanism
-  2. Test-specific endpoints
-  3. Database cleanup hooks
-  4. Cache invalidation
-  5. Mock service integration
-  '
+# Check service health
+curl http://localhost/api/v1/health
+
+# Verify Docker services
+docker compose ps
+
+# Check service logs
+docker compose logs api-gateway
 ```
 
-#### Monitoring Integration
-```bash
-/sc:implement \
-  "Connect E2E test results to monitoring systems" \
-  --context "Using Datadog, need test metrics" \
-  --steps '
-  1. Create custom test metrics
-  2. Setup test dashboards
-  3. Configure alerts
-  4. Implement SLA tracking
-  '
-```
+**Tests Timing Out**:
+- Increase timeouts in playwright.config.ts
+- Check service startup time
+- Verify database connections
+- Use explicit waits vs hard-coded delays
 
-### Troubleshooting Commands
+## Key Differences from Original Plan
 
-#### Debug Failing Tests
-```bash
-/sc:troubleshoot --verbose \
-  "Debug failing E2E tests in CI environment" \
-  --context "Tests pass locally but fail in CI" \
-  --analyze '
-  - Environment differences
-  - Timing issues
-  - Resource constraints
-  - Network connectivity
-  - Permission problems
-  '
-```
+### What Changed
+1. **Story-Driven**: Each phase tests a complete user story
+2. **Incremental**: Build complexity gradually
+3. **Momentum Building**: Each phase enables the next
+4. **Flexible Timeline**: 4-9 weeks depending on resources
+5. **Clear Dependencies**: Know exactly what blocks what
 
-#### Test Coverage Analysis
-```bash
-/sc:analyze --comprehensive \
-  "Analyze E2E test coverage gaps" \
-  --focus "user-journeys api-endpoints ui-components edge-cases" \
-  --deliverables '
-  - Coverage report by feature
-  - Missing test scenarios
-  - Risk assessment
-  - Remediation plan
-  '
-```
-
-## Quick Reference Commands
-
-### Daily Operations
-```bash
-# Run specific test suite
-npm run test:e2e -- --grep "enhancement flow"
-
-# Run tests in headed mode for debugging
-npm run test:e2e -- --headed --slowmo 100
-
-# Update visual regression baselines
-npm run test:visual -- --update-snapshots
-
-# Run security scan
-npm run test:security -- --severity high
-```
-
-### Continuous Improvement
-```bash
-# Weekly test health check
-/sc:analyze "E2E test suite health check" --metrics "flakiness coverage runtime"
-
-# Monthly performance review
-/sc:analyze "E2E test performance trends" --period "30d" --focus "slowest-tests bottlenecks"
-
-# Quarterly architecture review
-/sc:improve "E2E test architecture" --comprehensive --focus "maintainability scalability"
-```
+### Benefits
+- **Immediate Value**: Working tests from day 1
+- **Early Feedback**: Find issues in phase 1, not phase 8
+- **Parallel Friendly**: Clear independent tracks
+- **Lower Risk**: Smaller, focused changes
+- **Better Motivation**: See progress daily
 
 ## Next Steps
 
-1. **Wave 1 Kickoff**
-   - Schedule stakeholder meeting
-   - Finalize tool selection
-   - Set up test environments
-   - Begin user story documentation
+1. **Start Phase 1 Today**:
+   ```bash
+   /sc:implement --think --validate \
+     "Test US-001: Anonymous prompt enhancement flow" \
+     --output-dir "e2e/phase1"
+   ```
 
-2. **Team Onboarding**
-   - Hire/assign test engineers
-   - Conduct tool training
-   - Establish coding standards
-   - Create test documentation templates
+2. **Unblock Authentication**:
+   - Either implement auth UI
+   - Or create mock auth system
+   - This unlocks phases 2-4
 
-3. **Infrastructure Setup**
-   - Provision test environments
-   - Configure CI/CD pipelines
-   - Set up monitoring tools
-   - Establish security scanning
-
-4. **Quick Wins**
-   - Implement critical smoke tests
-   - Set up basic monitoring
-   - Create first UI tests
-   - Establish test reporting
+3. **Plan Resources**:
+   - Single dev: Sequential approach
+   - Multiple devs: Parallel tracks
+   - CI/CD: Setup after phase 1
 
 ---
 
-*This plan provides a comprehensive roadmap for implementing E2E testing across BetterPrompts. Each wave builds upon previous work while maintaining backward compatibility and continuous integration. The included /sc: commands are optimized for maximum success by leveraging appropriate personas, thinking modes, and validation steps. Regular retrospectives and plan adjustments ensure alignment with evolving project needs.*
+*This incremental plan transforms E2E testing from a monolithic 16-week effort into digestible story-based phases that deliver value immediately and build momentum continuously.*

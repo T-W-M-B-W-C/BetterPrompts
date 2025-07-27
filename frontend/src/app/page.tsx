@@ -16,6 +16,11 @@ const FeaturesSection = dynamic(() => import('@/components/home/FeaturesSection'
   ssr: true,
 })
 
+const AnonymousEnhanceSection = dynamic(() => import('@/components/home/AnonymousEnhanceSection'), {
+  loading: () => <SkeletonLoader type="default" />,
+  ssr: true,
+})
+
 const CTASection = dynamic(() => import('@/components/home/CTASection'), {
   loading: () => <SkeletonLoader type="default" />,
   ssr: true,
@@ -26,6 +31,9 @@ export default function Home() {
     <>
       {/* Hero Section - Load immediately */}
       <HeroSection />
+
+      {/* Anonymous Enhancement Section - Load immediately for testing */}
+      <AnonymousEnhanceSection />
 
       {/* Features Section - Lazy load when in viewport */}
       <ViewportLazyLoad fallback={<SkeletonLoader type="card" />}>

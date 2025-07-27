@@ -39,7 +39,7 @@ const features = [
 
 export default function FeaturesSection() {
   return (
-    <section className="py-20 sm:py-32">
+    <section data-testid="features-section" className="py-20 sm:py-32">
       <Container>
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="mb-4 text-3xl font-bold sm:text-4xl">
@@ -59,7 +59,7 @@ export default function FeaturesSection() {
               transition={{ delay: index * 0.1 }}
               viewport={{ once: true }}
             >
-              <div className="card group">
+              <div data-testid="feature-card" className="card group">
                 <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-blue-50 text-blue-600 transition-colors group-hover:bg-blue-100">
                   <feature.icon className="h-6 w-6" />
                 </div>
