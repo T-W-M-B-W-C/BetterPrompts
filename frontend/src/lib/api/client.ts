@@ -1,4 +1,4 @@
-import axios from 'redaxios'
+import redaxios from 'redaxios'
 import type { AxiosError, AxiosInstance, AxiosRequestConfig } from 'redaxios'
 import { useUserStore } from '@/store/useUserStore'
 
@@ -28,44 +28,60 @@ if (!API_BASE_URL) {
 console.log('API Client initialized with base URL:', API_BASE_URL)
 
 class ApiClient {
-  private client: AxiosInstance
+  private client: typeof redaxios
+  private baseConfig: AxiosRequestConfig
 
   constructor() {
-    this.client = axios.create({
+    this.baseConfig = {
       baseURL: API_BASE_URL,
       timeout: 30000,
       withCredentials: true, // Enable CORS credentials
       headers: {
         'Content-Type': 'application/json',
       },
-    })
+    }
 
-    // Request interceptor
-    this.client.interceptors.request.use(
-      (config) => {
-        const token = this.getAuthToken()
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`
+    // Create a wrapper around redaxios to add interceptor-like functionality
+    this.client = this.createClient()
+  }
+
+  private createClient() {
+    // Create a custom wrapper that adds auth headers and handles errors
+    const wrappedClient = (config: AxiosRequestConfig) => {
+      // Add auth token to headers
+      const token = this.getAuthToken()
+      const finalConfig = {
+        ...this.baseConfig,
+        ...config,
+        headers: {
+          ...this.baseConfig.headers,
+          ...config.headers,
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
         }
-        return config
-      },
-      (error) => {
-        return Promise.reject(error)
       }
-    )
 
-    // Response interceptor
-    this.client.interceptors.response.use(
-      (response) => response,
-      async (error: AxiosError) => {
+      // Make the request
+      return redaxios(finalConfig).catch(async (error: AxiosError) => {
+        // Handle 401 errors
         if (error.response?.status === 401) {
-          // Handle unauthorized - logout user
           useUserStore.getState().logout()
           window.location.href = '/login'
         }
-        return Promise.reject(this.formatError(error))
-      }
-    )
+        throw this.formatError(error)
+      })
+    }
+
+    // Add convenience methods
+    wrappedClient.get = (url: string, config?: AxiosRequestConfig) => 
+      wrappedClient({ ...config, method: 'GET', url })
+    wrappedClient.post = (url: string, data?: any, config?: AxiosRequestConfig) => 
+      wrappedClient({ ...config, method: 'POST', url, data })
+    wrappedClient.put = (url: string, data?: any, config?: AxiosRequestConfig) => 
+      wrappedClient({ ...config, method: 'PUT', url, data })
+    wrappedClient.delete = (url: string, config?: AxiosRequestConfig) => 
+      wrappedClient({ ...config, method: 'DELETE', url })
+
+    return wrappedClient as any
   }
 
   private getAuthToken(): string | null {
