@@ -115,6 +115,9 @@ export default function RegisterPage() {
         last_name: formData.lastName
       })
 
+      // Store email for verification page
+      localStorage.setItem('registrationEmail', formData.email)
+      
       // Store auth data
       setToken(response.access_token, response.refresh_token)
       setUser(response.user)
@@ -122,11 +125,11 @@ export default function RegisterPage() {
       // Show success message
       toast({
         title: 'Welcome to BetterPrompts!',
-        description: 'Your account has been created successfully.',
+        description: 'Please check your email to verify your account.',
       })
 
-      // Redirect to dashboard or onboarding
-      router.push('/onboarding')
+      // Redirect to email verification
+      router.push(`/verify-email?email=${encodeURIComponent(formData.email)}`)
     } catch (err: any) {
       console.error('Registration error:', err)
       const errorMessage = err.response?.data?.error || err.response?.data?.details || 'Registration failed. Please try again.'

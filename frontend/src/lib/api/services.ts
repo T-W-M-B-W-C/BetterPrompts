@@ -116,8 +116,11 @@ export const authService = {
   refreshToken: (data: RefreshTokenRequest) => 
     apiClient.post<AuthResponse>('/auth/refresh', data),
   
-  verifyEmail: (token: string) => 
-    apiClient.post('/auth/verify-email', { token }),
+  verifyEmail: (data: { token?: string; code?: string; email?: string }) => 
+    apiClient.post('/auth/verify-email', data),
+  
+  resendVerification: (data: { email: string }) => 
+    apiClient.post('/auth/resend-verification', data),
   
   getProfile: () => 
     cachedApi.getProfile(),
