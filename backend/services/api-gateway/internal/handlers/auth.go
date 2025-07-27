@@ -441,12 +441,30 @@ func (h *AuthHandler) VerifyEmail(c *gin.Context) {
 		return
 	}
 
-	err := h.userService.VerifyEmail(c.Request.Context(), req.Token)
+	var err error
+	
+	// Check if code or token is provided
+	if req.Code != "" && req.Email != "" {
+		// Verify with code
+		err = h.userService.VerifyEmailWithCode(c.Request.Context(), req.Email, req.Code)
+	} else if req.Token != "" {
+		// Verify with token
+		err = h.userService.VerifyEmail(c.Request.Context(), req.Token)
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Either code and email or token must be provided",
+		})
+		return
+	}
+
 	if err != nil {
 		h.logger.WithError(err).Error("Failed to verify email")
 		
 		statusCode := http.StatusInternalServerError
-		if err.Error() == "invalid or expired verification token" {
+		if err.Error() == "invalid or expired verification token" || 
+		   err.Error() == "invalid verification code" ||
+		   err.Error() == "user not found" ||
+		   err.Error() == "email already verified" {
 			statusCode = http.StatusBadRequest
 		}
 		
@@ -460,5 +478,42 @@ func (h *AuthHandler) VerifyEmail(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Email verified successfully",
+	})
+}
+
+// ResendVerification resends verification email
+func (h *AuthHandler) ResendVerification(c *gin.Context) {
+	var req struct {
+		Email string `json:"email" binding:"required,email"`
+	}
+	
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid request body",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	err := h.userService.ResendVerificationEmail(c.Request.Context(), req.Email)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to resend verification email")
+		
+		statusCode := http.StatusInternalServerError
+		if err.Error() == "user not found" || 
+		   err.Error() == "email already verified" {
+			statusCode = http.StatusBadRequest
+		}
+		
+		c.JSON(statusCode, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	h.logger.WithField("email", req.Email).Info("Verification email resent")
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Verification email sent successfully",
 	})
 }

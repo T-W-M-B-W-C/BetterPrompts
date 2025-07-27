@@ -50,8 +50,11 @@ func main() {
 	}
 	jwtManager := auth.NewJWTManager(jwtConfig)
 
+	// Initialize email service
+	emailService := services.NewEmailService(logger)
+
 	// Initialize user service
-	userService := services.NewUserService(clients.Database)
+	userService := services.NewUserService(clients.Database, emailService)
 
 	// Initialize auth handler
 	authHandler := handlers.NewAuthHandler(userService, jwtManager, clients.Cache, logger)
@@ -83,6 +86,7 @@ func main() {
 		public.POST("/auth/login", authHandler.Login)
 		public.POST("/auth/refresh", authHandler.RefreshToken)
 		public.POST("/auth/verify-email", authHandler.VerifyEmail)
+		public.POST("/auth/resend-verification", authHandler.ResendVerification)
 		
 		// Public analysis endpoint (optional auth)
 		public.POST("/analyze", 

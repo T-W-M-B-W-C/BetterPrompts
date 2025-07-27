@@ -17,13 +17,15 @@ import (
 
 // UserService handles user-related operations
 type UserService struct {
-	db *DatabaseService
+	db    *DatabaseService
+	email *EmailService
 }
 
 // NewUserService creates a new user service
-func NewUserService(db *DatabaseService) *UserService {
+func NewUserService(db *DatabaseService, email *EmailService) *UserService {
 	return &UserService{
-		db: db,
+		db:    db,
+		email: email,
 	}
 }
 
@@ -40,11 +42,14 @@ func (s *UserService) CreateUser(ctx context.Context, req models.UserRegistratio
 		return nil, fmt.Errorf("failed to hash password: %w", err)
 	}
 
-	// Generate verification token
+	// Generate verification token and code
 	verifyToken, err := auth.GenerateSecureToken(32)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate verification token: %w", err)
 	}
+	
+	// Generate 6-digit verification code
+	verifyCode := auth.GenerateVerificationCode()
 
 	// Create user
 	user := &models.User{
@@ -71,7 +76,7 @@ func (s *UserService) CreateUser(ctx context.Context, req models.UserRegistratio
 
 	// Insert user
 	query := `
-		INSERT INTO users (
+		INSERT INTO auth.users (
 			id, email, username, password_hash, first_name, last_name,
 			roles, is_active, is_verified, email_verify_token,
 			preferences, created_at, updated_at
@@ -101,7 +106,27 @@ func (s *UserService) CreateUser(ctx context.Context, req models.UserRegistratio
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
 
-	// TODO: Send verification email
+	// Store verification code (we'll use the preferences field temporarily)
+	user.Preferences["verification_code"] = verifyCode
+	prefsJSON, _ = json.Marshal(user.Preferences)
+	_, err = s.db.DB.ExecContext(ctx, "UPDATE auth.users SET preferences = $1 WHERE id = $2", prefsJSON, user.ID)
+	if err != nil {
+		// Log but don't fail - user is already created
+		fmt.Printf("Failed to store verification code: %v\n", err)
+	}
+
+	// Send verification email
+	if s.email != nil {
+		err = s.email.SendVerificationEmail(ctx, user.Email, user.Username, verifyCode, verifyToken)
+		if err != nil {
+			// Log but don't fail - user is already created
+			fmt.Printf("Failed to send verification email to %s: %v\n", user.Email, err)
+		} else {
+			fmt.Printf("Successfully sent verification email to %s with code %s\n", user.Email, verifyCode)
+		}
+	} else {
+		fmt.Printf("Email service is nil, cannot send verification email\n")
+	}
 
 	return user, nil
 }
@@ -118,7 +143,7 @@ func (s *UserService) GetUserByID(ctx context.Context, userID string) (*models.U
 			password_reset_token, password_reset_expires, last_login_at,
 			failed_login_attempts, locked_until, preferences,
 			created_at, updated_at
-		FROM users
+		FROM auth.users
 		WHERE id = $1`
 
 	err := s.db.DB.QueryRowContext(ctx, query, userID).Scan(
@@ -157,7 +182,7 @@ func (s *UserService) GetUserByEmail(ctx context.Context, email string) (*models
 			password_reset_token, password_reset_expires, last_login_at,
 			failed_login_attempts, locked_until, preferences,
 			created_at, updated_at
-		FROM users
+		FROM auth.users
 		WHERE LOWER(email) = LOWER($1)`
 
 	err := s.db.DB.QueryRowContext(ctx, query, email).Scan(
@@ -196,7 +221,7 @@ func (s *UserService) GetUserByUsername(ctx context.Context, username string) (*
 			password_reset_token, password_reset_expires, last_login_at,
 			failed_login_attempts, locked_until, preferences,
 			created_at, updated_at
-		FROM users
+		FROM auth.users
 		WHERE LOWER(username) = LOWER($1)`
 
 	err := s.db.DB.QueryRowContext(ctx, query, username).Scan(
@@ -264,7 +289,7 @@ func (s *UserService) UpdateUser(ctx context.Context, userID string, req models.
 
 	// Update user
 	query := `
-		UPDATE users SET
+		UPDATE auth.users SET
 			username = $2, first_name = $3, last_name = $4,
 			preferences = $5, updated_at = $6
 		WHERE id = $1`
@@ -290,7 +315,7 @@ func (s *UserService) UpdateUser(ctx context.Context, userID string, req models.
 func (s *UserService) UpdateLastLoginAt(ctx context.Context, userID string) error {
 	now := time.Now()
 	query := `
-		UPDATE users SET
+		UPDATE auth.users SET
 			last_login_at = $2,
 			failed_login_attempts = 0,
 			locked_until = NULL
@@ -308,7 +333,7 @@ func (s *UserService) UpdateLastLoginAt(ctx context.Context, userID string) erro
 func (s *UserService) IncrementFailedLogin(ctx context.Context, userID string) error {
 	// First, get current failed attempts
 	var failedAttempts int
-	query := `SELECT failed_login_attempts FROM users WHERE id = $1`
+	query := `SELECT failed_login_attempts FROM auth.users WHERE id = $1`
 	err := s.db.DB.QueryRowContext(ctx, query, userID).Scan(&failedAttempts)
 	if err != nil {
 		return fmt.Errorf("failed to get failed attempts: %w", err)
@@ -325,7 +350,7 @@ func (s *UserService) IncrementFailedLogin(ctx context.Context, userID string) e
 
 	// Update failed attempts and lock status
 	updateQuery := `
-		UPDATE users SET
+		UPDATE auth.users SET
 			failed_login_attempts = $2,
 			locked_until = $3
 		WHERE id = $1`
@@ -363,7 +388,7 @@ func (s *UserService) ChangePassword(ctx context.Context, userID string, current
 	}
 
 	// Update password
-	query := `UPDATE users SET password_hash = $2, updated_at = $3 WHERE id = $1`
+	query := `UPDATE auth.users SET password_hash = $2, updated_at = $3 WHERE id = $1`
 	_, err = s.db.DB.ExecContext(ctx, query, userID, newHash, time.Now())
 	if err != nil {
 		return fmt.Errorf("failed to update password: %w", err)
@@ -372,10 +397,10 @@ func (s *UserService) ChangePassword(ctx context.Context, userID string, current
 	return nil
 }
 
-// VerifyEmail verifies user's email
+// VerifyEmail verifies user's email with token
 func (s *UserService) VerifyEmail(ctx context.Context, token string) error {
 	query := `
-		UPDATE users SET
+		UPDATE auth.users SET
 			is_verified = true,
 			email_verify_token = '',
 			updated_at = $2
@@ -398,9 +423,86 @@ func (s *UserService) VerifyEmail(ctx context.Context, token string) error {
 	return nil
 }
 
+// VerifyEmailWithCode verifies user's email with verification code
+func (s *UserService) VerifyEmailWithCode(ctx context.Context, email, code string) error {
+	// Get user by email
+	user, err := s.GetUserByEmail(ctx, email)
+	if err != nil {
+		return errors.New("user not found")
+	}
+
+	// Check if already verified
+	if user.IsVerified {
+		return errors.New("email already verified")
+	}
+
+	// Get stored verification code from preferences
+	storedCode, ok := user.Preferences["verification_code"].(string)
+	if !ok || storedCode == "" {
+		return errors.New("no verification code found")
+	}
+
+	// Compare codes (case-insensitive)
+	if strings.ToUpper(code) != strings.ToUpper(storedCode) {
+		return errors.New("invalid verification code")
+	}
+
+	// Update user as verified
+	query := `
+		UPDATE auth.users SET
+			is_verified = true,
+			email_verify_token = '',
+			preferences = jsonb_set(preferences, '{verification_code}', 'null'),
+			updated_at = $2
+		WHERE id = $1`
+
+	_, err = s.db.DB.ExecContext(ctx, query, user.ID, time.Now())
+	if err != nil {
+		return fmt.Errorf("failed to verify email: %w", err)
+	}
+
+	return nil
+}
+
+// ResendVerificationEmail resends the verification email to a user
+func (s *UserService) ResendVerificationEmail(ctx context.Context, email string) error {
+	// Get user by email
+	user, err := s.GetUserByEmail(ctx, email)
+	if err != nil {
+		return errors.New("user not found")
+	}
+
+	// Check if already verified
+	if user.IsVerified {
+		return errors.New("email already verified")
+	}
+
+	// Generate new verification code
+	verifyCode := auth.GenerateVerificationCode()
+
+	// Update verification code in preferences
+	user.Preferences["verification_code"] = verifyCode
+	prefsJSON, _ := json.Marshal(user.Preferences)
+	_, err = s.db.DB.ExecContext(ctx, "UPDATE auth.users SET preferences = $1, updated_at = $2 WHERE id = $3", 
+		prefsJSON, time.Now(), user.ID)
+	if err != nil {
+		return fmt.Errorf("failed to update verification code: %w", err)
+	}
+
+	// Send verification email
+	if s.email != nil {
+		err = s.email.SendVerificationEmail(ctx, user.Email, user.Username, verifyCode, user.EmailVerifyToken.String)
+		if err != nil {
+			return fmt.Errorf("failed to send verification email: %w", err)
+		}
+	}
+
+	return nil
+}
+
 // DeleteUser deletes a user
 func (s *UserService) DeleteUser(ctx context.Context, userID string) error {
-	query := `DELETE FROM users WHERE id = $1`
+	query := `DELETE FROM auth.users WHERE id = $1`
 	result, err := s.db.DB.ExecContext(ctx, query, userID)
 	if err != nil {
 		return fmt.Errorf("failed to delete user: %w", err)
