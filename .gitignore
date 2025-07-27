@@ -7,3 +7,19 @@ frontend-build-debug.log
 
 # Local Docker overrides
 docker-compose.override.yml
+
+# ML Pipeline - Large Files
+ml-pipeline/trained_models/checkpoint-*/
+ml-pipeline/trained_models/*.safetensors
+ml-pipeline/trained_models/*.pt
+ml-pipeline/trained_models/*.bin
+ml-pipeline/data_generation/openai_training_data.json
+ml-pipeline/data_generation/template_training_data.json
+
+# Backend binaries
+backend/services/api-gateway/main
+backend/services/*/main
+
+# Test artifacts
+tests/e2e/node_modules/
+e2e/frontend/node_modules/
