@@ -133,6 +133,7 @@ services:
       - JWT_REFRESH_SECRET_KEY=dev-refresh-secret-change-in-production
       - LOG_LEVEL=DEBUG
       - NODE_ENV=development
+      - ENVIRONMENT=${ENVIRONMENT:-development}
       - INTENT_CLASSIFIER_URL=http://intent-classifier:8001
       - TECHNIQUE_SELECTOR_URL=http://technique-selector:8002
       - PROMPT_GENERATOR_URL=http://prompt-generator:8003

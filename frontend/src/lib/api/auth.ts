@@ -2,8 +2,9 @@ import { apiClient } from './client'
 import { User } from '@/store/useUserStore'
 
 export interface LoginRequest {
-  email: string
+  email_or_username: string
   password: string
+  remember_me?: boolean
 }
 
 export interface RegisterRequest {
@@ -14,8 +15,8 @@ export interface RegisterRequest {
 
 export interface AuthResponse {
   user: User
-  token: string
-  refreshToken: string
+  access_token: string
+  refresh_token: string
 }
 
 export interface RefreshTokenRequest {
@@ -30,13 +31,13 @@ export interface RefreshTokenResponse {
 class AuthService {
   async login(credentials: LoginRequest): Promise<AuthResponse> {
     const response = await apiClient.post<AuthResponse>('/auth/login', credentials)
-    this.setTokens(response.token, response.refreshToken)
+    this.setTokens(response.access_token, response.refresh_token)
     return response
   }
 
   async register(data: RegisterRequest): Promise<AuthResponse> {
     const response = await apiClient.post<AuthResponse>('/auth/register', data)
-    this.setTokens(response.token, response.refreshToken)
+    this.setTokens(response.access_token, response.refresh_token)
     return response
   }
 

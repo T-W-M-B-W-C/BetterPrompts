@@ -156,7 +156,7 @@ go test ./internal/handlers -v -race -run TestAuthHandlerTestSuite
 suite.userService.On("CreateUser", mock.Anything, req).Return(user, nil)
 
 // Get user by email/username
-suite.userService.On("GetUserByEmailOrUsername", mock.Anything, emailOrUsername).Return(user, nil)
+suite.userService.On("GetUserByemail_or_username", mock.Anything, email_or_username).Return(user, nil)
 
 // Update last login
 suite.userService.On("UpdateLastLoginAt", mock.Anything, userID).Return(nil)

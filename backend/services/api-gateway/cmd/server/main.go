@@ -29,10 +29,19 @@ func main() {
 	}
 	logger.SetLevel(level)
 	
+	// Get environment configuration
+	environment := os.Getenv("NODE_ENV")
+	if environment == "" {
+		environment = os.Getenv("ENVIRONMENT")
+	}
+	if environment == "" {
+		environment = "development"
+	}
+	
 	// Log environment info
 	logger.WithFields(logrus.Fields{
-		"log_level": logLevel,
-		"node_env":  os.Getenv("NODE_ENV"),
+		"log_level":   logLevel,
+		"environment": environment,
 	}).Info("Starting API Gateway")
 
 	// Initialize service clients
@@ -106,12 +115,12 @@ func main() {
 		
 		// Main enhancement endpoint
 		protected.POST("/enhance", 
-			middleware.RateLimitMiddleware(clients.Cache, middleware.DefaultRateLimitConfig(), logger),
+			middleware.RateLimitMiddleware(clients.Cache, middleware.GetRateLimitConfigForEnvironment(environment), logger),
 			handlers.EnhancePrompt(clients))
 		
 		// Batch enhancement endpoint (commented out - not implemented yet)
 		// protected.POST("/enhance/batch",
-		// 	middleware.RateLimitMiddleware(clients.Cache, middleware.DefaultRateLimitConfig(), logger),
+		// 	middleware.RateLimitMiddleware(clients.Cache, middleware.GetRateLimitConfigForEnvironment(environment), logger),
 		// 	handlers.HandleBatchEnhance(clients))
 		
 		// History endpoints

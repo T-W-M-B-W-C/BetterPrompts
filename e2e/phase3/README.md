@@ -47,11 +47,14 @@ This directory contains comprehensive End-to-End tests for US-013: User login an
 npm install
 ```
 
-2. Ensure the BetterPrompts application is running:
+2. Ensure the BetterPrompts application is running with test configuration:
 ```bash
 cd ../..
-docker compose up -d
+# Use test configuration with optimized rate limiting
+docker compose -f docker-compose.yml -f e2e/phase3/docker-compose.test.yml up -d
 ```
+
+**Note**: The test configuration automatically applies optimized rate limiting settings (1000 requests/minute vs 100 for production) to prevent test failures due to rate limiting during rapid test execution.
 
 ## Running Tests
 
@@ -130,20 +133,36 @@ const synced = await authHelpers.verifyMultiTabSync(otherPage);
 expect(synced).toBe(true);
 ```
 
-## Mocking Strategy
+## Backend Integration
 
-Tests use Playwright's route mocking to simulate API responses:
+Tests use **real backend integration** (no mocking) for authentic testing:
 
 ```typescript
-await context.route('**/api/v1/auth/login', async (route) => {
-  // Custom response logic
-  await route.fulfill({
-    status: 200,
-    contentType: 'application/json',
-    body: JSON.stringify(responseData)
-  });
+// Real API call to backend service
+const result = await loginPage.login({
+  email: 'test@example.com',
+  password: 'Test123!@#'
 });
+
+// Verify actual API response
+expect(result.status).toBe(200);
+expect(result.data.access_token).toBeTruthy();
 ```
+
+### Test Environment Configuration
+
+The test environment includes:
+- **Rate Limiting**: Optimized limits (1000 req/min vs 100 for production)
+- **Environment Detection**: Automatic `e2e` environment detection
+- **Test Database**: Uses real PostgreSQL with test user data
+- **Redis Cache**: Fast cache eviction for tests (256mb vs 512mb)
+
+### Rate Limiting Fix
+
+The implementation automatically detects test/e2e environments and applies:
+- Higher rate limits (1000 vs 100 requests/minute)
+- Test-specific cache keys (`test_user:` vs `user:`)
+- Disabled rate limiting for login endpoints during tests
 
 ## Security Considerations
 

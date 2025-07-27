@@ -13,9 +13,7 @@ import (
 
 	"github.com/betterprompts/api-gateway/internal/auth"
 	"github.com/betterprompts/api-gateway/internal/handlers"
-	"github.com/betterprompts/api-gateway/internal/middleware"
 	"github.com/betterprompts/api-gateway/internal/models"
-	"github.com/betterprompts/api-gateway/internal/services"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -137,12 +135,12 @@ func (m *MockCacheService) DeleteSession(ctx context.Context, key string) error 
 
 type AuthHandlerTestSuite struct {
 	suite.Suite
-	handler         *handlers.AuthHandler
-	userService     *MockUserService
-	jwtManager      *MockJWTManager
-	cacheService    *MockCacheService
-	logger          *logrus.Logger
-	router          *gin.Engine
+	handler      *handlers.AuthHandler
+	userService  *MockUserService
+	jwtManager   *MockJWTManager
+	cacheService *MockCacheService
+	logger       *logrus.Logger
+	router       *gin.Engine
 }
 
 func (suite *AuthHandlerTestSuite) SetupTest() {
@@ -251,11 +249,11 @@ func (suite *AuthHandlerTestSuite) TestRegister_Success() {
 
 	// Assertions
 	assert.Equal(suite.T(), http.StatusCreated, rec.Code)
-	
+
 	var resp models.UserLoginResponse
 	err := json.Unmarshal(rec.Body.Bytes(), &resp)
 	require.NoError(suite.T(), err)
-	
+
 	assert.Equal(suite.T(), expectedUser.ID, resp.User.ID)
 	assert.Equal(suite.T(), "access-token", resp.AccessToken)
 	assert.Equal(suite.T(), "refresh-token", resp.RefreshToken)
@@ -279,11 +277,11 @@ func (suite *AuthHandlerTestSuite) TestRegister_PasswordMismatch() {
 
 	// Assertions
 	assert.Equal(suite.T(), http.StatusBadRequest, rec.Code)
-	
+
 	var resp map[string]interface{}
 	err := json.Unmarshal(rec.Body.Bytes(), &resp)
 	require.NoError(suite.T(), err)
-	
+
 	assert.Equal(suite.T(), "Passwords do not match", resp["error"])
 }
 
@@ -308,11 +306,11 @@ func (suite *AuthHandlerTestSuite) TestRegister_DuplicateEmail() {
 
 	// Assertions
 	assert.Equal(suite.T(), http.StatusConflict, rec.Code)
-	
+
 	var resp map[string]interface{}
 	err := json.Unmarshal(rec.Body.Bytes(), &resp)
 	require.NoError(suite.T(), err)
-	
+
 	assert.Equal(suite.T(), "email already exists", resp["error"])
 }
 
@@ -323,8 +321,8 @@ func (suite *AuthHandlerTestSuite) TestLogin_Success() {
 
 	req := models.UserLoginRequest{
 		EmailOrUsername: "test@example.com",
-		Password:        "password123",
-		RememberMe:      false,
+		Password:          "password123",
+		RememberMe:        false,
 	}
 
 	user := suite.createTestUser()
@@ -348,11 +346,11 @@ func (suite *AuthHandlerTestSuite) TestLogin_Success() {
 
 	// Assertions
 	assert.Equal(suite.T(), http.StatusOK, rec.Code)
-	
+
 	var resp models.UserLoginResponse
 	err := json.Unmarshal(rec.Body.Bytes(), &resp)
 	require.NoError(suite.T(), err)
-	
+
 	assert.Equal(suite.T(), user.ID, resp.User.ID)
 	assert.Equal(suite.T(), "access-token", resp.AccessToken)
 	assert.Equal(suite.T(), "refresh-token", resp.RefreshToken)
@@ -364,8 +362,8 @@ func (suite *AuthHandlerTestSuite) TestLogin_InvalidCredentials() {
 
 	req := models.UserLoginRequest{
 		EmailOrUsername: "test@example.com",
-		Password:        "wrongpassword",
-		RememberMe:      false,
+		Password:          "wrongpassword",
+		RememberMe:        false,
 	}
 
 	user := suite.createTestUser()
@@ -382,11 +380,11 @@ func (suite *AuthHandlerTestSuite) TestLogin_InvalidCredentials() {
 
 	// Assertions
 	assert.Equal(suite.T(), http.StatusUnauthorized, rec.Code)
-	
+
 	var resp map[string]interface{}
 	err := json.Unmarshal(rec.Body.Bytes(), &resp)
 	require.NoError(suite.T(), err)
-	
+
 	assert.Equal(suite.T(), "Invalid credentials", resp["error"])
 }
 
@@ -395,8 +393,8 @@ func (suite *AuthHandlerTestSuite) TestLogin_AccountLocked() {
 
 	req := models.UserLoginRequest{
 		EmailOrUsername: "test@example.com",
-		Password:        "password123",
-		RememberMe:      false,
+		Password:          "password123",
+		RememberMe:        false,
 	}
 
 	user := suite.createTestUser()
@@ -414,11 +412,11 @@ func (suite *AuthHandlerTestSuite) TestLogin_AccountLocked() {
 
 	// Assertions
 	assert.Equal(suite.T(), http.StatusForbidden, rec.Code)
-	
+
 	var resp map[string]interface{}
 	err := json.Unmarshal(rec.Body.Bytes(), &resp)
 	require.NoError(suite.T(), err)
-	
+
 	assert.Equal(suite.T(), "Account is locked due to too many failed login attempts", resp["error"])
 	assert.NotEmpty(suite.T(), resp["locked_until"])
 }
@@ -428,8 +426,8 @@ func (suite *AuthHandlerTestSuite) TestLogin_InactiveAccount() {
 
 	req := models.UserLoginRequest{
 		EmailOrUsername: "test@example.com",
-		Password:        "password123",
-		RememberMe:      false,
+		Password:          "password123",
+		RememberMe:        false,
 	}
 
 	user := suite.createTestUser()
@@ -444,11 +442,11 @@ func (suite *AuthHandlerTestSuite) TestLogin_InactiveAccount() {
 
 	// Assertions
 	assert.Equal(suite.T(), http.StatusForbidden, rec.Code)
-	
+
 	var resp map[string]interface{}
 	err := json.Unmarshal(rec.Body.Bytes(), &resp)
 	require.NoError(suite.T(), err)
-	
+
 	assert.Equal(suite.T(), "Account is not active", resp["error"])
 }
 
@@ -457,8 +455,8 @@ func (suite *AuthHandlerTestSuite) TestLogin_RememberMe() {
 
 	req := models.UserLoginRequest{
 		EmailOrUsername: "test@example.com",
-		Password:        "password123",
-		RememberMe:      true,
+		Password:          "password123",
+		RememberMe:        true,
 	}
 
 	user := suite.createTestUser()
@@ -469,21 +467,21 @@ func (suite *AuthHandlerTestSuite) TestLogin_RememberMe() {
 	suite.userService.On("GetUserByEmailOrUsername", mock.Anything, req.EmailOrUsername).
 		Return(user, nil)
 	suite.userService.On("UpdateLastLoginAt", mock.Anything, user.ID).Return(nil)
-	
+
 	// Mock JWT manager calls
 	config := auth.JWTConfig{AccessExpiry: 30 * 24 * time.Hour} // 30 days for remember me
 	suite.jwtManager.On("GetConfig").Return(config)
-	
+
 	// Create a custom JWT manager mock for remember me
 	customJWT := new(MockJWTManager)
 	customJWT.On("GenerateTokenPair", user.ID, user.Email, user.Roles).
 		Return("long-access-token", "long-refresh-token", nil)
-	
+
 	// Note: In the actual implementation, we'd need to mock the auth.NewJWTManager call
 	// For this test, we'll simulate the behavior
 	suite.jwtManager.On("GenerateTokenPair", user.ID, user.Email, user.Roles).
 		Return("long-access-token", "long-refresh-token", nil)
-	
+
 	suite.cacheService.On("Key", []string{"refresh_token", user.ID, "long-refresh-token"[:16]}).
 		Return("cache-key")
 	suite.cacheService.On("StoreSession", mock.Anything, "cache-key", mock.Anything, 7*24*time.Hour).
@@ -494,19 +492,19 @@ func (suite *AuthHandlerTestSuite) TestLogin_RememberMe() {
 
 	// Assertions
 	assert.Equal(suite.T(), http.StatusOK, rec.Code)
-	
+
 	var resp models.UserLoginResponse
 	err := json.Unmarshal(rec.Body.Bytes(), &resp)
 	require.NoError(suite.T(), err)
-	
+
 	assert.Equal(suite.T(), user.ID, resp.User.ID)
 	assert.Equal(suite.T(), "long-access-token", resp.AccessToken)
 	assert.Equal(suite.T(), "long-refresh-token", resp.RefreshToken)
-	
+
 	// Check for cookie
 	cookies := rec.Result().Cookies()
 	assert.NotEmpty(suite.T(), cookies)
-	
+
 	var accessTokenCookie *http.Cookie
 	for _, cookie := range cookies {
 		if cookie.Name == "access_token" {
@@ -550,11 +548,11 @@ func (suite *AuthHandlerTestSuite) TestRefreshToken_Success() {
 
 	// Assertions
 	assert.Equal(suite.T(), http.StatusOK, rec.Code)
-	
+
 	var resp models.RefreshTokenResponse
 	err := json.Unmarshal(rec.Body.Bytes(), &resp)
 	require.NoError(suite.T(), err)
-	
+
 	assert.Equal(suite.T(), "new-access-token", resp.AccessToken)
 	assert.Equal(suite.T(), int64(900), resp.ExpiresIn) // 15 minutes
 }
@@ -575,11 +573,11 @@ func (suite *AuthHandlerTestSuite) TestRefreshToken_InvalidToken() {
 
 	// Assertions
 	assert.Equal(suite.T(), http.StatusUnauthorized, rec.Code)
-	
+
 	var resp map[string]interface{}
 	err := json.Unmarshal(rec.Body.Bytes(), &resp)
 	require.NoError(suite.T(), err)
-	
+
 	assert.Equal(suite.T(), "Invalid refresh token", resp["error"])
 }
 
@@ -608,11 +606,11 @@ func (suite *AuthHandlerTestSuite) TestRefreshToken_TokenNotInCache() {
 
 	// Assertions
 	assert.Equal(suite.T(), http.StatusUnauthorized, rec.Code)
-	
+
 	var resp map[string]interface{}
 	err := json.Unmarshal(rec.Body.Bytes(), &resp)
 	require.NoError(suite.T(), err)
-	
+
 	assert.Equal(suite.T(), "Invalid refresh token", resp["error"])
 }
 
@@ -642,13 +640,13 @@ func (suite *AuthHandlerTestSuite) TestLogout_Success() {
 
 	// Assertions
 	assert.Equal(suite.T(), http.StatusOK, rec.Code)
-	
+
 	var resp map[string]interface{}
 	err := json.Unmarshal(rec.Body.Bytes(), &resp)
 	require.NoError(suite.T(), err)
-	
+
 	assert.Equal(suite.T(), "Logged out successfully", resp["message"])
-	
+
 	// Check cookie is cleared
 	cookies := rec.Result().Cookies()
 	var accessTokenCookie *http.Cookie
@@ -684,11 +682,11 @@ func (suite *AuthHandlerTestSuite) TestGetProfile_Success() {
 
 	// Assertions
 	assert.Equal(suite.T(), http.StatusOK, rec.Code)
-	
+
 	var resp models.User
 	err := json.Unmarshal(rec.Body.Bytes(), &resp)
 	require.NoError(suite.T(), err)
-	
+
 	assert.Equal(suite.T(), user.ID, resp.ID)
 	assert.Equal(suite.T(), user.Email, resp.Email)
 }
@@ -702,11 +700,11 @@ func (suite *AuthHandlerTestSuite) TestGetProfile_Unauthorized() {
 
 	// Assertions
 	assert.Equal(suite.T(), http.StatusUnauthorized, rec.Code)
-	
+
 	var resp map[string]interface{}
 	err := json.Unmarshal(rec.Body.Bytes(), &resp)
 	require.NoError(suite.T(), err)
-	
+
 	assert.Equal(suite.T(), "Authentication required", resp["error"])
 }
 
@@ -736,11 +734,11 @@ func (suite *AuthHandlerTestSuite) TestUpdateProfile_Success() {
 
 	// Assertions
 	assert.Equal(suite.T(), http.StatusOK, rec.Code)
-	
+
 	var resp models.User
 	err := json.Unmarshal(rec.Body.Bytes(), &resp)
 	require.NoError(suite.T(), err)
-	
+
 	assert.Equal(suite.T(), "Updated", resp.FirstName.String)
 	assert.Equal(suite.T(), "Name", resp.LastName.String)
 }
@@ -760,7 +758,7 @@ func (suite *AuthHandlerTestSuite) TestChangePassword_Success() {
 	}
 
 	// Mock expectations
-	suite.userService.On("ChangePassword", mock.Anything, "test-user-id", 
+	suite.userService.On("ChangePassword", mock.Anything, "test-user-id",
 		req.CurrentPassword, req.NewPassword).Return(nil)
 
 	// Make request
@@ -768,11 +766,11 @@ func (suite *AuthHandlerTestSuite) TestChangePassword_Success() {
 
 	// Assertions
 	assert.Equal(suite.T(), http.StatusOK, rec.Code)
-	
+
 	var resp map[string]interface{}
 	err := json.Unmarshal(rec.Body.Bytes(), &resp)
 	require.NoError(suite.T(), err)
-	
+
 	assert.Equal(suite.T(), "Password changed successfully", resp["message"])
 }
 
@@ -795,11 +793,11 @@ func (suite *AuthHandlerTestSuite) TestChangePassword_Mismatch() {
 
 	// Assertions
 	assert.Equal(suite.T(), http.StatusBadRequest, rec.Code)
-	
+
 	var resp map[string]interface{}
 	err := json.Unmarshal(rec.Body.Bytes(), &resp)
 	require.NoError(suite.T(), err)
-	
+
 	assert.Equal(suite.T(), "Passwords do not match", resp["error"])
 }
 
@@ -818,7 +816,7 @@ func (suite *AuthHandlerTestSuite) TestChangePassword_IncorrectCurrent() {
 	}
 
 	// Mock expectations
-	suite.userService.On("ChangePassword", mock.Anything, "test-user-id", 
+	suite.userService.On("ChangePassword", mock.Anything, "test-user-id",
 		req.CurrentPassword, req.NewPassword).
 		Return(errors.New("current password is incorrect"))
 
@@ -827,11 +825,11 @@ func (suite *AuthHandlerTestSuite) TestChangePassword_IncorrectCurrent() {
 
 	// Assertions
 	assert.Equal(suite.T(), http.StatusBadRequest, rec.Code)
-	
+
 	var resp map[string]interface{}
 	err := json.Unmarshal(rec.Body.Bytes(), &resp)
 	require.NoError(suite.T(), err)
-	
+
 	assert.Equal(suite.T(), "current password is incorrect", resp["error"])
 }
 
@@ -852,11 +850,11 @@ func (suite *AuthHandlerTestSuite) TestVerifyEmail_Success() {
 
 	// Assertions
 	assert.Equal(suite.T(), http.StatusOK, rec.Code)
-	
+
 	var resp map[string]interface{}
 	err := json.Unmarshal(rec.Body.Bytes(), &resp)
 	require.NoError(suite.T(), err)
-	
+
 	assert.Equal(suite.T(), "Email verified successfully", resp["message"])
 }
 
@@ -876,11 +874,11 @@ func (suite *AuthHandlerTestSuite) TestVerifyEmail_InvalidToken() {
 
 	// Assertions
 	assert.Equal(suite.T(), http.StatusBadRequest, rec.Code)
-	
+
 	var resp map[string]interface{}
 	err := json.Unmarshal(rec.Body.Bytes(), &resp)
 	require.NoError(suite.T(), err)
-	
+
 	assert.Equal(suite.T(), "invalid or expired verification token", resp["error"])
 }
 

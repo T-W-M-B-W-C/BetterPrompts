@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { LoginPage } from './pages/LoginPage';
 import { AuthHelpers } from './utils/auth-helpers';
+import { DbHelpers } from './utils/db-helpers';
 
 test.describe('US-013: User Login with Real Backend', () => {
   let loginPage: LoginPage;
@@ -22,6 +23,9 @@ test.describe('US-013: User Login with Real Backend', () => {
     
     // Navigate to login page
     await loginPage.goto();
+    
+    // Add small delay to avoid rate limiting between tests
+    await page.waitForTimeout(1000);
   });
 
   test.describe('Basic Authentication Tests', () => {
@@ -53,9 +57,29 @@ test.describe('US-013: User Login with Real Backend', () => {
     });
 
     test('should successfully login with valid credentials', async ({ page, context }) => {
+      // Reset test user to clean state before testing
+      await DbHelpers.resetTestUser();
+      
+      // Monitor network requests
+      page.on('request', request => {
+        if (request.url().includes('/auth/login')) {
+          console.log('Request URL:', request.url());
+          console.log('Request method:', request.method());
+          console.log('Request headers:', request.headers());
+          console.log('Request body:', request.postData());
+        }
+      });
+      
+      page.on('response', response => {
+        if (response.url().includes('/auth/login')) {
+          console.log('Response status:', response.status());
+          console.log('Response headers:', response.headers());
+        }
+      });
+      
       // Use real backend - no mocking
       const result = await loginPage.login({
-        email: validUser.email,
+        email_or_username: validUser.email,
         password: validUser.password
       });
 
@@ -74,7 +98,7 @@ test.describe('US-013: User Login with Real Backend', () => {
 
     test('should fail login with invalid password', async ({ page }) => {
       const result = await loginPage.login({
-        email: validUser.email,
+        email_or_username: validUser.email,
         password: 'WrongPassword123!'
       });
 
@@ -91,7 +115,7 @@ test.describe('US-013: User Login with Real Backend', () => {
 
     test('should fail login with non-existent user', async ({ page }) => {
       const result = await loginPage.login({
-        email: 'nonexistent@example.com',
+        email_or_username: 'nonexistent@example.com',
         password: 'Test123!@#'
       });
 

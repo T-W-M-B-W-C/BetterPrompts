@@ -42,6 +42,41 @@ func DefaultRateLimitConfig() RateLimitConfig {
 	}
 }
 
+// TestRateLimitConfig returns a rate limit configuration optimized for testing
+func TestRateLimitConfig() RateLimitConfig {
+	return RateLimitConfig{
+		Limit:  1000, // Higher limit for tests
+		Window: 1 * time.Minute,
+		KeyFunc: func(c *gin.Context) string {
+			// Use user ID if authenticated, otherwise use IP
+			if userID, exists := c.Get("user_id"); exists {
+				return fmt.Sprintf("test_user:%v", userID)
+			}
+			return fmt.Sprintf("test_ip:%s", c.ClientIP())
+		},
+		SkipFunc: func(c *gin.Context) bool {
+			// Skip rate limiting for health checks and test endpoints
+			path := c.Request.URL.Path
+			return path == "/health" || path == "/ready" || 
+				   path == "/api/v1/health" || path == "/api/v1/auth/login"
+		},
+		OnLimitHit: func(c *gin.Context, remaining int) {
+			c.Header("X-RateLimit-Remaining", fmt.Sprintf("%d", remaining))
+			c.Header("Retry-After", "60")
+		},
+	}
+}
+
+// GetRateLimitConfigForEnvironment returns appropriate rate limit config based on environment
+func GetRateLimitConfigForEnvironment(env string) RateLimitConfig {
+	switch env {
+	case "test", "testing", "e2e":
+		return TestRateLimitConfig()
+	default:
+		return DefaultRateLimitConfig()
+	}
+}
+
 // RateLimitMiddleware creates a rate limiting middleware
 func RateLimitMiddleware(cache *services.CacheService, config RateLimitConfig, logger *logrus.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {

@@ -16,7 +16,7 @@ Successfully implemented comprehensive unit tests for all authentication handler
 
 1. **MockUserService** - 8 methods mocked:
    - CreateUser
-   - GetUserByEmailOrUsername
+   - GetUserByemail_or_username
    - GetUserByID
    - UpdateUser
    - UpdateLastLoginAt

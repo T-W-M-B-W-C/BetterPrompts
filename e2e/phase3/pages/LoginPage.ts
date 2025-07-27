@@ -2,7 +2,7 @@ import { Page, expect } from '@playwright/test';
 import { BasePage } from './BasePage';
 
 export interface LoginCredentials {
-  email: string;
+  email_or_username: string;
   password: string;
   rememberMe?: boolean;
 }
@@ -67,7 +67,7 @@ export class LoginPage extends BasePage {
    * Fill login form with credentials
    */
   async fillLoginForm(credentials: LoginCredentials) {
-    await this.clearAndFillInput(this.emailInput, credentials.email);
+    await this.clearAndFillInput(this.emailInput, credentials.email_or_username);
     await this.clearAndFillInput(this.passwordInput, credentials.password);
     
     if (credentials.rememberMe !== undefined) {
@@ -111,6 +111,14 @@ export class LoginPage extends BasePage {
    */
   async login(credentials: LoginCredentials) {
     await this.fillLoginForm(credentials);
+    
+    // Add console monitoring
+    this.page.on('console', msg => {
+      if (msg.type() === 'log') {
+        console.log('Browser console:', msg.text());
+      }
+    });
+    
     const response = await this.submitLogin();
     
     return {
@@ -293,7 +301,7 @@ export class LoginPage extends BasePage {
     
     for (const injection of injections) {
       await this.fillLoginForm({
-        email: injection,
+        email_or_username: injection,
         password: injection
       });
       
@@ -325,7 +333,7 @@ export class LoginPage extends BasePage {
     
     for (const payload of xssPayloads) {
       await this.fillLoginForm({
-        email: payload,
+        email_or_username: payload,
         password: 'test'
       });
       

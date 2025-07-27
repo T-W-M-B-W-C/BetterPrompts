@@ -47,7 +47,7 @@ func (s *UserService) CreateUser(ctx context.Context, req models.UserRegistratio
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate verification token: %w", err)
 	}
-	
+
 	// Generate 6-digit verification code
 	verifyCode := auth.GenerateVerificationCode()
 
@@ -61,7 +61,7 @@ func (s *UserService) CreateUser(ctx context.Context, req models.UserRegistratio
 		LastName:         sql.NullString{String: req.LastName, Valid: req.LastName != ""},
 		Roles:            []string{"user"}, // Default role
 		IsActive:         true,
-		IsVerified:  false,
+		IsVerified:       false,
 		EmailVerifyToken: sql.NullString{String: verifyToken, Valid: true},
 		Preferences:      make(map[string]interface{}),
 		CreatedAt:        time.Now(),
@@ -483,7 +483,7 @@ func (s *UserService) ResendVerificationEmail(ctx context.Context, email string)
 	// Update verification code in preferences
 	user.Preferences["verification_code"] = verifyCode
 	prefsJSON, _ := json.Marshal(user.Preferences)
-	_, err = s.db.DB.ExecContext(ctx, "UPDATE auth.users SET preferences = $1, updated_at = $2 WHERE id = $3", 
+	_, err = s.db.DB.ExecContext(ctx, "UPDATE auth.users SET preferences = $1, updated_at = $2 WHERE id = $3",
 		prefsJSON, time.Now(), user.ID)
 	if err != nil {
 		return fmt.Errorf("failed to update verification code: %w", err)
