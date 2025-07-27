@@ -1,8 +1,21 @@
 # E2E Testing Implementation Plan
 
+> **Note**: This plan has been reorganized into individual phase documents for better tracking and reduced context usage. See the [Phase Overview](phases/00_PHASE_OVERVIEW.md) for current status and quick navigation.
+
 ## Overview
 
 This document outlines an incremental E2E testing implementation plan for BetterPrompts, organized by individual user stories that build momentum from simple to complex scenarios.
+
+## Quick Navigation
+
+### 📁 Phase Documents
+- **[Phase Overview & Status](phases/00_PHASE_OVERVIEW.md)** - Current implementation status
+- **[Individual Phase Plans](phases/)** - Detailed plans for each phase
+
+### 📚 Supporting Documents
+- **[User Stories & Personas](USER_STORIES.md)** - Complete user story inventory
+- **[Implementation Roadmap](IMPLEMENTATION_ROADMAP.md)** - Timeline and resource planning
+- **[Troubleshooting Guide](TROUBLESHOOTING_GUIDE.md)** - Common issues and solutions
 
 **Target**: 95% test coverage through incremental story implementation, <5% test flake rate, <200ms p95 latency
 
