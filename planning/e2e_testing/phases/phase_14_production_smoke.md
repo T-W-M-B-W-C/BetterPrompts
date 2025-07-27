@@ -19,31 +19,138 @@
 
 ## Implementation Command
 ```bash
-/sc:implement --validate --safe-mode \
-  "Create production-safe smoke tests" \
-  --context "Read-only tests that run every 30 minutes in production" \
-  --requirements '
-  1. Health check endpoints
-  2. Anonymous enhancement flow
-  3. Login flow (test account)
-  4. API availability
-  5. Response time checks
-  6. Zero side effects
-  ' \
-  --steps '
-  1. Create read-only test suite
-  2. Setup test accounts
-  3. Implement health checks
-  4. Add performance checks
-  5. Configure monitoring alerts
-  6. Schedule recurring runs
-  ' \
-  --deliverables '
-  - e2e/tests/production-smoke.spec.ts
-  - Production test config
-  - Monitoring integration
-  - Alert configurations
-  ' \
+/sc:test e2e \
+  --persona-devops \
+  --persona-qa \
+  --play --seq \
+  --validate --safe-mode \
+  --uc \
+  --phase-config '{
+    "phase": 14,
+    "name": "Production Smoke Tests",
+    "focus": ["monitoring", "stability"],
+    "environment": "production",
+    "duration": "2 days",
+    "complexity": "low",
+    "safety": "read_only",
+    "dependencies": ["phase_13"]
+  }' \
+  --test-requirements '{
+    "smoke_tests": {
+      "health_checks": {
+        "endpoints": ["/health", "/api/v1/health", "/api/v1/status"],
+        "expected_response": {
+          "status": "healthy",
+          "services": ["database", "redis", "ml_service"],
+          "response_time": "<100ms"
+        }
+      },
+      "core_flows": {
+        "homepage_load": {
+          "target": "<3s",
+          "elements": "all_visible",
+          "console_errors": 0
+        },
+        "anonymous_enhancement": {
+          "test_prompt": "safe_test_prompt",
+          "response_required": true,
+          "no_data_saved": true
+        },
+        "login_flow": {
+          "test_account": "smoke-test-basic@betterprompts.com",
+          "immediate_logout": true,
+          "no_side_effects": true
+        },
+        "api_health": {
+          "endpoint": "/api/v1/test",
+          "response_time": "<200ms",
+          "rate_limits": "active"
+        }
+      },
+      "execution": {
+        "frequency": "every_30_minutes",
+        "timeout": "30s",
+        "retry_policy": "exponential_backoff",
+        "regions": ["us-east-1", "us-west-2", "eu-west-1"]
+      }
+    },
+    "monitoring_integration": {
+      "metrics": {
+        "smoke_test.duration": "execution_time",
+        "smoke_test.success": "pass_rate",
+        "smoke_test.homepage_load": "page_load_time",
+        "smoke_test.api_response": "api_latency"
+      },
+      "services": ["datadog", "new_relic", "cloudwatch"],
+      "dashboards": ["production_health", "smoke_test_status"]
+    },
+    "alerting": {
+      "critical": {
+        "condition": "success_rate < 0.9",
+        "window": "5_minutes",
+        "notify": ["oncall@betterprompts.com", "slack:#alerts"]
+      },
+      "warning": {
+        "condition": "api_response > 500ms",
+        "window": "10_minutes",
+        "notify": ["team@betterprompts.com"]
+      }
+    }
+  }' \
+  --test-patterns '{
+    "safety_rules": {
+      "no_writes": "GET_requests_only",
+      "test_accounts": "dedicated_smoke_accounts",
+      "rate_limits": "stay_under_10%",
+      "cleanup": "logout_after_test",
+      "error_handling": "never_expose"
+    },
+    "scheduling": {
+      "github_actions": "cron: */30 * * * *",
+      "aws_lambda": "cloudwatch_events",
+      "kubernetes": "cronjob",
+      "external": ["pingdom", "statuscake"]
+    }
+  }' \
+  --deliverables '{
+    "test_files": [
+      "production-smoke.spec.ts",
+      "production-health-checks.spec.ts"
+    ],
+    "configurations": [
+      "production-test.config.ts",
+      "monitoring-integration.yaml",
+      "alert-rules.yaml",
+      "cron-schedule.yaml"
+    ],
+    "utilities": [
+      "production-safe-helper.ts",
+      "monitoring-reporter.ts",
+      "test-account-manager.ts"
+    ],
+    "documentation": [
+      "smoke-test-runbook.md",
+      "alert-response-guide.md",
+      "production-test-strategy.md"
+    ]
+  }' \
+  --validation-gates '{
+    "safety": {
+      "zero_production_impact": true,
+      "read_only_verified": true,
+      "test_isolation": true
+    },
+    "reliability": {
+      "99.9%_success_rate": true,
+      "false_positive_rate": "<1%",
+      "execution_time": "<30s"
+    },
+    "monitoring": {
+      "metrics_published": true,
+      "alerts_configured": true,
+      "dashboards_updated": true
+    }
+  }' \
   --output-dir "e2e/phase14"
 ```
 

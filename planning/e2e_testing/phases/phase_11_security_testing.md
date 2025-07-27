@@ -19,32 +19,117 @@
 
 ## Implementation Command
 ```bash
-/sc:implement --ultrathink --validate --safe-mode \
-  "Test security scenarios SS-01 to SS-05" \
-  --context "OWASP Top 10 compliance, authentication security, data protection" \
-  --requirements '
-  1. SS-01: SQL injection prevention
-  2. SS-02: XSS protection
-  3. SS-03: Authentication security
-  4. SS-04: Session management
-  5. SS-05: Data encryption (transit/rest)
-  6. Security headers validation
-  ' \
-  --persona-security --persona-qa \
-  --steps '
-  1. Run OWASP ZAP baseline scan
-  2. Test injection vulnerabilities
-  3. Test authentication bypasses
-  4. Test session security
-  5. Validate encryption
-  6. Check security headers
-  ' \
-  --deliverables '
-  - e2e/tests/ss-01-05-security.spec.ts
-  - OWASP ZAP configuration
-  - Security test utilities
-  - Vulnerability reports
-  ' \
+/sc:test e2e \
+  --persona-security \
+  --persona-qa \
+  --persona-backend \
+  --play --seq --c7 \
+  --ultrathink --validate --safe-mode \
+  --phase-config '{
+    "phase": 11,
+    "name": "Security Testing",
+    "focus": "security",
+    "stories": ["SS-01", "SS-02", "SS-03", "SS-04", "SS-05"],
+    "duration": "4 days",
+    "complexity": "high",
+    "compliance": "OWASP_Top_10",
+    "dependencies": ["all_previous_phases"]
+  }' \
+  --test-requirements '{
+    "owasp_top_10": {
+      "SS-01": {
+        "name": "SQL Injection Prevention",
+        "tests": ["login_forms", "search", "api_params", "headers", "cookies"],
+        "payloads": ["union_select", "drop_table", "boolean_blind", "time_based"],
+        "priority": "critical"
+      },
+      "SS-02": {
+        "name": "XSS Protection",
+        "tests": ["stored_xss", "reflected_xss", "dom_based_xss", "csp_validation"],
+        "vectors": ["script_tags", "event_handlers", "javascript_urls", "svg_payloads"],
+        "priority": "critical"
+      },
+      "SS-03": {
+        "name": "Authentication Security",
+        "tests": ["password_complexity", "account_lockout", "password_reset", "mfa", "timing_attacks"],
+        "priority": "critical"
+      },
+      "SS-04": {
+        "name": "Session Management",
+        "tests": ["session_randomness", "expiration", "logout", "concurrent_sessions", "csrf"],
+        "priority": "high"
+      },
+      "SS-05": {
+        "name": "Data Encryption",
+        "tests": ["https_enforcement", "tls_version", "secure_cookies", "data_at_rest"],
+        "priority": "high"
+      }
+    },
+    "security_headers": {
+      "required": [
+        "Strict-Transport-Security",
+        "X-Content-Type-Options",
+        "X-Frame-Options",
+        "X-XSS-Protection",
+        "Content-Security-Policy",
+        "Referrer-Policy"
+      ],
+      "validate_values": true
+    },
+    "scanning_tools": {
+      "owasp_zap": {
+        "baseline_scan": true,
+        "api_scan": true,
+        "ajax_spider": true
+      },
+      "custom_tests": {
+        "business_logic": true,
+        "authorization": true
+      }
+    }
+  }' \
+  --test-patterns '{
+    "penetration_testing": {
+      "automated": ["owasp_zap", "security_headers", "ssl_tests"],
+      "manual": ["auth_bypass", "privilege_escalation", "business_logic"],
+      "payloads": ["sql_injection", "xss_vectors", "xxe", "command_injection"]
+    },
+    "vulnerability_assessment": {
+      "critical": "block_deployment",
+      "high": "fix_before_production",
+      "medium": "fix_within_30_days",
+      "low": "track_for_next_release"
+    }
+  }' \
+  --deliverables '{
+    "test_files": [
+      "ss-01-sql-injection.spec.ts",
+      "ss-02-xss-protection.spec.ts",
+      "ss-03-authentication.spec.ts",
+      "ss-04-session-management.spec.ts",
+      "ss-05-encryption.spec.ts"
+    ],
+    "configurations": ["owasp-zap-config.yaml", "security-test-suite.json"],
+    "utilities": ["security-payload-generator.ts", "vulnerability-scanner.ts"],
+    "reports": ["security-assessment.md", "penetration-test-report.pdf", "remediation-plan.md"]
+  }' \
+  --validation-gates '{
+    "critical_vulnerabilities": 0,
+    "high_vulnerabilities": 0,
+    "owasp_compliance": {
+      "all_controls_pass": true,
+      "security_headers_present": true,
+      "encryption_verified": true
+    },
+    "authentication": {
+      "secure_implementation": true,
+      "no_bypass_possible": true
+    },
+    "data_protection": {
+      "no_leakage": true,
+      "proper_encryption": true
+    }
+  }' \
   --output-dir "e2e/phase11"
 ```
 

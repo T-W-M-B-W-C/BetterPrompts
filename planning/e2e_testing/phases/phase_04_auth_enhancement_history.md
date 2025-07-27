@@ -19,32 +19,53 @@
 
 ## Implementation Command
 ```bash
-/sc:implement --think --validate \
-  "Test US-002 + US-007: Authenticated enhancement with history" \
-  --context "Logged-in users get enhancements saved to their history" \
-  --requirements '
-  1. Login → Enhance → Save to history flow
-  2. History page shows past enhancements
-  3. Can view details of past enhancements
-  4. Can re-run previous prompts
-  5. History pagination (10 per page)
-  6. Search/filter history
-  ' \
-  --steps '
-  1. Test authenticated enhancement flow
-  2. Verify history persistence
-  3. Test history page navigation
-  4. Test enhancement details view
-  5. Test re-run functionality
-  6. Test search and filters
-  ' \
-  --deliverables '
-  - e2e/tests/us-002-007-auth-enhancement-history.spec.ts
-  - Page objects: HistoryPage, EnhancementDetails
-  - History data generators
-  - Search/filter test utilities
-  ' \
-  --output-dir "e2e/phase4"
+/sc:test e2e \
+  @planning/e2e_testing/phases/phase_04_auth_enhancement_history.md \
+  --persona-qa --persona-backend \
+  --seq --play --c7 \
+  --think-hard --validate \
+  --scope module \
+  --focus testing \
+  --delegate auto \
+  --wave-mode force \
+  --wave-strategy systematic \
+  --wave-delegation tasks \
+  "E2E tests for US-002 + US-007: Authenticated enhancement with persistent history" \
+  --requirements '{
+    "auth_integration": "JWT token validation and user context propagation",
+    "enhancement_flow": "Login → Enhance → Auto-save to user history",
+    "history_features": ["Paginated display (10/page)", "Search/filter by prompt/technique", "Enhancement details view", "Re-run with consistency"],
+    "performance": ["History loads <2s", "Search responds <500ms", "Pagination <200ms"],
+    "data_integrity": ["User-enhancement associations", "Timestamp accuracy", "Soft delete support"]
+  }' \
+  --test-scenarios '{
+    "happy_path": "Complete auth → enhance → history → re-run flow",
+    "edge_cases": ["Empty history", "1000+ items", "Concurrent updates", "Session timeout"],
+    "error_handling": ["API failures", "Network timeouts", "Invalid tokens", "DB constraints"],
+    "performance": ["Large dataset pagination", "Search optimization", "Cache effectiveness"]
+  }' \
+  --deliverables '{
+    "test_files": ["us-002-007-auth-enhancement-history.spec.ts", "history-performance.spec.ts"],
+    "page_objects": ["HistoryPage", "EnhancementDetails", "PaginationComponent"],
+    "utilities": ["HistoryDataGenerator", "AuthMockHelper", "SearchTestUtils"],
+    "fixtures": ["user-with-history.json", "enhancement-samples.json"],
+    "documentation": ["test-plan.md", "api-mocks.md", "performance-baselines.md"]
+  }' \
+  --dependencies '{
+    "phase_3": "Authentication must be complete and stable",
+    "backend": ["GET /api/v1/prompts/history", "GET /api/v1/prompts/{id}", "POST /api/v1/prompts/{id}/rerun"],
+    "database": "prompts table with user_id FK and indexes",
+    "frontend": "History page UI components implemented"
+  }' \
+  --validation-gates '{
+    "pre_conditions": ["Phase 3 tests passing", "API endpoints available", "DB schema migrated"],
+    "test_coverage": ["Unit ≥80%", "Integration ≥70%", "E2E critical paths 100%"],
+    "performance": ["All operations within SLA", "No memory leaks", "Graceful degradation"],
+    "security": ["Auth tokens validated", "User isolation verified", "No data leakage"]
+  }' \
+  --output-dir "e2e/phase4" \
+  --tag "phase-4-auth-history" \
+  --priority critical
 ```
 
 ## Success Metrics

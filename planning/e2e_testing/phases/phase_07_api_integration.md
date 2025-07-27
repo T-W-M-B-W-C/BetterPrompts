@@ -19,33 +19,108 @@
 
 ## Implementation Command
 ```bash
-/sc:implement --think --validate \
-  "Test US-004: Enterprise API integration" \
-  --context "Test API authentication, endpoints, rate limiting" \
-  --requirements '
-  1. API key generation and management
-  2. RESTful endpoint testing
-  3. Rate limiting (1000 req/min)
-  4. API documentation accuracy
-  5. Error response consistency
-  6. Webhook notifications
-  ' \
-  --steps '
-  1. Test API key lifecycle
-  2. Test all API endpoints
-  3. Test rate limiting behavior
-  4. Validate OpenAPI spec
-  5. Test error scenarios
-  6. Test webhook delivery
-  ' \
-  --deliverables '
-  - e2e/tests/us-004-api-integration.spec.ts
-  - API client test helpers
-  - Rate limiting test utilities
-  - OpenAPI validation tests
-  - Webhook mock server
-  ' \
-  --output-dir "e2e/phase7"
+# Enterprise API integration with comprehensive contract testing
+/sc:test e2e \
+  --persona-qa --persona-backend --persona-security --persona-devops \
+  --play --seq --c7 \
+  --think-hard --validate \
+  --scope system \
+  --focus testing \
+  --delegate auto \
+  "E2E tests for US-004: Enterprise API integration and developer experience" \
+  --requirements '{
+    "api_design": {
+      "style": "RESTful with consistent patterns",
+      "versioning": "URL path versioning (/api/v1/)",
+      "authentication": "API key in header (X-API-Key)",
+      "format": "JSON request/response with consistent schema"
+    },
+    "key_management": {
+      "lifecycle": ["generate", "list", "revoke", "regenerate"],
+      "security": ["unique keys", "secure storage", "rotation support"],
+      "metadata": ["name", "created_at", "last_used", "permissions"],
+      "limits": "10 keys per account maximum"
+    },
+    "rate_limiting": {
+      "limits": {"default": "1000/min", "enterprise": "10000/min"},
+      "headers": ["X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset"],
+      "behavior": ["429 status", "Retry-After header", "graceful degradation"],
+      "scope": "Per API key, not per IP"
+    },
+    "developer_experience": {
+      "documentation": "OpenAPI 3.0 spec with examples",
+      "sdks": ["JavaScript", "Python", "Go", "Java"],
+      "errors": "Consistent format with request_id tracking",
+      "sandbox": "Test environment with sample data"
+    }
+  }' \
+  --test-scenarios '{
+    "api_endpoints": {
+      "enhancement": ["POST /api/v1/enhance", "single prompt processing"],
+      "batch": ["POST /api/v1/batch", "async batch processing"],
+      "techniques": ["GET /api/v1/techniques", "list with filtering"],
+      "history": ["GET /api/v1/history", "paginated results"],
+      "details": ["GET /api/v1/history/{id}", "single item"],
+      "delete": ["DELETE /api/v1/history/{id}", "soft delete"],
+      "stats": ["GET /api/v1/stats", "usage metrics"]
+    },
+    "authentication": {
+      "valid": ["correct API key", "proper header format"],
+      "invalid": ["wrong key", "expired key", "revoked key", "malformed"],
+      "missing": ["no header", "empty value", "wrong header name"]
+    },
+    "rate_limiting": {
+      "normal": ["999 requests success", "headers accurate"],
+      "boundary": ["1000th request success", "1001st gets 429"],
+      "recovery": ["wait for reset", "Retry-After respected"],
+      "burst": ["rapid 100 requests", "distributed load"]
+    },
+    "error_handling": {
+      "client_errors": ["400 validation", "401 auth", "403 forbidden", "404 not found"],
+      "rate_limit": ["429 with headers", "clear error message"],
+      "server_errors": ["500 with request_id", "503 maintenance mode"],
+      "consistency": ["same format all errors", "actionable messages"]
+    },
+    "webhooks": {
+      "registration": ["POST /api/v1/webhooks", "URL validation"],
+      "events": ["enhancement.completed", "batch.finished", "error.occurred"],
+      "delivery": ["HMAC signature", "retry logic", "event ordering"],
+      "management": ["list webhooks", "update URL", "delete webhook"]
+    },
+    "contract_testing": {
+      "openapi": ["spec validation", "example accuracy", "schema compliance"],
+      "versioning": ["backward compatibility", "deprecation headers"],
+      "integration": ["SDK tests", "postman collection", "curl examples"]
+    }
+  }' \
+  --deliverables '{
+    "test_files": [
+      "us-004-api-integration.spec.ts",
+      "api-contract.spec.ts",
+      "webhook-delivery.spec.ts"
+    ],
+    "utilities": {
+      "api_client": "Type-safe API client with retry logic",
+      "rate_limiter": "Rate limit testing with precise timing",
+      "webhook_server": "Mock webhook receiver with validation",
+      "openapi_validator": "Contract testing against spec"
+    },
+    "documentation": {
+      "api_guide": "Developer quickstart guide",
+      "postman_collection": "Complete API collection with examples",
+      "sdk_examples": "Sample code in multiple languages"
+    }
+  }' \
+  --validation-gates '{
+    "functional": ["All endpoints return correct data", "CRUD operations work"],
+    "performance": ["<200ms response time", "Rate limiting accurate to ±1%"],
+    "security": ["API keys secure", "No data leakage", "Proper auth checks"],
+    "developer_experience": ["Clear errors", "Helpful docs", "SDK quality"],
+    "reliability": ["Webhook delivery 99.9%", "Consistent uptime", "Graceful errors"]
+  }' \
+  --output-dir "e2e/phase7" \
+  --tag "phase-7-api-enterprise" \
+  --priority high
 ```
 
 ## Success Metrics

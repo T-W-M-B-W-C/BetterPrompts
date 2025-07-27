@@ -19,31 +19,97 @@
 
 ## Implementation Command
 ```bash
-/sc:implement --think --validate \
-  "Test US-019 + US-020: Mobile experience and accessibility" \
-  --context "Test responsive design, touch interactions, screen readers" \
-  --requirements '
-  1. Mobile viewport testing (320px-768px)
-  2. Touch gesture support
-  3. WCAG 2.1 AA compliance
-  4. Screen reader compatibility
-  5. Keyboard navigation
-  6. Color contrast validation
-  ' \
-  --steps '
-  1. Test responsive breakpoints
-  2. Test touch interactions
-  3. Run axe-core accessibility scan
-  4. Test with screen reader
-  5. Test keyboard navigation
-  6. Validate color contrast
-  ' \
-  --deliverables '
-  - e2e/tests/us-019-020-mobile-a11y.spec.ts
-  - Mobile viewport helpers
-  - Accessibility validators
-  - Screen reader test utils
-  ' \
+/sc:test e2e \
+  --persona-frontend \
+  --persona-qa \
+  --play --magic --c7 \
+  --think --validate \
+  --phase-config '{
+    "phase": 12,
+    "name": "Mobile & Accessibility",
+    "focus": ["accessibility", "mobile", "ux"],
+    "stories": ["US-019", "US-020"],
+    "duration": "3 days",
+    "complexity": "medium",
+    "compliance": "WCAG_2.1_AA"
+  }' \
+  --test-requirements '{
+    "mobile_testing": {
+      "viewports": {
+        "mobile_small": {"width": 320, "height": 568, "device": "iPhone_SE"},
+        "mobile_medium": {"width": 375, "height": 667, "device": "iPhone_8"},
+        "mobile_large": {"width": 414, "height": 896, "device": "iPhone_11_Pro"},
+        "tablet": {"width": 768, "height": 1024, "device": "iPad"},
+        "desktop": {"width": 1920, "height": 1080, "device": "Desktop"}
+      },
+      "touch_interactions": {
+        "gestures": ["tap", "swipe", "pinch", "long_press", "double_tap"],
+        "targets": {"minimum_size": "44x44px", "spacing": "8px"}
+      },
+      "responsive_breakpoints": ["320px", "768px", "1024px", "1920px"]
+    },
+    "accessibility": {
+      "wcag_2_1_aa": {
+        "perceivable": ["alt_text", "captions", "color_contrast", "text_resize"],
+        "operable": ["keyboard_access", "focus_order", "skip_links", "timing"],
+        "understandable": ["labels", "errors", "consistency", "instructions"],
+        "robust": ["valid_html", "aria_usage", "compatibility"]
+      },
+      "screen_readers": ["NVDA", "JAWS", "VoiceOver", "TalkBack"],
+      "color_contrast": {
+        "normal_text": "4.5:1",
+        "large_text": "3:1",
+        "ui_components": "3:1"
+      }
+    }
+  }' \
+  --test-patterns '{
+    "mobile_patterns": {
+      "viewport_testing": ["responsive_design", "orientation_change", "zoom_prevention"],
+      "touch_testing": ["gesture_recognition", "target_size", "scroll_behavior"],
+      "performance": ["lazy_loading", "image_optimization", "viewport_meta"]
+    },
+    "a11y_patterns": {
+      "automated": ["axe_core", "pa11y", "lighthouse"],
+      "manual": ["screen_reader_flow", "keyboard_navigation", "focus_management"],
+      "validation": ["aria_attributes", "semantic_html", "landmark_regions"]
+    }
+  }' \
+  --deliverables '{
+    "test_files": [
+      "us-019-mobile-experience.spec.ts",
+      "us-020-accessibility.spec.ts",
+      "mobile-a11y-combined.spec.ts"
+    ],
+    "utilities": [
+      "viewport-helper.ts",
+      "touch-gesture-simulator.ts",
+      "accessibility-validator.ts",
+      "screen-reader-helper.ts"
+    ],
+    "documentation": [
+      "mobile-test-results.md",
+      "accessibility-audit.md",
+      "wcag-compliance-report.md"
+    ]
+  }' \
+  --validation-gates '{
+    "mobile": {
+      "all_viewports_work": true,
+      "touch_targets_accessible": true,
+      "responsive_design_valid": true
+    },
+    "accessibility": {
+      "wcag_aa_compliant": true,
+      "screen_reader_compatible": true,
+      "keyboard_navigable": true,
+      "color_contrast_passes": true
+    },
+    "cross_browser": {
+      "mobile": ["mobile_chrome", "mobile_safari", "samsung_browser"],
+      "desktop": ["chrome", "firefox", "safari", "edge"]
+    }
+  }' \
   --output-dir "e2e/phase12"
 ```
 

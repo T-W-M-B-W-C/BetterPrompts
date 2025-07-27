@@ -19,32 +19,81 @@
 
 ## Implementation Command
 ```bash
-/sc:implement --think --validate \
-  "Test US-013: User login and session management" \
-  --context "Test login, logout, session persistence, protected routes" \
-  --requirements '
-  1. Login form with email/password
-  2. Remember me functionality
-  3. JWT token management
-  4. Protected route redirects
-  5. Logout clears session
-  6. Session timeout handling
-  ' \
-  --steps '
-  1. Create LoginPage object
-  2. Test successful login flow
-  3. Test invalid credentials
-  4. Test session persistence
-  5. Test protected route access
-  6. Test logout functionality
-  ' \
-  --deliverables '
-  - e2e/tests/us-013-login-session.spec.ts
-  - Page objects: LoginPage, AuthHelpers
-  - JWT token test utilities
-  - Protected route test helpers
-  ' \
-  --output-dir "e2e/phase3"
+# Login and session management with JWT security focus
+/sc:test e2e \
+  --persona-qa --persona-security --persona-backend \
+  --play --seq --c7 \
+  --think --validate \
+  --scope module \
+  --focus testing \
+  "E2E tests for US-013: User login and session management with JWT tokens" \
+  --requirements '{
+    "auth_flow": {
+      "login": "Email/password authentication with bcrypt verification",
+      "tokens": "JWT token generation and storage (localStorage)",
+      "session": "Token persistence and refresh mechanism",
+      "logout": "Complete session cleanup and token invalidation"
+    },
+    "security": {
+      "rate_limiting": "1000 req/min for test env, 10/min for prod",
+      "brute_force": "Account locking after failed attempts",
+      "validation": "SQL injection and XSS prevention",
+      "token_security": "Tamper detection and expiry handling"
+    },
+    "features": {
+      "remember_me": "Extended session duration option",
+      "protected_routes": "Automatic redirect for unauthenticated access",
+      "multi_tab": "Session synchronization across browser tabs",
+      "timeout": "Automatic logout after inactivity"
+    }
+  }' \
+  --test-scenarios '{
+    "authentication": {
+      "success": ["Valid login", "Remember me", "Token storage"],
+      "failures": ["Invalid email", "Wrong password", "Unverified account", "Locked account"],
+      "edge_cases": ["Special chars in password", "Unicode email", "Case sensitivity"]
+    },
+    "session_management": {
+      "persistence": ["Page refresh", "New tab", "Browser restart with remember me"],
+      "expiry": ["Token timeout", "Forced logout", "Refresh token flow"],
+      "security": ["Token tampering", "Session fixation", "CSRF protection"]
+    },
+    "protected_routes": {
+      "access_control": ["Redirect when unauthenticated", "Allow with valid token"],
+      "deep_linking": ["Direct URL access", "Post-login redirect to intended page"],
+      "api_protection": ["401 on expired token", "403 on invalid permissions"]
+    },
+    "cross_browser": ["Chrome", "Firefox", "Safari", "Mobile browsers"]
+  }' \
+  --deliverables '{
+    "test_files": ["us-013-login-session.spec.ts"],
+    "page_objects": ["LoginPage", "BasePage", "DashboardPage"],
+    "utilities": {
+      "auth_helpers": "JWT token management and validation",
+      "db_helpers": "Test user creation and state reset",
+      "test_helpers": "Common test utilities and assertions"
+    },
+    "configuration": {
+      "docker_compose": "docker-compose.test.yml for isolated testing",
+      "migrations": "005_e2e_test_users.sql with bcrypt hashes",
+      "env_config": "APP_ENV=test with custom rate limits"
+    }
+  }' \
+  --validation-gates '{
+    "functional": ["25/25 core tests passing", "Cross-browser compatibility"],
+    "security": ["Rate limiting enforced", "No token leakage", "bcrypt hash compatibility"],
+    "performance": ["Login <2s", "Token validation <100ms", "No memory leaks"],
+    "infrastructure": ["Real backend integration", "Database consistency", "Error handling"]
+  }' \
+  --known-issues '{
+    "bcrypt_compatibility": "Go vs Python bcrypt incompatibility - use Go-generated hashes",
+    "field_naming": "Backend PascalCase vs frontend snake_case - check JSON tags",
+    "rate_limiting": "Test env needs higher limits (1000/min vs 10/min prod)",
+    "account_locking": "Reset test users between runs to avoid lockouts"
+  }' \
+  --output-dir "e2e/phase3" \
+  --tag "phase-3-login-session" \
+  --priority critical
 ```
 
 ## Success Metrics

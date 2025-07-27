@@ -19,31 +19,87 @@
 
 ## Implementation Command
 ```bash
-/sc:implement --think --validate \
-  "Test US-015 + EC-06: Rate limiting and concurrent access" \
-  --context "Test rate limiting accuracy and concurrent request handling" \
-  --requirements '
-  1. Rate limiting per user (1000/min)
-  2. Rate limiting per IP (5000/min)
-  3. Concurrent request queuing
-  4. Rate limit headers (X-RateLimit-*)
-  5. 429 error responses
-  6. Rate limit reset behavior
-  ' \
-  --steps '
-  1. Test per-user rate limits
-  2. Test per-IP rate limits
-  3. Test concurrent bursts
-  4. Test rate limit headers
-  5. Test retry behavior
-  6. Test limit reset timing
-  ' \
-  --deliverables '
-  - e2e/tests/us-015-rate-limiting.spec.ts
-  - Rate limit test utilities
-  - Concurrent request helpers
-  - Header validation utils
-  ' \
+/sc:test e2e \
+  --persona-performance \
+  --persona-security \
+  --persona-backend \
+  --play --seq \
+  --think --validate \
+  --phase-config '{
+    "phase": 10,
+    "name": "Rate Limiting & Concurrent Access",
+    "focus": ["performance", "security"],
+    "stories": ["US-015", "EC-06"],
+    "duration": "2 days",
+    "complexity": "medium",
+    "dependencies": ["phase_7"]
+  }' \
+  --test-requirements '{
+    "rate_limiting": {
+      "per_user": {
+        "limit": 1000,
+        "window": "1_minute",
+        "tests": ["under_limit", "at_limit", "over_limit", "multiple_api_keys"]
+      },
+      "per_ip": {
+        "limit": 5000,
+        "window": "1_minute",
+        "tests": ["single_user", "multiple_users", "proxy_handling", "ipv4_ipv6"]
+      },
+      "headers": {
+        "required": ["X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset"],
+        "optional": ["X-RateLimit-Reset-After", "X-RateLimit-Bucket"]
+      },
+      "error_responses": {
+        "status": 429,
+        "headers": ["Retry-After"],
+        "body": "rate_limit_info"
+      }
+    },
+    "concurrent_access": {
+      "burst_tests": [100, 1000],
+      "sustained_load": "high_rate",
+      "queuing_behavior": "fair",
+      "race_conditions": "none"
+    }
+  }' \
+  --test-patterns '{
+    "load_generation": {
+      "concurrent_requests": ["Promise.all", "burst_generator", "sustained_load"],
+      "distributed_testing": ["multiple_ips", "multiple_users", "mixed_auth"]
+    },
+    "validation": {
+      "accuracy": ["exact_limits", "timing_precision", "reset_behavior"],
+      "fairness": ["user_isolation", "ip_sharing", "queue_ordering"]
+    },
+    "strategies": ["fixed_window", "sliding_window", "token_bucket"]
+  }' \
+  --deliverables '{
+    "test_files": ["us-015-rate-limiting.spec.ts", "ec-06-concurrent-access.spec.ts"],
+    "utilities": [
+      "rate-limit-tester.ts",
+      "concurrent-request-helper.ts",
+      "header-validator.ts",
+      "load-generator.ts"
+    ],
+    "documentation": ["rate-limit-test-report.md", "performance-baseline.md"]
+  }' \
+  --validation-gates '{
+    "accuracy": {
+      "rate_limits_enforced": true,
+      "headers_accurate": true,
+      "reset_timing_correct": true
+    },
+    "performance": {
+      "no_race_conditions": true,
+      "fair_queuing": true,
+      "graceful_degradation": true
+    },
+    "security": {
+      "bypass_attempts_blocked": true,
+      "distributed_limiting_works": true
+    }
+  }' \
   --output-dir "e2e/phase10"
 ```
 

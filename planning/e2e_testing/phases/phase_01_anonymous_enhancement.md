@@ -20,32 +20,45 @@
 
 ## Implementation Command
 ```bash
-/sc:implement --think --validate \
-  "Test US-001: Anonymous prompt enhancement flow" \
-  --context "Test simplest user journey: enter prompt → get enhancement" \
-  --requirements '
-  1. Homepage loads and shows prompt input
-  2. User can enter text up to 2000 characters
-  3. Clicking enhance triggers API call
-  4. Enhanced prompt displays with technique explanation
-  5. Response time <2 seconds
-  6. Works on mobile and desktop
-  ' \
-  --steps '
-  1. Create test for homepage navigation
-  2. Test prompt input validation (empty, valid, max length)
-  3. Test enhancement API integration
-  4. Test loading states and error handling
-  5. Test response display
-  6. Add performance assertions
-  ' \
-  --deliverables '
-  - e2e/tests/us-001-anonymous-enhancement.spec.ts
-  - Page objects: HomePage, EnhanceSection
-  - Test data: 10 sample prompts
-  - Performance baseline metrics
-  ' \
-  --output-dir "e2e/phase1"
+# Simple E2E test for core anonymous user flow - minimal complexity
+/sc:test e2e \
+  --persona-qa \
+  --play \
+  --think --validate \
+  --scope module \
+  --focus testing \
+  "E2E tests for US-001: Anonymous prompt enhancement flow" \
+  --requirements '{
+    "user_flow": "Enter prompt → Click enhance → View enhanced result",
+    "constraints": {
+      "max_length": 2000,
+      "response_time": "<2s",
+      "cross_browser": ["chromium", "firefox", "webkit"],
+      "responsive": ["mobile", "desktop"]
+    },
+    "validations": ["empty input", "max length", "special chars", "unicode/emoji"],
+    "api_behavior": "Mock API with 500ms delay for realistic testing"
+  }' \
+  --test-scenarios '{
+    "happy_path": ["Navigate home", "Enter prompt", "Enhance", "View result"],
+    "validation": ["Empty prompt", "Whitespace only", "Max length", "Over limit"],
+    "error_handling": ["API timeout", "500 error", "Network failure", "Invalid response"],
+    "performance": ["Page load <3s", "Time to interactive", "API response <2s", "Render time"]
+  }' \
+  --deliverables '{
+    "test_files": ["us-001-anonymous-enhancement.spec.ts"],
+    "page_objects": ["HomePage", "EnhanceSection"],
+    "test_data": ["test-data-anonymous.ts with 10 sample prompts"],
+    "metrics": ["performance-baseline.json"]
+  }' \
+  --validation-gates '{
+    "functional": ["All test scenarios pass", "Cross-browser compatible"],
+    "performance": ["Homepage loads <3s", "Enhancement <2s", "No memory leaks"],
+    "quality": ["Page objects follow POM pattern", "Tests are maintainable"]
+  }' \
+  --output-dir "e2e/phase1" \
+  --tag "phase-1-anonymous" \
+  --priority high
 ```
 
 ## Success Metrics

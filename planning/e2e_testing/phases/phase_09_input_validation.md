@@ -19,31 +19,82 @@
 
 ## Implementation Command
 ```bash
-/sc:implement --think --validate \
-  "Test edge cases EC-01 to EC-05: Input validation and error handling" \
-  --context "Test system behavior with invalid, extreme, or malicious inputs" \
-  --requirements '
-  1. EC-01: 2000 character limit enforcement
-  2. EC-02: Special characters and emojis
-  3. EC-03: Multiple languages (UTF-8)
-  4. EC-04: Empty and whitespace inputs
-  5. EC-05: Script injection attempts
-  6. Proper error messages for each case
-  ' \
-  --steps '
-  1. Test character limit validation
-  2. Test special character handling
-  3. Test multilingual inputs
-  4. Test empty input scenarios
-  5. Test XSS prevention
-  6. Verify error message clarity
-  ' \
-  --deliverables '
-  - e2e/tests/ec-01-05-input-validation.spec.ts
-  - Edge case data generators
-  - Input sanitization validators
-  - Error message validators
-  ' \
+/sc:test e2e \
+  --persona-security \
+  --persona-qa \
+  --play --seq --c7 \
+  --validate --safe-mode \
+  --phase-config '{
+    "phase": 9,
+    "name": "Input Validation & Edge Cases",
+    "focus": "security",
+    "stories": ["EC-01", "EC-02", "EC-03", "EC-04", "EC-05"],
+    "duration": "3 days",
+    "complexity": "medium"
+  }' \
+  --test-requirements '{
+    "validation": {
+      "EC-01": {
+        "name": "Character Limit Enforcement",
+        "tests": ["exactly_2000", "under_limit", "over_limit", "unicode_counting"],
+        "priority": "high"
+      },
+      "EC-02": {
+        "name": "Special Characters & Emojis",
+        "tests": ["punctuation", "mathematical", "currency", "emojis", "zero_width"],
+        "priority": "high"
+      },
+      "EC-03": {
+        "name": "Multilingual Support",
+        "tests": ["utf8", "rtl_languages", "mixed_scripts", "unicode_normalization"],
+        "priority": "medium"
+      },
+      "EC-04": {
+        "name": "Empty & Whitespace",
+        "tests": ["empty", "spaces_only", "mixed_whitespace", "trimming"],
+        "priority": "medium"
+      },
+      "EC-05": {
+        "name": "Security Injection",
+        "tests": ["xss", "sql_injection", "path_traversal", "command_injection"],
+        "priority": "critical"
+      }
+    },
+    "security_focus": {
+      "sanitization": ["html_encoding", "parameterized_queries", "whitelist_validation"],
+      "csp_headers": true,
+      "error_handling": "no_technical_details"
+    }
+  }' \
+  --test-patterns '{
+    "edge_cases": {
+      "generators": ["character_limit", "special_chars", "multilingual", "malicious"],
+      "validators": ["input_sanitization", "error_message_format", "security_headers"]
+    },
+    "error_validation": {
+      "user_friendly": true,
+      "actionable": true,
+      "no_sensitive_data": true
+    }
+  }' \
+  --deliverables '{
+    "test_files": ["ec-01-05-input-validation.spec.ts"],
+    "utilities": ["edge-case-generator.ts", "input-validator.ts", "security-validator.ts"],
+    "documentation": ["input-validation-guide.md", "security-test-results.md"]
+  }' \
+  --validation-gates '{
+    "security": {
+      "no_xss_vulnerabilities": true,
+      "no_injection_attacks": true,
+      "proper_sanitization": true
+    },
+    "functionality": {
+      "all_inputs_handled": true,
+      "clear_error_messages": true,
+      "consistent_behavior": true
+    },
+    "cross_browser": ["chrome", "firefox", "safari", "edge"]
+  }' \
   --output-dir "e2e/phase9"
 ```
 

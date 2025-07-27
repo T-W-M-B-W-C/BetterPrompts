@@ -13,19 +13,52 @@
 
 ## Implementation Command
 ```bash
-/sc:analyze --think-hard --comprehensive \
-  "Map all user stories and design E2E test architecture for BetterPrompts" \
-  --context "5 personas, 15+ user stories, need comprehensive test strategy" \
-  --focus "user-journey acceptance-criteria test-scenarios tool-selection" \
-  --deliverables '
-  - User story inventory with acceptance criteria
-  - User journey maps for each persona  
-  - Test scenario matrix (50+ scenarios)
-  - Test architecture design document
-  - Tool evaluation and selection matrix
-  - CI/CD pipeline architecture
-  ' \
-  --output "e2e/wave1-test-architecture.md"
+# Optimized for comprehensive architectural analysis with structured approach
+/sc:analyze @planning/project_requirements.md \
+  --persona-architect --persona-analyzer --persona-qa \
+  --seq --c7 \
+  --think-hard --validate \
+  --scope system \
+  --focus architecture \
+  --wave-mode force \
+  --wave-strategy systematic \
+  "Design comprehensive E2E test architecture and strategy for BetterPrompts" \
+  --requirements '{
+    "scope": "5 personas, 15+ user stories, full test ecosystem",
+    "analysis_areas": ["user journeys", "acceptance criteria", "test scenarios", "tool selection", "CI/CD design"],
+    "constraints": ["open source tools", "parallel execution", "cloud-native", "cost-effective"],
+    "standards": ["OWASP security", "WCAG accessibility", "performance SLAs"]
+  }' \
+  --deliverables '{
+    "documentation": {
+      "user_stories": "Complete inventory with acceptance criteria and test scenarios",
+      "journey_maps": "Visual and textual maps for all 5 personas",
+      "test_matrix": "50+ scenarios mapped to stories and journeys",
+      "architecture": "3-layer test architecture with patterns and practices"
+    },
+    "technical": {
+      "tool_evaluation": "Comparison matrix with POC results",
+      "framework_selection": "Detailed rationale and implementation guide",
+      "ci_cd_design": "Pipeline architecture with parallelization strategy"
+    },
+    "planning": {
+      "roadmap": "8-week implementation timeline",
+      "resource_plan": "Team structure and skill requirements",
+      "risk_assessment": "Technical and organizational risks"
+    }
+  }' \
+  --validation-criteria '{
+    "completeness": ["All user stories have acceptance criteria", "Every persona has journey map", "Test scenarios cover all critical paths"],
+    "feasibility": ["Tool POCs validate selections", "Architecture supports scale requirements", "Timeline realistic with resources"],
+    "quality": ["Follows industry best practices", "Maintainable and extensible design", "Clear documentation and examples"]
+  }' \
+  --output-format '{
+    "main_document": "e2e/wave1-test-architecture.md",
+    "executive_summary": "e2e/wave1-executive-summary.md",
+    "technical_appendix": "e2e/wave1-technical-details.md"
+  }' \
+  --tag "phase-0-foundation" \
+  --priority critical
 ```
 
 ## Success Metrics

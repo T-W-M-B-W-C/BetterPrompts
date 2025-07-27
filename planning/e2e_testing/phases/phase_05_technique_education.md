@@ -19,32 +19,76 @@
 
 ## Implementation Command
 ```bash
-/sc:implement --think --validate \
-  "Test US-006: Technique education tooltips and explanations" \
-  --context "Test educational UI elements that explain techniques" \
-  --requirements '
-  1. Technique name displayed after enhancement
-  2. "Why this technique?" tooltip/modal
-  3. "Learn more" links to documentation
-  4. Alternative technique suggestions
-  5. Technique comparison feature
-  6. Mobile-friendly tooltips
-  ' \
-  --steps '
-  1. Test technique display after enhancement
-  2. Test tooltip interactions (hover/click)
-  3. Test modal content and navigation
-  4. Test documentation links
-  5. Test alternative suggestions
-  6. Test mobile touch interactions
-  ' \
-  --deliverables '
-  - e2e/tests/us-006-technique-education.spec.ts
-  - Tooltip/Modal test helpers
-  - Educational content fixtures
-  - Mobile gesture utilities
-  ' \
-  --output-dir "e2e/phase5"
+# UI-focused educational features with accessibility emphasis
+/sc:test e2e \
+  --persona-qa --persona-frontend \
+  --play --magic \
+  --think --validate \
+  --scope module \
+  --focus testing \
+  "E2E tests for US-006: Technique education tooltips and explanations" \
+  --requirements '{
+    "ui_components": {
+      "tooltips": "Hover/click activated with smart positioning",
+      "modals": "Full technique explanations with examples",
+      "links": "Documentation and learn more navigation",
+      "alternatives": "Technique comparison and switching"
+    },
+    "interactions": {
+      "desktop": ["hover tooltips", "keyboard navigation", "modal controls"],
+      "mobile": ["touch tooltips", "swipe gestures", "responsive modals"],
+      "accessibility": ["screen reader support", "ARIA labels", "keyboard only"]
+    },
+    "performance": {
+      "tooltip_display": "<100ms response time",
+      "modal_load": "<300ms with content",
+      "smooth_animations": "60fps transitions"
+    }
+  }' \
+  --test-scenarios '{
+    "tooltip_behavior": {
+      "activation": ["Hover show/hide", "Click toggle", "Touch activation"],
+      "positioning": ["Viewport edge detection", "Auto-repositioning", "Mobile adaptation"],
+      "dismissal": ["Click outside", "ESC key", "Focus change"]
+    },
+    "modal_functionality": {
+      "content": ["Technique explanation", "Use cases", "Examples", "Benefits"],
+      "controls": ["Open/close", "Scroll lock", "Keyboard navigation"],
+      "responsive": ["Mobile layout", "Tablet view", "Desktop modal"]
+    },
+    "educational_flow": {
+      "learning": ["Why this technique", "When to use", "Alternatives available"],
+      "navigation": ["Learn more links", "Documentation access", "Back to app"],
+      "comparison": ["Side-by-side view", "Difference highlighting", "Switch technique"]
+    },
+    "accessibility": {
+      "aria": ["role=tooltip", "aria-describedby", "aria-expanded"],
+      "keyboard": ["Tab navigation", "Enter activation", "ESC dismissal"],
+      "screen_reader": ["Content announcement", "Focus management", "Navigation cues"]
+    }
+  }' \
+  --deliverables '{
+    "test_files": ["us-006-technique-education.spec.ts"],
+    "helpers": {
+      "tooltip_helpers": "Tooltip interaction and position testing",
+      "modal_helpers": "Modal state and content validation",
+      "gesture_helpers": "Mobile touch and swipe testing"
+    },
+    "fixtures": {
+      "educational_content": "Sample explanations for all techniques",
+      "technique_data": "Comparison data and alternatives",
+      "accessibility_rules": "WCAG compliance checklist"
+    }
+  }' \
+  --validation-gates '{
+    "functional": ["All UI interactions work", "Content loads correctly", "Navigation flows"],
+    "performance": ["Tooltips <100ms", "Smooth animations", "No layout shifts"],
+    "accessibility": ["WCAG 2.1 AA compliant", "Keyboard navigable", "Screen reader friendly"],
+    "responsive": ["Mobile gestures work", "Touch targets 44x44px", "Readable on all devices"]
+  }' \
+  --output-dir "e2e/phase5" \
+  --tag "phase-5-education-ui" \
+  --priority medium
 ```
 
 ## Success Metrics

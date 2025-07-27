@@ -19,33 +19,100 @@
 
 ## Implementation Command
 ```bash
-/sc:implement --think --validate \
-  "Test US-003: Batch prompt processing via CSV upload" \
-  --context "Test file upload, async processing, progress tracking" \
-  --requirements '
-  1. CSV file upload (up to 1000 prompts)
-  2. File validation (format, size, content)
-  3. Async processing with progress bar
-  4. Email notification when complete
-  5. Download results as CSV/JSON
-  6. Handle processing errors gracefully
-  ' \
-  --steps '
-  1. Test file upload mechanics
-  2. Test CSV validation rules
-  3. Test progress tracking UI
-  4. Test completion notifications
-  5. Test result downloads
-  6. Test error scenarios
-  ' \
-  --deliverables '
-  - e2e/tests/us-003-batch-processing.spec.ts
-  - Page objects: BatchUploadPage, ProgressTracker
-  - CSV test file generator
-  - Async polling utilities
-  - Download verification helpers
-  ' \
-  --output-dir "e2e/phase6"
+# Complex async batch processing with performance focus
+/sc:test e2e \
+  --persona-qa --persona-performance --persona-backend \
+  --play --seq --c7 \
+  --think-hard --validate \
+  --scope module \
+  --focus testing \
+  --wave-mode force \
+  --wave-strategy progressive \
+  --delegate auto \
+  "E2E tests for US-003: Batch prompt processing via CSV upload" \
+  --requirements '{
+    "file_handling": {
+      "formats": ["CSV", "XLSX", "TXT (one per line)"],
+      "limits": {"max_prompts": 1000, "max_size": "10MB"},
+      "upload_methods": ["drag-drop", "file-picker", "paste"],
+      "validation": ["format", "size", "content", "encoding"]
+    },
+    "async_processing": {
+      "architecture": "Background job queue with worker processes",
+      "progress": "Real-time updates via WebSocket or polling",
+      "concurrency": "Handle multiple batches per user",
+      "resilience": "Resume on failure, partial completion handling"
+    },
+    "performance": {
+      "throughput": "100 prompts in <60s",
+      "updates": "Progress every 2s",
+      "scaling": "Linear performance up to 1000 prompts",
+      "optimization": "Batch API calls, parallel processing"
+    },
+    "notifications": {
+      "channels": ["email", "in-app", "push"],
+      "events": ["start", "progress milestones", "completion", "errors"],
+      "customization": "User notification preferences"
+    }
+  }' \
+  --test-scenarios '{
+    "file_upload": {
+      "valid": ["10 prompts", "100 prompts", "1000 prompts", "multi-column CSV"],
+      "invalid": ["empty file", ">1000 prompts", "corrupt CSV", ">10MB file"],
+      "edge_cases": ["unicode content", "special chars", "very long prompts"]
+    },
+    "async_flow": {
+      "progress": ["0-100% tracking", "accurate ETA", "pause/resume", "cancel"],
+      "resilience": ["network interruption", "server restart", "partial failure"],
+      "concurrency": ["multiple uploads", "same user parallel", "system load"]
+    },
+    "results": {
+      "download": ["CSV format", "JSON format", "ZIP for large results"],
+      "integrity": ["order preserved", "all fields included", "error marking"],
+      "performance": ["stream large files", "compression", "CDN delivery"]
+    },
+    "websocket": {
+      "connection": ["establish", "reconnect", "fallback to polling"],
+      "messages": ["progress updates", "completion", "errors", "heartbeat"],
+      "scaling": ["100 concurrent connections", "message queuing"]
+    }
+  }' \
+  --deliverables '{
+    "test_files": ["us-003-batch-processing.spec.ts", "batch-performance.spec.ts"],
+    "page_objects": ["BatchUploadPage", "ProgressTracker", "ResultsDownloader"],
+    "utilities": {
+      "csv_generator": "Create test files with configurable size/content",
+      "async_helpers": "WebSocket testing and polling utilities",
+      "download_validator": "Verify file integrity and content"
+    },
+    "fixtures": {
+      "sample_files": ["valid-10.csv", "valid-1000.csv", "invalid-format.csv"],
+      "test_data": "Diverse prompts for comprehensive testing",
+      "performance_baselines": "Expected processing times by batch size"
+    }
+  }' \
+  --validation-gates '{
+    "functional": ["All upload methods work", "Progress tracking accurate", "Downloads complete"],
+    "performance": ["100/min throughput", "2s update frequency", "No memory leaks"],
+    "reliability": ["Resume on failure", "Concurrent processing", "Data integrity"],
+    "ux": ["Clear progress indication", "Error recovery options", "Responsive UI"]
+  }' \
+  --dependencies '{
+    "phase_4": "Authenticated user context required",
+    "backend": {
+      "endpoints": ["/api/v1/batch/upload", "/api/v1/batch/status/{id}", "/api/v1/batch/download/{id}"],
+      "workers": "Background job processing system (Redis + workers)",
+      "storage": "S3 or compatible for file storage"
+    },
+    "infrastructure": {
+      "websocket": "Real-time progress updates",
+      "email": "Notification service integration",
+      "monitoring": "Job queue metrics and alerts"
+    }
+  }' \
+  --output-dir "e2e/phase6" \
+  --tag "phase-6-batch-async" \
+  --priority high
 ```
 
 ## Success Metrics

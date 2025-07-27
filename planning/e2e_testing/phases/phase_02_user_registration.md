@@ -20,32 +20,63 @@
 
 ## Implementation Command
 ```bash
-/sc:implement --think --validate \
-  "Test US-012: User registration and email verification flow" \
-  --context "Test user can register, verify email, and access account" \
-  --requirements '
-  1. Registration form with name, email, password
-  2. Client-side validation (email format, password strength)
-  3. Server-side validation and error handling
-  4. Email verification process (can mock SMTP)
-  5. Successful registration redirects to dashboard
-  6. Duplicate email prevention
-  ' \
-  --steps '
-  1. Create RegisterPage object with form interactions
-  2. Test field validations (empty, invalid, valid)
-  3. Test successful registration flow
-  4. Test duplicate email handling
-  5. Mock email service for verification
-  6. Test post-verification redirect
-  ' \
-  --deliverables '
-  - e2e/tests/us-012-user-registration.spec.ts
-  - Page objects: RegisterPage, VerificationPage
-  - Mock email service helper
-  - Test user generator utility
-  ' \
-  --output-dir "e2e/phase2"
+# Registration flow with security validation and email verification
+/sc:test e2e \
+  --persona-qa --persona-security \
+  --play --seq \
+  --think --validate \
+  --scope module \
+  --focus testing \
+  "E2E tests for US-012: User registration and email verification flow" \
+  --requirements '{
+    "form_fields": ["name", "email", "password", "confirm_password"],
+    "validations": {
+      "client_side": ["email format", "password strength", "matching passwords"],
+      "server_side": ["duplicate email", "SQL injection", "XSS prevention"],
+      "security": ["password hashing", "secure token generation", "rate limiting"]
+    },
+    "email_flow": {
+      "verification": "Send verification email with token/link",
+      "timeout": "30s for email arrival",
+      "mock_service": "MailHog integration for testing"
+    },
+    "performance": {
+      "registration": "<20s with real backend",
+      "email_delivery": "<30s with retry logic"
+    }
+  }' \
+  --test-scenarios '{
+    "happy_path": ["Fill form", "Submit", "Receive email", "Verify", "Access dashboard"],
+    "field_validation": {
+      "name": ["empty", "too short", "too long", "special chars"],
+      "email": ["invalid format", "missing @", "missing domain"],
+      "password": ["too short", "no uppercase", "no numbers", "weak strength"]
+    },
+    "security_tests": ["SQL injection", "XSS attempts", "malformed requests"],
+    "email_verification": ["valid token", "expired token", "invalid token", "resend"],
+    "edge_cases": ["duplicate registration", "concurrent signups", "network interruption"]
+  }' \
+  --deliverables '{
+    "test_files": ["us-012-user-registration.spec.ts"],
+    "page_objects": ["RegisterPage", "VerificationPage"],
+    "utilities": ["TestUserGenerator", "EmailMockService", "DatabaseHelper"],
+    "fixtures": ["valid-users.json", "invalid-inputs.json", "security-payloads.json"]
+  }' \
+  --validation-gates '{
+    "functional": ["All 19 test scenarios pass", "Email verification works"],
+    "security": ["No SQL injection", "XSS prevented", "Passwords hashed"],
+    "performance": ["Registration <20s", "No timeouts", "Smart waiting implemented"],
+    "quality": ["No waitForTimeout() usage", "API response sync", "Proper error handling"]
+  }' \
+  --best-practices '{
+    "waiting": "Use waitForResponse() not waitForTimeout()",
+    "assertions": "Use expect() with auto-retry",
+    "api_sync": "Wait for API responses before proceeding",
+    "email_testing": "30s timeout with retry logic"
+  }' \
+  --output-dir "e2e/phase2" \
+  --tag "phase-2-registration" \
+  --priority high
 ```
 
 ## Success Metrics
