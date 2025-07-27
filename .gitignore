@@ -8,14 +8,13 @@ frontend-build-debug.log
 # Local Docker overrides
 docker-compose.override.yml
 
-# ML Pipeline - Large Files
-ml-pipeline/trained_models/
-ml-pipeline/data_generation/openai_training_data.json
-ml-pipeline/data_generation/template_training_data.json
+# ML Pipeline - Temporary Files
+ml-pipeline/trained_models/.tmp/
+ml-pipeline/data_generation/.tmp/
 
-# Backend binaries
-backend/services/api-gateway/main
-backend/services/*/main
+# Backend build artifacts (but not binaries - those are in LFS)
+backend/services/*/*.o
+backend/services/*/*.a
 
 # Test artifacts
 tests/e2e/node_modules/
