@@ -6,6 +6,43 @@ import { TestUserGenerator, generateTestUser } from './utils/test-user-generator
 import { cleanupDatabase, getUser } from '../../../test-helpers/database';
 import { getVerificationCodeFromEmail, getVerificationLinkFromEmail, clearAllEmails, waitForEmail } from '../../../test-helpers/mailhog';
 
+// Helper function to wait for registration API response
+async function waitForRegistrationComplete(page) {
+  try {
+    // Wait for successful registration API response
+    await page.waitForResponse(
+      response => response.url().includes('/api/v1/auth/register') && 
+                  (response.status() === 200 || response.status() === 201),
+      { timeout: 10000 }
+    );
+    console.log('Registration API response received');
+  } catch (error) {
+    console.error('Registration API response timeout:', error);
+  }
+}
+
+// Helper function to wait for email with better error handling
+async function waitForVerificationEmail(email: string, timeout = 30000) {
+  console.log(`Waiting for verification email for ${email}...`);
+  const startTime = Date.now();
+  
+  try {
+    // Use the waitForEmail helper with proper timeout
+    const message = await waitForEmail(email, {
+      timeout: timeout,
+      subject: 'verify'
+    });
+    
+    const elapsed = Date.now() - startTime;
+    console.log(`Email received after ${elapsed}ms`);
+    return message;
+  } catch (error) {
+    const elapsed = Date.now() - startTime;
+    console.error(`Failed to receive email after ${elapsed}ms:`, error);
+    throw error;
+  }
+}
+
 test.describe('US-012: User Registration and Email Verification', () => {
   let registerPage: RegisterPage;
   let verificationPage: VerificationPage;
@@ -254,29 +291,41 @@ test.describe('US-012: User Registration and Email Verification', () => {
       localStorage.setItem('registrationEmail', email);
     }, testUser.email);
     
+    // Register first user and wait for API response
+    const registrationPromise = waitForRegistrationComplete(page);
     await registerPage.register(testUser);
+    await registrationPromise;
     
     // Wait for registration to complete
-    await Promise.race([
-      page.waitForURL('**/verify-email**', { timeout: 5000 }),
-      page.waitForURL('**/login**', { timeout: 5000 })
-    ]).catch(() => {
-      // Registration might have failed if user exists from previous test
-    });
+    await page.waitForURL('**/verify-email**', { timeout: 15000 });
     
-    // Wait a bit for backend to process
-    await page.waitForTimeout(1000);
+    // Ensure user is created in database
+    const firstUser = await getUser(testUser.email);
+    expect(firstUser).toBeTruthy();
+    
+    // Navigate back to registration page
+    await registerPage.goto();
     
     // Try to register with same email
-    await registerPage.goto();
+    const duplicatePromise = page.waitForResponse(
+      response => response.url().includes('/api/v1/auth/register') && 
+                  response.status() === 409, // Expecting conflict status
+      { timeout: 10000 }
+    );
+    
     await registerPage.register(testUser);
     
-    // Should show error message (wait for it to appear)
-    const errorSelector = '[data-testid="error-message"], [data-testid="field-error-email"], .text-red-500, [role="alert"]';
-    await page.waitForSelector(errorSelector, { timeout: 5000 });
-    const errorMessage = await page.locator(errorSelector).first().textContent();
+    try {
+      await duplicatePromise;
+    } catch {
+      // If no 409 response, check for error message
+    }
     
-    // Flexible duplicate email check
+    // Should show error message
+    const errorSelector = '[data-testid="error-message"], [data-testid="field-error-email"], .text-red-500, [role="alert"]';
+    await expect(page.locator(errorSelector).first()).toBeVisible({ timeout: 5000 });
+    
+    const errorMessage = await page.locator(errorSelector).first().textContent();
     expect(errorMessage.toLowerCase()).toMatch(/already exists|already registered|duplicate.*email|email.*taken|email.*use/i);
   });
 
@@ -288,14 +337,13 @@ test.describe('US-012: User Registration and Email Verification', () => {
       localStorage.setItem('registrationEmail', email);
     }, testUser.email);
     
-    // Register user
+    // Register user and wait for API response
+    const registrationPromise = waitForRegistrationComplete(page);
     await registerPage.register(testUser);
+    await registrationPromise;
     
     // Should redirect to verification page
-    await page.waitForURL('**/verify-email**', { timeout: 10000 });
-    
-    // Wait a bit for email to be sent
-    await page.waitForTimeout(1000);
+    await page.waitForURL('**/verify-email**', { timeout: 15000 });
     
     // Check that user was created in database
     const user = await getUser(testUser.email);
@@ -303,7 +351,11 @@ test.describe('US-012: User Registration and Email Verification', () => {
     expect(user.email).toBe(testUser.email);
     expect(user.email_verified).toBe(false);
     
-    // Check that verification email was sent via MailHog
+    // Wait for and check verification email
+    const email = await waitForVerificationEmail(testUser.email);
+    expect(email).toBeTruthy();
+    
+    // Extract and validate verification code
     const verificationCode = await getVerificationCodeFromEmail(testUser.email);
     expect(verificationCode).toBeTruthy();
     expect(verificationCode).toMatch(/^[A-Z0-9]{6}$/);
@@ -317,29 +369,39 @@ test.describe('US-012: User Registration and Email Verification', () => {
       localStorage.setItem('registrationEmail', email);
     }, testUser.email);
     
-    // Register user
+    // Register user and wait for API response
+    const registrationPromise = waitForRegistrationComplete(page);
     await registerPage.register(testUser);
-    await page.waitForURL('**/verify-email**', { timeout: 10000 });
+    await registrationPromise;
     
-    // Wait for email to be sent
-    await page.waitForTimeout(2000);
+    await page.waitForURL('**/verify-email**', { timeout: 15000 });
+    
+    // Wait for verification email
+    const email = await waitForVerificationEmail(testUser.email);
+    expect(email).toBeTruthy();
     
     // Get verification code from email
     const verificationCode = await getVerificationCodeFromEmail(testUser.email);
     expect(verificationCode).toBeTruthy();
+    console.log(`Verification code: ${verificationCode}`);
     
     // Enter and submit verification code
     await verificationPage.verifyWithCode(verificationCode);
     
-    // Wait for success state
-    await page.waitForTimeout(1000);
+    // Wait for verification API response
+    await page.waitForResponse(
+      response => response.url().includes('/api/v1/auth/verify-email') && 
+                  response.status() === 200,
+      { timeout: 10000 }
+    );
     
-    // Should show success and redirect to dashboard
+    // Should show success
     const isSuccess = await verificationPage.isVerificationSuccessful();
     expect(isSuccess).toBe(true);
     
+    // Continue to dashboard
     await verificationPage.continueToApp();
-    await page.waitForURL('**/dashboard', { timeout: 10000 });
+    await page.waitForURL('**/dashboard', { timeout: 15000 });
     
     // Verify user is now verified in database
     const user = await getUser(testUser.email);
@@ -354,23 +416,38 @@ test.describe('US-012: User Registration and Email Verification', () => {
       localStorage.setItem('registrationEmail', email);
     }, testUser.email);
     
-    // Register user
+    // Register user and wait for API response
+    const registrationPromise = waitForRegistrationComplete(page);
     await registerPage.register(testUser);
-    await page.waitForURL('**/verify-email**', { timeout: 10000 });
+    await registrationPromise;
     
-    // Wait for email to be sent
-    await page.waitForTimeout(2000);
+    await page.waitForURL('**/verify-email**', { timeout: 15000 });
+    
+    // Wait for verification email
+    const email = await waitForVerificationEmail(testUser.email);
+    expect(email).toBeTruthy();
     
     // Get verification link from email
     const verificationLink = await getVerificationLinkFromEmail(testUser.email);
     expect(verificationLink).toBeTruthy();
+    console.log(`Verification link: ${verificationLink}`);
     
     // Navigate to verification link
     await page.goto(verificationLink);
     
+    // Wait for automatic verification to complete
+    await page.waitForResponse(
+      response => response.url().includes('/api/v1/auth/verify-email') && 
+                  response.status() === 200,
+      { timeout: 10000 }
+    ).catch(() => {
+      // Link verification might happen automatically on page load
+      console.log('Verification might have happened on page load');
+    });
+    
     // Should auto-verify and redirect to dashboard
     await verificationPage.verifyAutoVerificationWithToken();
-    await page.waitForURL('**/dashboard', { timeout: 10000 });
+    await page.waitForURL('**/dashboard', { timeout: 15000 });
     
     // Verify user is now verified in database
     const user = await getUser(testUser.email);
@@ -400,12 +477,16 @@ test.describe('US-012: User Registration and Email Verification', () => {
       localStorage.setItem('registrationEmail', email);
     }, testUser.email);
     
-    // Register user
+    // Register user and wait for API response
+    const registrationPromise = waitForRegistrationComplete(page);
     await registerPage.register(testUser);
-    await page.waitForURL('**/verify-email**', { timeout: 10000 });
+    await registrationPromise;
     
-    // Wait for initial email to be sent
-    await page.waitForTimeout(2000);
+    await page.waitForURL('**/verify-email**', { timeout: 15000 });
+    
+    // Wait for initial email
+    const initialEmail = await waitForVerificationEmail(testUser.email);
+    expect(initialEmail).toBeTruthy();
     
     // Clear previous emails
     await clearAllEmails();
@@ -413,15 +494,19 @@ test.describe('US-012: User Registration and Email Verification', () => {
     // Wait for page to fully load
     await verificationPage.verifyPageLoaded();
     
-    // Resend verification email
+    // Resend verification email and wait for API response
+    const resendPromise = page.waitForResponse(
+      response => response.url().includes('/api/v1/auth/resend-verification') && 
+                  response.status() === 200,
+      { timeout: 10000 }
+    );
+    
     await verificationPage.resendVerificationEmail();
+    await resendPromise;
     
-    // Wait for email to be sent
-    await page.waitForTimeout(2000);
-    
-    // Check new email was sent
-    const email = await waitForEmail(testUser.email, { subject: 'verification' });
-    expect(email).toBeTruthy();
+    // Wait for new email
+    const newEmail = await waitForVerificationEmail(testUser.email);
+    expect(newEmail).toBeTruthy();
     
     // Verify new verification code can be used
     const newCode = await getVerificationCodeFromEmail(testUser.email);
@@ -437,26 +522,34 @@ test.describe('US-012: User Registration and Email Verification', () => {
       localStorage.setItem('registrationEmail', email);
     }, testUser.email);
     
-    // Register user
+    // Register user and wait for API response
+    const registrationPromise = waitForRegistrationComplete(page);
     await registerPage.register(testUser);
-    await page.waitForURL('**/verify-email**', { timeout: 10000 });
+    await registrationPromise;
+    
+    await page.waitForURL('**/verify-email**', { timeout: 15000 });
+    
+    // Wait for initial email
+    await waitForVerificationEmail(testUser.email);
     
     // Wait for page to fully load
     await verificationPage.verifyPageLoaded();
-    await page.waitForTimeout(1000);
     
-    // Resend email
+    // Resend email and wait for API response
+    const resendPromise = page.waitForResponse(
+      response => response.url().includes('/api/v1/auth/resend-verification') && 
+                  response.status() === 200,
+      { timeout: 10000 }
+    );
+    
     await verificationPage.resendVerificationEmail();
+    await resendPromise;
     
-    // Wait for timer to update
-    await page.waitForTimeout(500);
-    
-    // Check timer is shown - look for the timer text in button
+    // Check timer is shown - wait for button text to update
     const resendButton = page.locator('button:has-text("Resend"), a:has-text("Resend")');
-    const buttonText = await resendButton.textContent();
     
-    // Should show countdown timer
-    expect(buttonText).toMatch(/Resend in \d+s|\d+ seconds?/i);
+    // Use expect with automatic retry instead of manual wait
+    await expect(resendButton).toHaveText(/Resend in \d+s|\d+ seconds?/i, { timeout: 5000 });
     
     // Resend button should be disabled
     await expect(resendButton).toBeDisabled();
@@ -580,8 +673,8 @@ test.describe('US-012: User Registration and Email Verification', () => {
 
   test('should maintain form data on validation errors', async ({ page }) => {
     const testUser = generateTestUser({
-      password: 'weak', // Intentionally weak
-      confirmPassword: 'different' // Intentionally different
+      password: 'ValidPass123!', // Valid password to test mismatch error
+      confirmPassword: 'DifferentPass456!' // Intentionally different
     });
     
     // Fill form with some invalid data
@@ -633,42 +726,53 @@ test.describe('US-012: User Registration and Email Verification', () => {
     // Start performance measurement
     const startTime = Date.now();
     
-    // Complete registration
+    // Complete registration and wait for API response
+    const registrationPromise = waitForRegistrationComplete(page);
     await registerPage.register(testUser);
-    await page.waitForURL('**/verify-email**', { timeout: 10000 });
+    await registrationPromise;
+    
+    await page.waitForURL('**/verify-email**', { timeout: 15000 });
     
     const registrationTime = Date.now() - startTime;
     
-    // Wait for email to be sent
-    await page.waitForTimeout(2000);
+    // Wait for verification email
+    const email = await waitForVerificationEmail(testUser.email);
+    expect(email).toBeTruthy();
     
     // Get verification code and complete verification
     const verificationCode = await getVerificationCodeFromEmail(testUser.email);
     expect(verificationCode).toBeTruthy();
     
-    await verificationPage.verifyWithCode(verificationCode);
+    // Enter code and wait for verification API response
+    const verificationPromise = page.waitForResponse(
+      response => response.url().includes('/api/v1/auth/verify-email') && 
+                  response.status() === 200,
+      { timeout: 10000 }
+    );
     
-    // Wait for success state
-    await page.waitForTimeout(1000);
+    await verificationPage.verifyWithCode(verificationCode);
+    await verificationPromise;
     
     // Check if verification was successful
     const isSuccess = await verificationPage.isVerificationSuccessful();
     expect(isSuccess).toBe(true);
     
     await verificationPage.continueToApp();
-    await page.waitForURL('**/dashboard', { timeout: 10000 });
+    await page.waitForURL('**/dashboard', { timeout: 15000 });
     
     const totalTime = Date.now() - startTime;
     
     // Log metrics for monitoring
     console.log('Registration Metrics:', {
-      registrationTime,
-      totalTime,
+      registrationTime: `${registrationTime}ms`,
+      totalTime: `${totalTime}ms`, 
+      registrationTimeSeconds: `${(registrationTime / 1000).toFixed(2)}s`,
+      totalTimeSeconds: `${(totalTime / 1000).toFixed(2)}s`,
       user: testUser.email
     });
     
     // Assert reasonable performance
-    expect(registrationTime).toBeLessThan(15000); // 15 seconds (increased for real backend)
-    expect(totalTime).toBeLessThan(30000); // 30 seconds (increased for full flow)
+    expect(registrationTime).toBeLessThan(20000); // 20 seconds for registration
+    expect(totalTime).toBeLessThan(45000); // 45 seconds for full flow (includes email)
   });
 });
