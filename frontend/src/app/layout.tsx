@@ -25,9 +25,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full">
+    <html lang="en" className="h-full" suppressHydrationWarning>
       <body
         className="flex min-h-full flex-col bg-white text-gray-900 antialiased font-sans"
+        suppressHydrationWarning
       >
         <QueryProvider>
           <ThemeProvider>

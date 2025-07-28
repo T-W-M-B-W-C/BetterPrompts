@@ -29,7 +29,7 @@ export default function EnhancePage() {
     fetchTechniques().then(techs => {
       setTechniques(techs)
     })
-  }, [fetchTechniques])
+  }, []) // Empty dependency array - only run on mount
 
   const handleEnhance = async () => {
     if (!userInput.trim()) return

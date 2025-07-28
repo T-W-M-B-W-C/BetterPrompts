@@ -9,9 +9,8 @@ import (
 // Stub handlers to make the build work
 
 func GetAvailableTechniques(clients *services.ServiceClients) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"techniques": []string{"cot", "few_shot"}})
-	}
+	// Use the proper GetTechniques handler that returns full technique objects
+	return GetTechniques()
 }
 
 func SelectTechniques(clients *services.ServiceClients) gin.HandlerFunc {

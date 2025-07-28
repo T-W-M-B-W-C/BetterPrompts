@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Search, Filter, Trash2, ChevronLeft, ChevronRight, Copy, ExternalLink, Eye } from 'lucide-react'
+import { Search, Filter, Trash2, ChevronLeft, ChevronRight, Copy, ExternalLink, Eye, RefreshCw } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 export default function HistoryPage() {
@@ -24,6 +24,7 @@ export default function HistoryPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedIntent, setSelectedIntent] = useState<string>('all')
   const [selectedTechnique, setSelectedTechnique] = useState<string>('all')
+  const [rerunningId, setRerunningId] = useState<string | null>(null)
   
   const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error', message: string } | null>(null)
 
@@ -106,6 +107,30 @@ export default function HistoryPage() {
       type: 'success',
       message: 'Prompt copied to clipboard'
     })
+  }
+
+  // Rerun prompt
+  const handleRerun = async (id: string) => {
+    try {
+      setRerunningId(id)
+      const result = await historyService.rerunPrompt(id)
+      
+      setToastMessage({
+        type: 'success',
+        message: 'Prompt rerun successfully!'
+      })
+      
+      // Navigate to the new prompt details
+      setTimeout(() => {
+        router.push(`/history/${result.id}`)
+      }, 1500)
+    } catch (err: any) {
+      setToastMessage({
+        type: 'error',
+        message: err.message || 'Failed to rerun prompt'
+      })
+      setRerunningId(null)
+    }
   }
 
   // Get unique intents and techniques for filters
@@ -235,6 +260,15 @@ export default function HistoryPage() {
                       title="View details"
                     >
                       <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleRerun(item.id)}
+                      disabled={rerunningId === item.id}
+                      title="Rerun prompt"
+                    >
+                      <RefreshCw className={`h-4 w-4 ${rerunningId === item.id ? 'animate-spin' : ''}`} />
                     </Button>
                     <Button
                       variant="ghost"

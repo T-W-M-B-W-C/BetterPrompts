@@ -29,6 +29,7 @@ export default function TechniqueCard({ technique, isSelected, onClick }: Techni
           >
             <button
               onClick={onClick}
+              data-testid="technique-card"
               className={cn(
                 "relative w-full rounded-lg border p-3 sm:p-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2",
                 isSelected

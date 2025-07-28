@@ -19,6 +19,8 @@ backend/services/*/*.a
 # Test artifacts
 tests/e2e/node_modules/
 e2e/frontend/node_modules/
+e2e/*/node_modules/
+**/node_modules/
 
 # Next.js build cache
 frontend/.next/

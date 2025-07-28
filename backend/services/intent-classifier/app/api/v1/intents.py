@@ -92,7 +92,7 @@ async def classify_intent(
             intent=result["intent"],
             confidence=result["confidence"],
             complexity=result["complexity"],
-            suggested_techniques=result["suggested_techniques"],
+            suggested_techniques=result.get("suggested_techniques", ["chain_of_thought"]),
             metadata={
                 "processing_time": time.time() - start_time,
                 "model_version": settings.MODEL_VERSION,

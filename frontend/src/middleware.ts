@@ -14,6 +14,7 @@ const publicRoutes = [
   '/about',
   '/contact',
   '/docs',
+  '/enhance',  // Public route with optional authentication
 ]
 
 // Define API routes that don't require authentication
@@ -25,7 +26,6 @@ const publicApiRoutes = [
 // Routes that require authentication
 const protectedRoutes = [
   '/dashboard',
-  '/enhance',
   '/history',
   '/profile',
   '/settings',

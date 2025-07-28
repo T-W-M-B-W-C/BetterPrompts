@@ -3,8 +3,8 @@ package handlers
 import (
 	"github.com/sirupsen/logrus"
 	"net/http"
-	"strconv"
 
+	"github.com/betterprompts/api-gateway/internal/models"
 	"github.com/betterprompts/api-gateway/internal/services"
 	"github.com/gin-gonic/gin"
 )
@@ -19,33 +19,31 @@ func GetPromptHistory(clients *services.ServiceClients) gin.HandlerFunc {
 			return
 		}
 
-		// Parse query parameters
-		page := c.DefaultQuery("page", "1")
-		limit := c.DefaultQuery("limit", "20")
+		// Parse pagination and filter parameters
+		paginationReq := models.ParsePaginationRequest(c)
 
-		pageNum, err := strconv.Atoi(page)
-		if err != nil || pageNum < 1 {
-			pageNum = 1
-		}
-
-		limitNum, err := strconv.Atoi(limit)
-		if err != nil || limitNum < 1 || limitNum > 100 {
-			limitNum = 20
-		}
-
-		// Calculate offset
-		offset := (pageNum - 1) * limitNum
-
-		// Get history from database
-		history, err := clients.Database.GetUserPromptHistory(c.Request.Context(), userID.(string), limitNum, offset)
+		// Get history from database with filters
+		history, totalCount, err := clients.Database.GetUserPromptHistoryWithFilters(
+			c.Request.Context(),
+			userID.(string),
+			paginationReq,
+		)
 		if err != nil {
 			c.MustGet("logger").(*logrus.Entry).WithError(err).Error("Failed to get prompt history")
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve history"})
 			return
 		}
 
-		// Return the history items
-		c.JSON(http.StatusOK, history)
+		// Create paginated response
+		response := models.CreatePaginatedResponse(
+			history,
+			paginationReq.Page,
+			paginationReq.Limit,
+			totalCount,
+		)
+
+		// Return the paginated history
+		c.JSON(http.StatusOK, response)
 	}
 }
 
@@ -124,8 +122,7 @@ func DeletePromptHistoryItem(clients *services.ServiceClients) gin.HandlerFunc {
 		}
 
 		// Delete the item
-		query := "DELETE FROM prompts.history WHERE id = $1"
-		_, err = clients.Database.DB.ExecContext(c.Request.Context(), query, historyID)
+		err = clients.Database.DeletePromptHistory(c.Request.Context(), historyID)
 		if err != nil {
 			c.MustGet("logger").(*logrus.Entry).WithError(err).Error("Failed to delete prompt history item")
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete history item"})

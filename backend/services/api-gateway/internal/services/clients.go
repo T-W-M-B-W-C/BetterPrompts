@@ -20,10 +20,10 @@ import (
 
 // ServiceClients holds all service clients
 type ServiceClients struct {
-	IntentClassifier     *IntentClassifierClient
-	TechniqueSelector    *TechniqueSelectorClient
-	PromptGenerator      *PromptGeneratorClient
-	Database             *DatabaseService
+	IntentClassifier     IntentClassifierInterface
+	TechniqueSelector    TechniqueSelectorInterface
+	PromptGenerator      PromptGeneratorInterface
+	Database             DatabaseInterface
 	Cache                *CacheService
 	HTTPClient           *http.Client
 	IntentClassifierURL  string
@@ -368,7 +368,10 @@ func (c *PromptGeneratorClient) WarmConnection(ctx context.Context) error {
 // Close closes all clients
 func (c *ServiceClients) Close() error {
 	if c.Database != nil {
-		c.Database.Close()
+		// Type assert to get the underlying DatabaseService
+		if dbService, ok := c.Database.(*DatabaseService); ok && dbService != nil && dbService.DB != nil {
+			dbService.DB.Close()
+		}
 	}
 	if c.Cache != nil {
 		c.Cache.client.Close()

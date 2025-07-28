@@ -358,9 +358,9 @@ func BenchmarkAuthHandler_Register(b *testing.B) {
 func BenchmarkAuthHandler_Login(b *testing.B) {
 	handler := &AuthHandler{}
 
-	reqBody := models.UserLoginRequest{
-		email_or_username: "test@example.com",
-		Password:          "SecurePass123!",
+	reqBody := models.LoginRequest{
+		Email:    "test@example.com",
+		Password: "SecurePass123!",
 	}
 
 	bodyBytes, _ := json.Marshal(reqBody)

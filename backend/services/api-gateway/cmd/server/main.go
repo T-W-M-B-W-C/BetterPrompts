@@ -63,7 +63,12 @@ func main() {
 	emailService := services.NewEmailService(logger)
 
 	// Initialize user service
-	userService := services.NewUserService(clients.Database, emailService)
+	// Type assert to concrete type as NewUserService expects *DatabaseService
+	dbService, ok := clients.Database.(*services.DatabaseService)
+	if !ok {
+		logger.Fatal("Database service is not of expected type")
+	}
+	userService := services.NewUserService(dbService, emailService)
 
 	// Initialize auth handler
 	authHandler := handlers.NewAuthHandler(userService, jwtManager, clients.Cache, logger)
@@ -101,6 +106,15 @@ func main() {
 		public.POST("/analyze", 
 			middleware.OptionalAuth(jwtManager, logger),
 			handlers.AnalyzeIntent(clients))
+		
+		// Techniques endpoint (public)
+		public.GET("/techniques", handlers.GetAvailableTechniques(clients))
+		
+		// Main enhancement endpoint (public with optional auth)
+		public.POST("/enhance", 
+			middleware.OptionalAuth(jwtManager, logger),
+			middleware.RateLimitMiddleware(clients.Cache, middleware.GetRateLimitConfigForEnvironment(environment), logger),
+			handlers.EnhancePrompt(clients))
 	}
 
 	// Protected routes
@@ -113,23 +127,22 @@ func main() {
 		protected.POST("/auth/change-password", authHandler.ChangePassword)
 		protected.POST("/auth/logout", authHandler.Logout)
 		
-		// Main enhancement endpoint
-		protected.POST("/enhance", 
-			middleware.RateLimitMiddleware(clients.Cache, middleware.GetRateLimitConfigForEnvironment(environment), logger),
-			handlers.EnhancePrompt(clients))
-		
 		// Batch enhancement endpoint (commented out - not implemented yet)
 		// protected.POST("/enhance/batch",
 		// 	middleware.RateLimitMiddleware(clients.Cache, middleware.GetRateLimitConfigForEnvironment(environment), logger),
 		// 	handlers.HandleBatchEnhance(clients))
 		
-		// History endpoints
+		// Prompt history endpoints
+		protected.GET("/prompts/history", handlers.GetPromptHistory(clients))
+		protected.GET("/prompts/:id", handlers.GetPromptByID(clients))
+		protected.POST("/prompts/:id/rerun", handlers.RerunPrompt(clients))
+		
+		// Legacy history endpoints (for backward compatibility)
 		protected.GET("/history", handlers.GetPromptHistory(clients))
 		protected.GET("/history/:id", handlers.GetPromptHistoryItem(clients))
 		protected.DELETE("/history/:id", handlers.DeletePromptHistoryItem(clients))
 		
-		// Techniques endpoint
-		protected.GET("/techniques", handlers.GetAvailableTechniques(clients))
+		// Techniques selection endpoint (requires auth to save preferences)
 		protected.POST("/techniques/select", handlers.SelectTechniques(clients))
 		
 		// Feedback endpoints

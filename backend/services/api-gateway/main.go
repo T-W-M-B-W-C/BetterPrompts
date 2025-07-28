@@ -46,7 +46,7 @@ func main() {
 	// Add middleware
 	router.Use(gin.Recovery())
 	router.Use(middleware.Logger(logger))
-	router.Use(middleware.CORS(cfg.CORSAllowedOrigins))
+	router.Use(middleware.CORSConfig(logger))
 	router.Use(middleware.RateLimiter(cfg.RateLimitRequestsPerMinute, cfg.RateLimitBurst))
 	router.Use(middleware.RequestID())
 

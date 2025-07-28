@@ -143,4 +143,5 @@ class HealthCheckMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
         
         # Use monitoring middleware for other endpoints
-        return await MonitoringMiddleware().dispatch(request, call_next)
+        monitoring = MonitoringMiddleware(self.app)
+        return await monitoring.dispatch(request, call_next)

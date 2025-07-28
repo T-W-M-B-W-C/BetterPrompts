@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { historyService } from '@/lib/api/services'
+import { historyService, PromptHistoryItem } from '@/lib/api/history'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { ArrowLeft, Copy, Download, Trash2, Star, Calendar, Clock, Hash, Zap, Target, Brain } from 'lucide-react'
+import { ArrowLeft, Copy, Download, Trash2, Star, Calendar, Clock, Hash, Zap, Target, Brain, RefreshCw } from 'lucide-react'
 // Using native date formatting instead of date-fns
 
 export default function HistoryDetailPage() {
@@ -16,11 +16,12 @@ export default function HistoryDetailPage() {
   const router = useRouter()
   const id = params.id as string
   
-  const [historyItem, setHistoryItem] = useState<any>(null)
+  const [historyItem, setHistoryItem] = useState<PromptHistoryItem | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error', message: string } | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [rerunning, setRerunning] = useState(false)
 
   useEffect(() => {
     fetchHistoryItem()
@@ -80,6 +81,32 @@ export default function HistoryDetailPage() {
       type: 'success',
       message: `${type} copied to clipboard`
     })
+  }
+
+  const handleRerun = async () => {
+    if (!historyItem) return
+    
+    try {
+      setRerunning(true)
+      const result = await historyService.rerunPrompt(historyItem.id)
+      
+      setToastMessage({
+        type: 'success',
+        message: 'Prompt rerun successfully!'
+      })
+      
+      // Navigate to the new prompt details after a short delay
+      setTimeout(() => {
+        router.push(`/history/${result.id}`)
+      }, 1500)
+    } catch (err: any) {
+      setToastMessage({
+        type: 'error',
+        message: err.message || 'Failed to rerun prompt'
+      })
+    } finally {
+      setRerunning(false)
+    }
   }
 
   const handleExport = () => {
@@ -180,6 +207,16 @@ export default function HistoryDetailPage() {
           </div>
           
           <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRerun}
+              disabled={rerunning}
+              title="Rerun prompt"
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${rerunning ? 'animate-spin' : ''}`} />
+              {rerunning ? 'Rerunning...' : 'Rerun'}
+            </Button>
             <Button
               variant="outline"
               size="sm"

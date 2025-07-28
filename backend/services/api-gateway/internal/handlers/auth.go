@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/betterprompts/api-gateway/internal/auth"
@@ -18,6 +19,12 @@ type AuthHandler struct {
 	jwtManager  *auth.JWTManager
 	cache       *services.CacheService
 	logger      *logrus.Logger
+}
+
+// isProduction checks if we're running in production environment
+func isProduction() bool {
+	env := os.Getenv("NODE_ENV")
+	return env == "production" || env == "prod"
 }
 
 // NewAuthHandler creates a new auth handler
@@ -88,6 +95,28 @@ func (h *AuthHandler) Register(c *gin.Context) {
 			"token":   refreshToken,
 		}, 7*24*time.Hour)
 	}
+
+	// Set cookies for hybrid authentication approach
+	secure := isProduction()
+	c.SetCookie(
+		"auth_token",
+		accessToken,
+		int(h.jwtManager.GetConfig().AccessExpiry.Seconds()),
+		"/",
+		"",     // Domain
+		secure, // Secure flag based on environment
+		true,   // HttpOnly
+	)
+	
+	c.SetCookie(
+		"refresh_token",
+		refreshToken,
+		int(7*24*time.Hour.Seconds()), // 7 days
+		"/",
+		"",     // Domain
+		secure, // Secure flag based on environment
+		true,   // HttpOnly
+	)
 
 	h.logger.WithFields(logrus.Fields{
 		"user_id": user.ID,
@@ -195,18 +224,29 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		}, 7*24*time.Hour)
 	}
 
-	// Set cookies if remember me
-	if req.RememberMe {
-		c.SetCookie(
-			"access_token",
-			accessToken,
-			int(tokenExpiry.Seconds()),
-			"/",
-			"",    // Domain
-			false, // Secure (set to true in production)
-			true,  // HttpOnly
-		)
-	}
+	// Always set cookies for hybrid authentication approach
+	// This allows the frontend middleware to authenticate requests
+	secure := isProduction()
+	c.SetCookie(
+		"auth_token", // Changed to match frontend middleware expectation
+		accessToken,
+		int(tokenExpiry.Seconds()),
+		"/",
+		"",     // Domain
+		secure, // Secure flag based on environment
+		true,   // HttpOnly
+	)
+	
+	// Also set refresh token cookie
+	c.SetCookie(
+		"refresh_token",
+		refreshToken,
+		int(7*24*time.Hour.Seconds()), // 7 days
+		"/",
+		"",     // Domain
+		secure, // Secure flag based on environment
+		true,   // HttpOnly
+	)
 
 	h.logger.WithFields(logrus.Fields{
 		"user_id":     user.ID,
@@ -276,6 +316,18 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 
+	// Update auth_token cookie with new access token
+	secure := isProduction()
+	c.SetCookie(
+		"auth_token",
+		accessToken,
+		int(h.jwtManager.GetConfig().AccessExpiry.Seconds()),
+		"/",
+		"",     // Domain
+		secure, // Secure flag based on environment
+		true,   // HttpOnly
+	)
+
 	h.logger.WithFields(logrus.Fields{
 		"user_id": claims.UserID,
 	}).Info("Token refreshed successfully")
@@ -303,14 +355,36 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 		h.cache.DeleteSession(c.Request.Context(), refreshKey)
 	}
 
-	// Clear cookies
+	// Clear all auth cookies
+	secure := isProduction()
+	c.SetCookie(
+		"auth_token",
+		"",
+		-1,
+		"/",
+		"",
+		secure,
+		true,
+	)
+	
+	c.SetCookie(
+		"refresh_token",
+		"",
+		-1,
+		"/",
+		"",
+		secure,
+		true,
+	)
+	
+	// Also clear the old access_token cookie for backwards compatibility
 	c.SetCookie(
 		"access_token",
 		"",
 		-1,
 		"/",
 		"",
-		false,
+		secure,
 		true,
 	)
 

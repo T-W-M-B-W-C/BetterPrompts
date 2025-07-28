@@ -24,12 +24,13 @@ func AuthMiddleware(jwtManager *auth.JWTManager, logger *logrus.Logger) gin.Hand
 		// Check for development mode bypass
 		if isDevelopmentMode() && shouldBypassAuth(c) {
 			logger.Warn("Development mode: Bypassing authentication for testing")
-			// Set test user information
-			c.Set("user_id", "dev-user-123")
+			// Set test user information with valid UUID
+			devUserID := "12345678-1234-1234-1234-123456789012" // Valid UUID format
+			c.Set("user_id", devUserID)
 			c.Set("user_email", "dev@betterprompts.test")
 			c.Set("user_roles", []string{"developer", "user"})
 			c.Set("auth_claims", &auth.Claims{
-				UserID: "dev-user-123",
+				UserID: devUserID,
 				Email:  "dev@betterprompts.test",
 				Roles:  []string{"developer", "user"},
 			})
@@ -41,8 +42,12 @@ func AuthMiddleware(jwtManager *auth.JWTManager, logger *logrus.Logger) gin.Hand
 		authHeader := c.GetHeader("Authorization")
 		token, err := auth.ExtractTokenFromHeader(authHeader)
 		if err != nil {
-			// Check cookie as fallback
-			token, _ = c.Cookie("access_token")
+			// Check cookies as fallback (try both new and old cookie names)
+			token, _ = c.Cookie("auth_token")
+			if token == "" {
+				// Try old cookie name for backwards compatibility
+				token, _ = c.Cookie("access_token")
+			}
 			if token == "" {
 				c.JSON(http.StatusUnauthorized, gin.H{
 					"error": "Authorization required",
@@ -194,8 +199,12 @@ func OptionalAuth(jwtManager *auth.JWTManager, logger *logrus.Logger) gin.Handle
 		authHeader := c.GetHeader("Authorization")
 		token, err := auth.ExtractTokenFromHeader(authHeader)
 		if err != nil {
-			// Check cookie as fallback
-			token, _ = c.Cookie("access_token")
+			// Check cookies as fallback (try both new and old cookie names)
+			token, _ = c.Cookie("auth_token")
+			if token == "" {
+				// Try old cookie name for backwards compatibility
+				token, _ = c.Cookie("access_token")
+			}
 			if token == "" {
 				// No authentication provided, continue without it
 				c.Next()

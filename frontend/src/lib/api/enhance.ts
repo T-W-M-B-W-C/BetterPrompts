@@ -44,6 +44,8 @@ export interface FrontendEnhanceResponse {
     technique: string
   }>
   explanation?: string
+  history_id?: string  // Added for history integration
+  techniques_used?: string[]  // Added for feedback
 }
 
 export interface AnalyzeRequest {
@@ -190,6 +192,9 @@ class EnhanceService {
           all_techniques: backend.techniques_used
         }
       },
+      // Include history ID (backend saves automatically for authenticated users)
+      history_id: backend.id,
+      techniques_used: backend.techniques_used,
       // TODO: Implement alternatives when backend supports variations
       alternatives: undefined,
       // TODO: Extract explanation from metadata when available

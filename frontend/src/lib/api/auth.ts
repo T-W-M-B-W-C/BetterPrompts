@@ -31,13 +31,24 @@ export interface RefreshTokenResponse {
 class AuthService {
   async login(credentials: LoginRequest): Promise<AuthResponse> {
     const response = await apiClient.post<AuthResponse>('/auth/login', credentials)
+    
+    // Set tokens in localStorage for client-side access
     this.setTokens(response.access_token, response.refresh_token)
+    
+    // Cookies are now set by the backend automatically
+    // The apiClient has withCredentials: true which ensures cookies are sent/received
+    
     return response
   }
 
   async register(data: RegisterRequest): Promise<AuthResponse> {
     const response = await apiClient.post<AuthResponse>('/auth/register', data)
+    
+    // Set tokens in localStorage for client-side access
     this.setTokens(response.access_token, response.refresh_token)
+    
+    // Cookies are now set by the backend automatically
+    
     return response
   }
 
@@ -45,7 +56,10 @@ class AuthService {
     try {
       await apiClient.post('/auth/logout')
     } finally {
+      // Clear localStorage tokens
       this.clearTokens()
+      
+      // Cookies are cleared by the backend automatically
     }
   }
 
@@ -53,7 +67,12 @@ class AuthService {
     const response = await apiClient.post<RefreshTokenResponse>('/auth/refresh', {
       refreshToken,
     })
+    
+    // Set tokens in localStorage
     this.setTokens(response.token, response.refreshToken)
+    
+    // Cookies are updated by the backend automatically
+    
     return response
   }
 

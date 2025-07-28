@@ -44,19 +44,25 @@ class HistoryService {
       ...filters
     }
     
-    // The backend returns an array, we need to wrap it
-    const items = await apiClient.get<PromptHistoryItem[]>('/history', { params })
-    
-    // Calculate pagination metadata
-    const total = items.length // This will be updated when backend provides total count
-    const hasMore = items.length === params.limit
+    // Backend returns paginated response with data and pagination fields
+    const response = await apiClient.get<{
+      data: PromptHistoryItem[]
+      pagination: {
+        page: number
+        limit: number
+        total_records: number
+        total_pages: number
+        has_next: boolean
+        has_previous: boolean
+      }
+    }>('/prompts/history', { params })
     
     return {
-      items,
-      total,
-      page: params.page,
-      limit: params.limit,
-      has_more: hasMore
+      items: response.data,
+      total: response.pagination.total_records,
+      page: response.pagination.page,
+      limit: response.pagination.limit,
+      has_more: response.pagination.has_next
     }
   }
 
@@ -64,14 +70,29 @@ class HistoryService {
    * Get a specific history item by ID
    */
   async getHistoryItem(id: string): Promise<PromptHistoryItem> {
-    return apiClient.get<PromptHistoryItem>(`/history/${id}`)
+    return apiClient.get<PromptHistoryItem>(`/prompts/${id}`)
   }
 
   /**
    * Delete a history item
    */
   async deleteHistoryItem(id: string): Promise<void> {
-    return apiClient.delete(`/history/${id}`)
+    return apiClient.delete(`/prompts/${id}`)
+  }
+
+  /**
+   * Rerun a prompt with the same techniques
+   */
+  async rerunPrompt(id: string): Promise<{
+    id: string
+    enhanced: boolean
+    enhanced_text: string
+    techniques: string[]
+    intent: string
+    confidence: number
+    metadata: Record<string, any>
+  }> {
+    return apiClient.post(`/prompts/${id}/rerun`)
   }
 
   /**
