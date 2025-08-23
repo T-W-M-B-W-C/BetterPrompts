@@ -1,0 +1,48 @@
+# Core dependencies for local development (minimal ML libs)
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+pydantic-settings==2.1.0
+python-multipart==0.0.6
+
+# Basic ML (skip heavy torch/transformers for local dev)
+numpy==1.26.2
+scikit-learn==1.3.2
+pandas==2.1.4
+
+# Database
+asyncpg==0.29.0
+psycopg2-binary==2.9.9
+sqlalchemy==2.0.23
+alembic==1.13.0
+pgvector==0.2.4
+
+# Redis
+redis==5.0.1
+hiredis==2.3.2
+
+# Message Queue
+aio-pika==9.3.1
+
+# Monitoring
+prometheus-client==0.19.0
+
+# Utilities
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-dotenv==1.0.0
+httpx==0.25.2
+orjson==3.9.10
+
+# Development
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+black==23.12.0
+isort==5.13.2
+mypy==1.7.1
+pre-commit==3.6.0
+protobuf>=3.20.0
+
+# Demo and visualization
+colorama==0.4.6
