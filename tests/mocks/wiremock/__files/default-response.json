@@ -1,5 +1,0 @@
-{
-  "message": "This is a default mock response",
-  "timestamp": "{{now}}",
-  "request_id": "{{randomValue type='UUID'}}"
-}
