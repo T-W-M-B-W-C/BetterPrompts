@@ -1,5 +1,0 @@
-# GPU-enabled PyTorch for production
--r requirements-base.txt
-
-# GPU-enabled PyTorch (CUDA 12.1)
-torch==2.1.0

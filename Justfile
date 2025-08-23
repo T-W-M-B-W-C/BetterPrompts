@@ -45,6 +45,8 @@ import 'just/test.just'
 import 'just/services.just'
 import 'just/health.just'
 import 'just/performance.just'
+import 'just/prompts.just'
+import 'just/diagnostic.just'
 
 # Quick start - bring up system and check health
 start:

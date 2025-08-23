@@ -7,9 +7,11 @@ This directory contains modular Just files for organizing project commands.
 ```
 just/
 ├── database.just    # Database management commands
+├── diagnostic.just  # Troubleshooting and debugging
 ├── docker.just      # Docker service management
 ├── health.just      # Health checks and monitoring
 ├── performance.just # Performance testing and benchmarks
+├── prompts.just     # Prompt testing scenarios
 ├── services.just    # Service-specific testing
 └── test.just        # General testing commands
 ```
@@ -49,6 +51,18 @@ just/
 - Service benchmarking
 - Load testing
 - Performance metrics
+
+### 🔍 diagnostic.just
+- System troubleshooting
+- Service debugging
+- Communication testing
+- Configuration validation
+
+### 📝 prompts.just
+- Scenario-based testing
+- Intent-specific tests
+- Complexity variations
+- Real-world examples
 
 ## Usage
 

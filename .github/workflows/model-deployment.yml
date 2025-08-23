@@ -1,4 +1,4 @@
-name: Model Deployment Pipeline
+name: Model Docker Build Pipeline
 
 on:
   push:
@@ -10,307 +10,58 @@ on:
   workflow_dispatch:
     inputs:
       model_version:
-        description: 'Model version to deploy'
+        description: 'Model version to build'
         required: true
         type: string
-      environment:
-        description: 'Deployment environment'
-        required: true
-        type: choice
-        options:
-          - development
-          - staging
-          - production
-      strategy:
-        description: 'Deployment strategy'
-        required: true
-        type: choice
-        options:
-          - canary
-          - blue-green
-          - rolling
 
 env:
-  AWS_REGION: us-west-2
-  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-west-2.amazonaws.com
-  MODEL_REGISTRY_BUCKET: betterprompts-model-registry
-  SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/torchserve
 
 jobs:
-  validate-model:
-    name: Validate Model
-    runs-on: ubuntu-latest
-    outputs:
-      model_path: ${{ steps.model_info.outputs.path }}
-      model_hash: ${{ steps.model_info.outputs.hash }}
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-
-      - name: Install Dependencies
-        run: |
-          pip install -r infrastructure/model-serving/requirements-serving.txt
-          pip install pytest pytest-cov
-
-      - name: Get Model Information
-        id: model_info
-        run: |
-          MODEL_VERSION="${{ github.event.inputs.model_version || 'latest' }}"
-          MODEL_PATH="ml-pipeline/models/production/intent_classifier_v${MODEL_VERSION}"
-          
-          if [ -d "$MODEL_PATH" ]; then
-            echo "path=$MODEL_PATH" >> $GITHUB_OUTPUT
-            echo "hash=$(find $MODEL_PATH -type f -exec sha256sum {} + | sha256sum | cut -d' ' -f1)" >> $GITHUB_OUTPUT
-          else
-            echo "Model not found: $MODEL_PATH"
-            exit 1
-          fi
-
-      - name: Validate Model Files
-        run: |
-          python infrastructure/model-serving/scripts/validate_model.py \
-            --model-path ${{ steps.model_info.outputs.path }} \
-            --model-type intent_classifier
-
-      - name: Run Model Tests
-        run: |
-          pytest infrastructure/model-serving/tests/test_model_handler.py \
-            --model-path ${{ steps.model_info.outputs.path }} \
-            --cov=torchserve.handlers \
-            --cov-report=xml
-
-      - name: Upload Test Coverage
-        uses: codecov/codecov-action@v3
-        with:
-          file: ./coverage.xml
-          flags: model-serving
-
-  build-model-archive:
-    name: Build Model Archive
-    needs: validate-model
-    runs-on: ubuntu-latest
-    outputs:
-      mar_file: ${{ steps.archive.outputs.mar_file }}
-      mar_hash: ${{ steps.archive.outputs.mar_hash }}
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-
-      - name: Install TorchServe Tools
-        run: |
-          pip install torch-model-archiver torch-workflow-archiver
-
-      - name: Package Model
-        id: archive
-        run: |
-          MODEL_VERSION="${{ github.event.inputs.model_version || 'latest' }}"
-          
-          python infrastructure/model-serving/scripts/package_models.py \
-            --model-path ${{ needs.validate-model.outputs.model_path }} \
-            --version $MODEL_VERSION \
-            --handler infrastructure/model-serving/torchserve/handlers/intent_classifier_handler.py
-          
-          MAR_FILE="infrastructure/model-serving/torchserve/models/intent_classifier_v${MODEL_VERSION}.mar"
-          echo "mar_file=$MAR_FILE" >> $GITHUB_OUTPUT
-          echo "mar_hash=$(sha256sum $MAR_FILE | cut -d' ' -f1)" >> $GITHUB_OUTPUT
-
-      - name: Upload Model Archive
-        uses: actions/upload-artifact@v3
-        with:
-          name: model-archive
-          path: ${{ steps.archive.outputs.mar_file }}
-          retention-days: 30
-
   build-docker-image:
-    name: Build Docker Image
-    needs: [validate-model, build-model-archive]
+    name: Build TorchServe Docker Image
     runs-on: ubuntu-latest
-    outputs:
-      image_tag: ${{ steps.build.outputs.tag }}
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Download Model Archive
-        uses: actions/download-artifact@v3
-        with:
-          name: model-archive
-          path: infrastructure/model-serving/torchserve/models/
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=${{ github.event.inputs.model_version }},enable=${{ github.event_name == 'workflow_dispatch' }}
 
       - name: Build and Push Docker Image
-        id: build
-        run: |
-          cd infrastructure/model-serving
-          
-          VERSION="${{ github.event.inputs.model_version || 'latest' }}"
-          COMMIT_SHA=$(git rev-parse --short HEAD)
-          IMAGE_TAG="${VERSION}-${COMMIT_SHA}"
-          
-          docker build \
-            --build-arg MODEL_VERSION=$VERSION \
-            --cache-from $ECR_REGISTRY/betterprompts/torchserve:latest \
-            -t $ECR_REGISTRY/betterprompts/torchserve:$IMAGE_TAG \
-            -t $ECR_REGISTRY/betterprompts/torchserve:latest \
-            -f docker/Dockerfile.torchserve .
-          
-          docker push $ECR_REGISTRY/betterprompts/torchserve:$IMAGE_TAG
-          docker push $ECR_REGISTRY/betterprompts/torchserve:latest
-          
-          echo "tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
-
-      - name: Scan Docker Image
-        uses: aquasecurity/trivy-action@master
+        uses: docker/build-push-action@v5
         with:
-          image-ref: ${{ env.ECR_REGISTRY }}/betterprompts/torchserve:${{ steps.build.outputs.tag }}
-          format: 'sarif'
-          output: 'trivy-results.sarif'
+          context: ./infrastructure/model-serving
+          file: ./infrastructure/model-serving/docker/Dockerfile.torchserve
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            MODEL_VERSION=${{ github.event.inputs.model_version || 'latest' }}
 
-      - name: Upload Trivy Scan Results
-        uses: github/codeql-action/upload-sarif@v2
-        with:
-          sarif_file: 'trivy-results.sarif'
-
-  deploy-to-kubernetes:
-    name: Deploy to Kubernetes
-    needs: [build-docker-image]
-    runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment || 'staging' }}
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Configure kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-          version: 'v1.28.0'
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Update kubeconfig
-        run: |
-          aws eks update-kubeconfig \
-            --region ${{ env.AWS_REGION }} \
-            --name betterprompts-${{ github.event.inputs.environment || 'staging' }}
-
-      - name: Deploy with Kustomize
-        run: |
-          cd infrastructure/model-serving/kubernetes
-          
-          ENVIRONMENT="${{ github.event.inputs.environment || 'staging' }}"
-          IMAGE_TAG="${{ needs.build-docker-image.outputs.image_tag }}"
-          
-          # Update image tag
-          cd overlays/$ENVIRONMENT
-          kustomize edit set image betterprompts/torchserve=$ECR_REGISTRY/betterprompts/torchserve:$IMAGE_TAG
-          
-          # Apply deployment
-          kubectl apply -k .
-          
-          # Wait for rollout
-          kubectl rollout status deployment/torchserve -n model-serving --timeout=10m
-
-      - name: Run Smoke Tests
-        run: |
-          # Wait for service to be ready
-          kubectl wait --for=condition=ready pod -l app=torchserve -n model-serving --timeout=5m
-          
-          # Get service endpoint
-          SERVICE_IP=$(kubectl get svc torchserve -n model-serving -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-          
-          # Run health check
-          curl -f http://$SERVICE_IP:8080/ping || exit 1
-          
-          # Test inference endpoint
-          curl -X POST http://$SERVICE_IP:8080/predictions/intent_classifier \
-            -H "Content-Type: application/json" \
-            -d '{"text": "How do I create a React component?"}' \
-            -o response.json
-          
-          # Validate response
-          python -c "
-          import json
-          with open('response.json') as f:
-              data = json.load(f)
-              assert 'intent' in data
-              assert 'confidence' in data
-              assert data['confidence'] > 0.5
-          "
-
-  update-model-registry:
-    name: Update Model Registry
-    needs: [deploy-to-kubernetes]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Update Registry
-        run: |
-          pip install boto3 pyyaml
-          
-          python infrastructure/model-serving/scripts/model_versioning.py \
-            --config infrastructure/model-serving/configs/model_registry.yaml \
-            promote \
-            --name intent_classifier \
-            --version ${{ github.event.inputs.model_version || 'latest' }} \
-            --to ${{ github.event.inputs.environment || 'staging' }} \
-            --reason "Automated deployment via GitHub Actions"
-
-  notify-deployment:
-    name: Notify Deployment Status
-    needs: [deploy-to-kubernetes, update-model-registry]
-    runs-on: ubuntu-latest
-    if: always()
-    steps:
-      - name: Send Slack Notification
-        uses: 8398a7/action-slack@v3
-        with:
-          status: ${{ job.status }}
-          webhook_url: ${{ env.SLACK_WEBHOOK }}
-          text: |
-            Model Deployment ${{ job.status == 'success' && 'Successful' || 'Failed' }}
-            
-            Environment: ${{ github.event.inputs.environment || 'staging' }}
-            Model Version: ${{ github.event.inputs.model_version || 'latest' }}
-            Image Tag: ${{ needs.build-docker-image.outputs.image_tag }}
-            
-            Workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
