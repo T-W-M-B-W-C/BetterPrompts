@@ -1,29 +1,4 @@
 services:
-  # Frontend Service
-  frontend:
-    image: node:20-alpine
-    working_dir: /app
-    container_name: betterprompts-frontend
-    entrypoint: ["/app/docker/frontend/entrypoint.sh"]
-    ports:
-      - "3000:3000"
-    environment:
-      - NODE_ENV=development
-      - NEXT_PUBLIC_API_URL=http://localhost/api/v1
-      - DOCKERIZED=true
-    volumes:
-      - ./frontend:/app
-      - ./docker/frontend/entrypoint.sh:/app/docker/frontend/entrypoint.sh:ro
-      - /app/node_modules
-    networks:
-      - betterprompts-network
-    healthcheck:
-      test: ["CMD", "node", "/app/public/healthcheck.js"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
-
   # Intent Classification Service
   intent-classifier:
     build:
@@ -137,7 +112,7 @@ services:
       - INTENT_CLASSIFIER_URL=http://intent-classifier:8001
       - TECHNIQUE_SELECTOR_URL=http://technique-selector:8002
       - PROMPT_GENERATOR_URL=http://prompt-generator:8003
-      - CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001,http://localhost
+      - CORS_ALLOWED_ORIGINS=http://localhost:3001,http://localhost
       - PRODUCTION_ORIGIN=${PRODUCTION_ORIGIN:-}
     volumes:
       # Don't mount source code in production mode - it overrides the built binary
@@ -173,7 +148,6 @@ services:
     networks:
       - betterprompts-network
     depends_on:
-      - frontend
       - api-gateway
     restart: unless-stopped
     healthcheck:
