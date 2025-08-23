@@ -10,10 +10,7 @@ techniques:
         - "reasoning"
         - "problem_solving"
         - "data_analysis"
-      complexity_levels:
-        - "moderate"
-        - "complex"
-      complexity_threshold: 0.5
+        - "code_generation"
       keywords:
         - "explain"
         - "why"
@@ -44,9 +41,6 @@ techniques:
         - "problem_solving"
         - "task_planning"
         - "reasoning"
-      complexity_levels:
-        - "complex"
-      complexity_threshold: 0.7
       keywords:
         - "options"
         - "alternatives"
@@ -54,7 +48,6 @@ techniques:
         - "evaluate"
         - "best approach"
         - "pros and cons"
-      requires_exploration: true
     template: |
       I'll explore different approaches to this problem.
       
@@ -78,7 +71,6 @@ techniques:
         - "pattern"
         - "template"
         - "like"
-      requires_pattern: true
     template: |
       I'll follow a similar pattern to these examples:
       
@@ -95,8 +87,6 @@ techniques:
       intents:
         - "question_answering"
         - "conversation"
-      complexity_threshold_max: 0.3
-      simple_request: true
     template: |
       {original_prompt}
 
@@ -115,7 +105,6 @@ techniques:
         - "accurate"
         - "correct"
         - "validate"
-      requires_accuracy: true
     template: |
       I'll solve this multiple ways to ensure accuracy.
       
@@ -135,7 +124,6 @@ techniques:
         - "appropriate"
         - "responsible"
         - "fair"
-      sensitive_content: true
     template: |
       I'll approach this with appropriate ethical considerations.
       
@@ -177,7 +165,6 @@ techniques:
         - "as a"
         - "role"
         - "perspective"
-      requires_expertise: true
     template: |
       As a {role}, I'll address this request:
       
@@ -188,6 +175,9 @@ techniques:
     description: "Provides response in a specific structured format"
     priority: 8
     conditions:
+      intents:
+        - "code_generation"
+        - "data_analysis"
       keywords:
         - "list"
         - "bullet points"
@@ -195,7 +185,6 @@ techniques:
         - "json"
         - "markdown"
         - "format"
-      requires_structure: true
     template: |
       I'll provide this in a structured format.
       
@@ -211,7 +200,6 @@ techniques:
       intents:
         - "reasoning"
         - "problem_solving"
-      complexity_threshold: 0.8
       keywords:
         - "think"
         - "consider"
@@ -227,7 +215,7 @@ techniques:
 # Selection rules
 selection_rules:
   max_techniques: 3  # Maximum number of techniques to apply
-  min_confidence: 0.7  # Minimum confidence to suggest a technique
+  min_confidence: 0.3  # Minimum confidence to suggest a technique
   
   # Combination rules
   compatible_combinations:

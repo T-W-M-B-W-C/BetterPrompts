@@ -10,6 +10,7 @@ import structlog
 from uuid import uuid4
 from dataclasses import dataclass, field
 from copy import deepcopy
+import httpx
 
 from .models import (
     PromptGenerationRequest,
@@ -195,6 +196,49 @@ class PromptGenerationEngine:
             "priority": 1,
             "parameters": {}
         }
+    
+    async def _fetch_techniques_from_selector(self, request: PromptGenerationRequest) -> List[str]:
+        """Call technique selector if no techniques specified"""
+        # If user provided techniques, use them
+        if request.techniques:
+            return request.techniques
+        
+        # Try to get recommendations from technique selector
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                response = await client.post(
+                    f"{settings.technique_selector_url}/api/v1/select",
+                    json={
+                        "text": request.text,
+                        "intent": request.intent,
+                        "complexity": request.complexity
+                    }
+                )
+                if response.status_code == 200:
+                    data = response.json()
+                    raw_techniques = [t["id"] for t in data.get("techniques", [])]
+                    
+                    # Filter to only techniques we support
+                    valid_techniques = [t.value for t in TechniqueType]
+                    techniques = [t for t in raw_techniques if t in valid_techniques]
+                    
+                    if techniques:
+                        self.logger.info(
+                            "Retrieved techniques from selector",
+                            techniques=techniques,
+                            count=len(techniques),
+                            filtered_out=len(raw_techniques) - len(techniques)
+                        )
+                        return techniques
+        except Exception as e:
+            self.logger.warning(
+                "Failed to get techniques from selector",
+                error=str(e)
+            )
+        
+        # Fallback to zero_shot
+        self.logger.info("Using default technique: zero_shot")
+        return ["zero_shot"]
         
     async def generate(self, request: PromptGenerationRequest) -> PromptGenerationResponse:
         """Generate an enhanced prompt"""
@@ -209,6 +253,9 @@ class PromptGenerationEngine:
         )
         
         try:
+            # Get techniques from selector if not provided
+            request.techniques = await self._fetch_techniques_from_selector(request)
+            
             # Validate input
             validation_result = await self._validate_request(request)
             if not validation_result.is_valid:
