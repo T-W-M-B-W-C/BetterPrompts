@@ -1,15 +1,5 @@
 # Docker Service Management Commands
 
-# Start all services
-up:
-    docker compose up -d
-    @echo "✅ Services started"
-
-# Stop all services
-down:
-    docker compose down
-    @echo "🛑 Services stopped"
-
 # Restart specific service(s)
 restart service="all":
     #!/bin/bash
