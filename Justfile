@@ -5,6 +5,20 @@
 default:
     @just --list
 
+# Import database commands
+import 'database.just'
+
+# Test authentication API
+test-auth:
+    @echo "Testing authentication API..."
+    @/usr/bin/python3 -m pip install --user -q pytest requests 2>/dev/null || true
+    @/usr/bin/python3 -m pytest tests/test_auth_api.py tests/test_auth_flow.py -v --tb=short
+
+# Quick auth test
+test-auth-quick:
+    @pip install -q pytest requests
+    @python -m pytest tests/test_auth_api.py::TestAuth::test_login -v
+
 # === Service Management ===
 
 # Start all services

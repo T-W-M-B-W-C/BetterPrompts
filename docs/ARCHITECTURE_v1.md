@@ -4,263 +4,176 @@
 
 ```mermaid
 graph TB
-    subgraph "Client Layer"
-        CLIENT[API Clients<br/>curl/httpx/requests]
-        CLIENT --> |HTTP Requests| NGINX
-    end
+    CLIENT[API Clients] --> GATEWAY[API Gateway<br/>:8000]
     
-    subgraph "API Gateway"
-        NGINX[NGINX<br/>:80]
-    end
+    GATEWAY --> AUTH{Auth Check}
+    AUTH --> SERVICES[Services]
     
-    subgraph "Microservices Layer"
-        NGINX --> IC[Intent Classifier<br/>Python/FastAPI<br/>:8001]
-        NGINX --> TS[Technique Selector<br/>Go/Gin<br/>:8002]
-        NGINX --> PG[Prompt Generator<br/>Python/FastAPI<br/>:8003]
-        
-        PG -.->|Auto-select<br/>techniques| TS
-    end
+    SERVICES --> IC[Intent Classifier<br/>:8001]
+    SERVICES --> TS[Technique Selector<br/>:8002]
+    SERVICES --> PG[Prompt Generator<br/>:8003]
     
-    subgraph "Data Layer"
-        IC --> ML[DistilBERT Model<br/>models/]
-        TS --> RULES[rules.yaml<br/>configs/]
-        PG --> TECH[Technique<br/>Templates]
-    end
+    IC --> ML[(ML Models)]
+    TS --> RULES[(Rules)]
+    PG --> TECH[(Techniques)]
     
-    subgraph "Infrastructure"
-        DOCKER[Docker Compose]
-        DOCKER --> |Orchestrates| NGINX
-        DOCKER --> |Orchestrates| IC
-        DOCKER --> |Orchestrates| TS
-        DOCKER --> |Orchestrates| PG
-    end
-```
-
-## Request Flow
-
-```mermaid
-sequenceDiagram
-    participant Client
-    participant NGINX
-    participant IntentClassifier
-    participant TechniqueSelector
-    participant PromptGenerator
-    
-    Client->>NGINX: POST /api/v1/classify
-    NGINX->>IntentClassifier: Classify intent
-    IntentClassifier-->>NGINX: Return intent
-    NGINX-->>Client: Intent classification
-    
-    alt Automatic Selection
-        Client->>NGINX: POST /api/v1/generate (no techniques)
-        NGINX->>PromptGenerator: Generate request
-        PromptGenerator->>TechniqueSelector: POST /api/v1/select
-        TechniqueSelector-->>PromptGenerator: Return techniques
-        PromptGenerator-->>NGINX: Enhanced prompt
-        NGINX-->>Client: Response with auto-selected techniques
-    else Manual Selection
-        Client->>NGINX: POST /api/v1/generate (with techniques)
-        NGINX->>PromptGenerator: Generate with specified techniques
-        PromptGenerator-->>NGINX: Enhanced prompt
-        NGINX-->>Client: Response with manual techniques
-    end
+    AUTH --> DB[(PostgreSQL)]
+    SERVICES --> REDIS[(Redis Cache)]
 ```
 
 ## Directory Structure
 
 ```
 BetterPrompts/
-│
 ├── backend/
-│   └── services/
-│       ├── intent-classifier/   # Python/FastAPI Service
-│       │   ├── app/
-│       │   │   ├── main.py     # FastAPI app
-│       │   │   ├── models.py   # Data models
-│       │   │   └── classifier.py # ML logic
-│       │   ├── models/         # DistilBERT model
-│       │   └── Dockerfile
-│       │
-│       ├── technique-selector/  # Go/Gin Service
-│       │   ├── cmd/            # Main application
-│       │   ├── internal/       # Business logic
-│       │   │   ├── handlers/   # HTTP handlers
-│       │   │   ├── rules/      # Selection engine
-│       │   │   └── models/     # Data structures
-│       │   ├── configs/
-│       │   │   └── rules.yaml  # Selection rules
-│       │   └── Dockerfile
-│       │
-│       └── prompt-generator/    # Python/FastAPI Service
-│           ├── app/
-│           │   ├── main.py     # FastAPI app
-│           │   ├── engine.py   # Generation logic
-│           │   ├── models.py   # Request/Response
-│           │   └── techniques/ # Technique implementations
-│           └── Dockerfile
+│   ├── services/
+│   │   ├── api-gateway/        # Go/Gin Gateway (Port 8000)
+│   │   │   ├── internal/
+│   │   │   │   ├── auth/       # JWT authentication
+│   │   │   │   ├── handlers/   # API endpoints
+│   │   │   │   ├── middleware/ # Auth, CORS, logging
+│   │   │   │   └── services/   # User, prompt services
+│   │   │   └── migrations/     # Database migrations
+│   │   │
+│   │   ├── intent-classifier/  # Python ML Service (Port 8001)
+│   │   ├── technique-selector/ # Go Rules Engine (Port 8002)
+│   │   └── prompt-generator/   # Python Generator (Port 8003)
+│   │
+│   └── infrastructure/
+│       └── database/
+│           └── migrations/      # PostgreSQL schemas
 │
-├── docker/
-│   └── nginx/
-│       └── conf.d/
-│           └── api.conf        # Routing rules
+├── tests/                       # pytest test suite
+│   ├── test_auth_api.py       # Auth endpoints
+│   └── test_auth_flow.py      # Full auth flow
 │
-├── docker-compose.yml          # Service orchestration
-│
-├── scripts/                     # Utility scripts
-│   └── setup_git_lfs.sh
-│
-├── Justfile                    # Main test commands
-├── test-prompts.just           # Scenario tests
-├── diagnostic.just             # Troubleshooting
-└── TEST_COMMANDS.md            # Test documentation
+├── docker-compose.yml          # All services
+├── Justfile                    # Main commands
+└── database.just               # DB management
 ```
 
-## Service Details
+## Core Services
 
-### 1. Intent Classifier (Port 8001)
-```yaml
-Technology: Python 3.11, FastAPI, PyTorch
-Model: DistilBERT (fine-tuned)
-Purpose: Classify user intent from text
-Endpoints:
-  - POST /classify
-  - GET /health
-Response Time: ~200ms
-```
+### API Gateway (Port 8000)
+- **Tech**: Go 1.21, Gin Framework
+- **Auth**: JWT tokens with Bearer authentication
+- **Database**: PostgreSQL with auth schemas
+- **Endpoints**:
+  - `POST /api/v1/auth/register` - User registration
+  - `POST /api/v1/auth/login` - User login
+  - `POST /api/v1/auth/refresh` - Token refresh
+  - `GET /api/v1/auth/profile` - User profile
+  - `POST /api/v1/enhance` - Enhance prompts
+  - `GET /api/v1/history` - Prompt history
 
-### 2. Technique Selector (Port 8002)
-```yaml
-Technology: Go 1.21, Gin Framework
-Configuration: YAML-based rules engine
-Purpose: Select optimal prompt techniques
-Endpoints:
-  - POST /api/v1/select
-  - GET /health
-Features:
-  - Score-based selection
-  - Complexity filtering
-  - Confidence thresholds
-Response Time: ~50ms
-```
+### Intent Classifier (Port 8001)
+- **Tech**: Python 3.11, FastAPI, PyTorch
+- **Model**: DistilBERT (fine-tuned)
+- **Purpose**: Classify user intent from text
+- **Response**: ~200ms
 
-### 3. Prompt Generator (Port 8003)
-```yaml
-Technology: Python 3.11, FastAPI
-Integration: Calls Technique Selector
-Purpose: Apply techniques to enhance prompts
-Endpoints:
-  - POST /api/v1/generate
-  - GET /api/v1/techniques
-  - GET /health
-Techniques:
-  - zero_shot
-  - few_shot
-  - chain_of_thought
-  - structured_output
-  - self_consistency
-  - analogical
-Response Time: ~100-300ms
-```
+### Technique Selector (Port 8002)
+- **Tech**: Go 1.21, Gin
+- **Config**: YAML rules engine
+- **Purpose**: Select optimal techniques
+- **Response**: ~50ms
 
-## Data Flow
+### Prompt Generator (Port 8003)
+- **Tech**: Python 3.11, FastAPI
+- **Purpose**: Apply techniques to prompts
+- **Techniques**: zero_shot, few_shot, chain_of_thought, structured_output
+- **Response**: ~100-300ms
+
+## Request Flow
 
 ```mermaid
 graph LR
-    subgraph "Input Processing"
-        A[User Input] --> B[Intent Classification]
-        B --> C{Has Techniques?}
-    end
-    
-    subgraph "Technique Selection"
-        C -->|No| D[Auto-Select]
-        D --> E[Score Techniques]
-        E --> F[Filter by Confidence]
-        F --> G[Apply Thresholds]
-    end
-    
-    subgraph "Prompt Generation"
-        C -->|Yes| H[Manual Techniques]
-        G --> I[Merge Techniques]
-        H --> I
-        I --> J[Apply Templates]
-        J --> K[Generate Output]
-    end
-    
-    K --> L[Enhanced Prompt]
+    A[Client Request] --> B[JWT Auth]
+    B --> C{Valid?}
+    C -->|No| D[401 Error]
+    C -->|Yes| E[Process Request]
+    E --> F[Enhance Prompt]
+    F --> G[Store History]
+    G --> H[Return Response]
 ```
 
-## Configuration
-
-### Docker Compose Services
-```yaml
-services:
-  nginx:             # Port 80
-  intent-classifier: # Port 8001
-  technique-selector: # Port 8002  
-  prompt-generator:   # Port 8003
-```
-
-### NGINX Routing
-```nginx
-/api/intent → intent-classifier:8001
-/api/techniques → technique-selector:8002
-/api/enhance → prompt-generator:8003
-```
-
-## Testing Infrastructure
+## Database Schema
 
 ```mermaid
 graph TD
-    subgraph "Test Commands"
-        J[Justfile] --> |orchestrates| TC[Test Commands]
-        TC --> ST[Smoke Tests]
-        TC --> IT[Integration Tests]
-        TC --> PT[Performance Tests]
+    subgraph auth
+        USERS[users]
+        SESSIONS[sessions]
+        API_KEYS[api_keys]
     end
     
-    subgraph "Diagnostic Tools"
-        D[diagnostic.just] --> |troubleshooting| DT[Debug Tools]
-        DT --> TS[Technique Debug]
-        DT --> CM[Communication Check]
-        DT --> SR[System Report]
+    subgraph prompts
+        HISTORY[history]
+        TEMPLATES[templates]
     end
     
-    subgraph "Scenario Tests"
-        TP[test-prompts.just] --> |scenarios| SC[Test Scenarios]
-        SC --> CI[Code Intent]
-        SC --> RI[Reasoning Intent]
-        SC --> CW[Creative Writing]
-    end
+    USERS --> SESSIONS
+    USERS --> HISTORY
+    USERS --> API_KEYS
 ```
 
-## Key Integration Points
+### Key Tables
+- **auth.users**: User accounts with JWT auth
+- **auth.sessions**: Active user sessions
+- **prompts.history**: Prompt enhancement history
+- **prompts.templates**: Reusable prompt templates
 
-1. **Prompt Generator ↔ Technique Selector**
-   - Automatic technique selection when not specified
-   - Fallback to zero_shot on failure
-   - Filters unknown techniques
-
-2. **Client ↔ Backend Services**
-   - All traffic routed through NGINX
-   - RESTful API communication
-   - JSON request/response format
-   - Tested via curl/Just commands
-
-3. **Service Discovery**
-   - Docker Compose internal networking
-   - Service names as hostnames
-   - Health checks for availability
-
-## Deployment
+## Quick Start
 
 ```bash
-# Development
+# 1. Start services
 docker compose up -d
 
-# Testing
-just test-integration
+# 2. Setup database
+just setup-db
 
-# Monitoring
+# 3. Run tests
+just test-auth
+
+# 4. Check health
 just health
-just logs [service]
 ```
+
+## Testing
+
+### Test Commands
+- `just test-auth` - Run authentication tests
+- `just test-integration` - Full integration tests
+- `just smoke-test` - Quick health check
+
+### Database Commands
+- `just setup-db` - Initialize database with migrations
+- `just reset-db` - Clean reset of database
+- `just migrate` - Run pending migrations
+
+## API Usage
+
+### Authentication
+```bash
+# Register
+curl -X POST localhost:8000/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"user@example.com","username":"user","password":"Pass123!"}'
+
+# Login
+curl -X POST localhost:8000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email_or_username":"user","password":"Pass123!"}'
+
+# Use API with token
+curl -H "Authorization: Bearer $TOKEN" \
+  localhost:8000/api/v1/history
+```
+
+## Environment
+
+- **Development**: Docker Compose with hot reload
+- **Database**: PostgreSQL 15 with auth schemas
+- **Cache**: Redis for session management
+- **Auth**: JWT with Bearer tokens
+- **Testing**: pytest for API testing
