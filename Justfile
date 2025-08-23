@@ -7,12 +7,17 @@ default:
     @echo "🚀 BetterPrompts Command Interface"
     @echo "=================================="
     @echo ""
-    @echo "📦 Service Management:"
+    @echo "🎯 Quick Start:"
+    @echo "  first-time      - Complete first-time setup (run this first!)"
     @echo "  up              - Start all services"
     @echo "  down            - Stop all services"
+    @echo "  health          - Check service health"
+    @echo ""
+    @echo "📦 Service Management:"
     @echo "  restart         - Restart service(s)"
     @echo "  logs            - View service logs"
     @echo "  rebuild         - Rebuild service(s)"
+    @echo "  status          - Show service status"
     @echo ""
     @echo "🧪 Testing:"
     @echo "  test-auth       - Test authentication"
@@ -27,9 +32,8 @@ default:
     @echo "  db-shell        - Connect to database"
     @echo ""
     @echo "🏥 Monitoring:"
-    @echo "  health          - Check service health"
-    @echo "  status          - Show service status"
     @echo "  monitor         - Monitor resources"
+    @echo "  metrics         - View Prometheus metrics"
     @echo ""
     @echo "⚡ Performance:"
     @echo "  bench-selector  - Benchmark selector"
@@ -47,6 +51,9 @@ import 'just/health.just'
 import 'just/performance.just'
 import 'just/prompts.just'
 import 'just/diagnostic.just'
+import 'just/first-time.just'
+import 'just/up.just'
+import 'just/down.just'
 
 # Quick start - bring up system and check health
 start:

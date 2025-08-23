@@ -6,6 +6,9 @@ This directory contains modular Just files for organizing project commands.
 
 ```
 just/
+├── first-time.just  # Complete first-time setup
+├── up.just          # Start application (various modes)
+├── down.just        # Stop application (various modes)
 ├── database.just    # Database management commands
 ├── diagnostic.just  # Troubleshooting and debugging
 ├── docker.just      # Docker service management
@@ -15,6 +18,41 @@ just/
 ├── services.just    # Service-specific testing
 └── test.just        # General testing commands
 ```
+
+## 🎯 Primary Commands
+
+### 🚀 first-time.just
+**Complete first-time setup for new developers**
+- `first-time` - Run complete setup (checks, deps, build, db, tests)
+- `check-requirements` - Verify system requirements
+- `install-deps` - Install Python dependencies
+- `setup-env` - Create .env file
+- `build-all` - Build all Docker images
+- `setup-database` - Initialize PostgreSQL with migrations
+- `run-tests` - Run smoke tests
+- `clean-first-time` - Clean everything for fresh start
+
+### ⬆️ up.just
+**Start the application with various options**
+- `up` - Start with health checks (recommended)
+- `up-fast` - Quick start without checks
+- `up-attached` - Start with live logs
+- `up-dev` - Development mode with hot reload
+- `up-prod` - Production mode
+- `up-build` - Rebuild and start
+- `up-fresh` - Start with clean database
+- `up-monitor` - Start with Grafana dashboard
+
+### ⬇️ down.just
+**Stop the application with cleanup options**
+- `down` - Graceful stop (default)
+- `down-clean` - Stop and remove containers
+- `down-all` - Remove everything including volumes
+- `down-backup` - Backup data before stopping
+- `down-force` - Emergency force stop
+- `pause/resume` - Pause and resume services
+- `restart` - Quick restart
+- `restart-full` - Full restart with new containers
 
 ## Modules
 
@@ -69,17 +107,21 @@ just/
 All commands are available from the project root:
 
 ```bash
-# Show all available commands
-just
+# First-time setup (run this once)
+just first-time
 
-# Start services
-just up
+# Daily workflow
+just up          # Start everything
+just health      # Check status
+just down        # Stop when done
 
-# Run auth tests
-just test-auth
+# Testing
+just test-auth   # Test authentication
+just smoke-test  # Quick validation
 
-# Check health
-just health
+# Maintenance
+just restart     # Quick restart
+just down-backup # Stop with backup
 ```
 
 ## Adding New Modules
