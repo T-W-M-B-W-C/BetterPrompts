@@ -346,8 +346,21 @@ class PromptGenerationEngine:
             "intent": request.intent,
             "complexity": request.complexity,
             "target_model": request.target_model,
-            "temperature": request.temperature or settings.default_temperature
+            "temperature": request.temperature or settings.default_temperature,
+            # Enable enhanced mode for supported techniques when complexity is moderate or complex
+            "enhanced": request.complexity in ["moderate", "complex"],
+            # Pass intent as initial domain hint for techniques that need it
+            "domain": request.intent,
+            # Enable sub-steps for complex problems
+            "show_substeps": request.complexity == "complex"
         }
+        
+        self.logger.info(
+            "Prepared context for techniques",
+            enhanced_mode=context["enhanced"],
+            complexity=request.complexity,
+            intent=request.intent
+        )
         
         # Merge with request context
         if request.context:
@@ -408,6 +421,15 @@ class PromptGenerationEngine:
                 )
                 
                 # Apply technique with enhanced context
+                self.logger.info(
+                    f"Applying technique with context",
+                    technique=technique_id,
+                    context_keys=list(technique_context.keys()),
+                    enhanced_mode=technique_context.get("enhanced", False),
+                    complexity=technique_context.get("complexity"),
+                    intent=technique_context.get("intent")
+                )
+                
                 result = await self._apply_single_technique_with_metadata(
                     technique_id,
                     chain_context.current_text,
@@ -489,10 +511,25 @@ class PromptGenerationEngine:
             
         # Apply technique with tracking if available
         tracking_id = None
+        self.logger.debug(
+            f"Calling technique.apply",
+            technique_id=technique_id,
+            text_length=len(text),
+            has_tracking=hasattr(technique, 'apply_with_tracking')
+        )
+        
         if hasattr(technique, 'apply_with_tracking'):
             result, tracking_id = technique.apply_with_tracking(text, context)
         else:
             result = technique.apply(text, context)
+        
+        self.logger.debug(
+            f"Technique applied",
+            technique_id=technique_id,
+            input_length=len(text),
+            output_length=len(result),
+            changed=result != text
+        )
         
         # Extract metadata if the technique provides it
         metadata = {}

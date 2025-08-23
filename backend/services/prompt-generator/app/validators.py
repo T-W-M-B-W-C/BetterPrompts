@@ -127,12 +127,9 @@ class PromptValidator:
         if len(techniques) > 5:
             warnings.append("Using too many techniques may make the prompt overly complex")
             
-        # Check for unknown techniques
-        valid_techniques = [
-            "chain_of_thought", "tree_of_thoughts", "few_shot", "zero_shot",
-            "role_play", "step_by_step", "structured_output", "emotional_appeal",
-            "constraints", "analogical"
-        ]
+        # Check for unknown techniques - use the actual enum values
+        from .models import TechniqueType
+        valid_techniques = [t.value for t in TechniqueType]
         
         for technique in techniques:
             if technique not in valid_techniques:

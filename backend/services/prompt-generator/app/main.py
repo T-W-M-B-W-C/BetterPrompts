@@ -287,70 +287,64 @@ async def generate_prompts_batch(request: BatchGenerationRequest):
 )
 async def list_techniques():
     """List all available prompt engineering techniques"""
-    techniques = [
-        {
-            "id": "chain_of_thought",
-            "name": "Chain of Thought",
-            "description": "Encourages step-by-step reasoning",
-            "best_for": ["complex reasoning", "problem solving", "analysis"]
-        },
-        {
-            "id": "tree_of_thoughts",
-            "name": "Tree of Thoughts",
-            "description": "Explores multiple solution paths",
-            "best_for": ["complex problems", "optimization", "creative solutions"]
-        },
-        {
-            "id": "few_shot",
-            "name": "Few-Shot Learning",
-            "description": "Provides examples to guide behavior",
-            "best_for": ["pattern matching", "formatting", "consistency"]
-        },
-        {
-            "id": "zero_shot",
-            "name": "Zero-Shot Learning",
-            "description": "Clear instructions without examples",
-            "best_for": ["straightforward tasks", "general queries"]
-        },
-        {
-            "id": "role_play",
-            "name": "Role Playing",
-            "description": "Assigns specific role or expertise",
-            "best_for": ["expert advice", "specialized knowledge", "perspective"]
-        },
-        {
-            "id": "step_by_step",
-            "name": "Step by Step",
-            "description": "Breaks down complex tasks",
-            "best_for": ["procedures", "tutorials", "workflows"]
-        },
-        {
-            "id": "structured_output",
-            "name": "Structured Output",
-            "description": "Requests specific output format",
-            "best_for": ["data extraction", "formatting", "organization"]
-        },
-        {
-            "id": "emotional_appeal",
-            "name": "Emotional Appeal",
-            "description": "Adds emotional context for engagement",
-            "best_for": ["creative tasks", "persuasion", "engagement"]
-        },
-        {
-            "id": "constraints",
-            "name": "Constraints",
-            "description": "Adds specific requirements and limits",
-            "best_for": ["precision", "compliance", "boundaries"]
-        },
-        {
-            "id": "analogical",
-            "name": "Analogical Reasoning",
-            "description": "Uses analogies to explain concepts",
-            "best_for": ["explanation", "understanding", "teaching"]
+    from .models import TechniqueType
+    
+    # Build technique list from the actual enum
+    techniques = []
+    for technique_type in TechniqueType:
+        technique_info = {
+            "id": technique_type.value,
+            "name": technique_type.value.replace("_", " ").title(),
+            "description": get_technique_description(technique_type.value),
+            "best_for": get_technique_best_for(technique_type.value)
         }
-    ]
+        techniques.append(technique_info)
     
     return {"techniques": techniques}
+
+def get_technique_description(technique_id: str) -> str:
+    """Get description for a technique"""
+    descriptions = {
+        "chain_of_thought": "Encourages step-by-step reasoning",
+        "tree_of_thoughts": "Explores multiple solution paths",
+        "few_shot": "Provides examples to guide behavior",
+        "zero_shot": "Clear instructions without examples",
+        "role_play": "Assigns specific role or expertise",
+        "step_by_step": "Breaks down complex tasks",
+        "structured_output": "Requests specific output format",
+        "emotional_appeal": "Adds emotional context for engagement",
+        "constraints": "Adds specific requirements and limits",
+        "analogical": "Uses analogies to explain concepts",
+        "self_consistency": "Multiple reasoning paths for verification",
+        "react": "Combines reasoning and acting",
+        "socratic": "Guides through questioning",
+        "meta_prompting": "Reflects on prompt construction",
+        "recursive": "Applies techniques recursively",
+        "adversarial": "Challenges assumptions"
+    }
+    return descriptions.get(technique_id, "Advanced prompting technique")
+
+def get_technique_best_for(technique_id: str) -> list:
+    """Get best use cases for a technique"""
+    best_for = {
+        "chain_of_thought": ["complex reasoning", "problem solving", "analysis"],
+        "tree_of_thoughts": ["complex problems", "optimization", "creative solutions"],
+        "few_shot": ["pattern matching", "formatting", "consistency"],
+        "zero_shot": ["straightforward tasks", "general queries"],
+        "role_play": ["expert advice", "specialized knowledge", "perspective"],
+        "step_by_step": ["procedures", "tutorials", "workflows"],
+        "structured_output": ["data extraction", "formatting", "organization"],
+        "emotional_appeal": ["creative tasks", "persuasion", "engagement"],
+        "constraints": ["precision", "compliance", "boundaries"],
+        "analogical": ["explanation", "understanding", "teaching"],
+        "self_consistency": ["verification", "accuracy", "reliability"],
+        "react": ["problem solving", "task execution", "reasoning"],
+        "socratic": ["learning", "discovery", "critical thinking"],
+        "meta_prompting": ["prompt optimization", "meta-cognition"],
+        "recursive": ["deep analysis", "iterative improvement"],
+        "adversarial": ["robustness", "edge cases", "validation"]
+    }
+    return best_for.get(technique_id, ["general use"])
 
 
 @app.get("/metrics")

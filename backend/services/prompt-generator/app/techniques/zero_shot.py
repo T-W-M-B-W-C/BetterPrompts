@@ -79,21 +79,71 @@ class ZeroShotTechnique(BaseTechnique):
             return "Please provide a clear and helpful response to the following:"
             
         intent = context.get("intent", "general")
+        complexity = context.get("complexity", "simple")
         
+        # Enhanced instruction map with complexity-aware instructions
         instruction_map = {
-            "question_answering": "Answer the following question accurately and comprehensively:",
-            "summarization": "Summarize the following text concisely while preserving key information:",
-            "translation": "Translate the following text accurately:",
-            "classification": "Classify the following input into the appropriate category:",
-            "generation": "Generate content based on the following prompt:",
-            "analysis": "Analyze the following and provide insights:",
-            "explanation": "Explain the following clearly and thoroughly:",
-            "problem_solving": "Solve the following problem with clear reasoning:",
-            "creative_writing": "Create engaging content based on the following:",
-            "code_generation": "Generate clean, efficient code for the following requirement:"
+            "question_answering": {
+                "simple": "Answer the following question clearly:",
+                "moderate": "Provide a comprehensive answer to the following question, including relevant context:",
+                "complex": "Analyze and answer the following question in depth, considering multiple perspectives and implications:"
+            },
+            "summarization": {
+                "simple": "Summarize the following text briefly:",
+                "moderate": "Summarize the following text, preserving key details and insights:",
+                "complex": "Provide a comprehensive summary with analysis of the following:"
+            },
+            "explanation": {
+                "simple": "Explain the following in simple terms:",
+                "moderate": "Explain the following clearly, including relevant details and examples:",
+                "complex": "Provide a thorough explanation with multiple perspectives, examples, and implications:"
+            },
+            "problem_solving": {
+                "simple": "Solve the following problem:",
+                "moderate": "Solve the following problem, showing your reasoning process:",
+                "complex": "Analyze and solve the following problem systematically, considering edge cases and alternatives:"
+            },
+            "creative_writing": {
+                "simple": "Create content based on:",
+                "moderate": "Create engaging and well-structured content based on:",
+                "complex": "Craft sophisticated, nuanced content with depth and originality based on:"
+            },
+            "code_generation": {
+                "simple": "Generate code for:",
+                "moderate": "Generate clean, documented code with error handling for:",
+                "complex": "Design and implement a robust, scalable solution with best practices for:"
+            },
+            "reasoning": {
+                "simple": "Consider the following:",
+                "moderate": "Analyze and reason through the following:",
+                "complex": "Provide deep analytical reasoning with evidence and logical progression for:"
+            },
+            "data_analysis": {
+                "simple": "Analyze the following data:",
+                "moderate": "Perform detailed analysis with insights on the following:",
+                "complex": "Conduct comprehensive data analysis with patterns, correlations, and recommendations:"
+            },
+            "task_planning": {
+                "simple": "Plan the following task:",
+                "moderate": "Create a detailed plan with milestones for:",
+                "complex": "Develop a comprehensive strategy with risk assessment and contingencies for:"
+            }
         }
         
-        return instruction_map.get(intent, "Please provide a clear and helpful response to the following:")
+        # Get the appropriate instruction based on intent and complexity
+        if intent in instruction_map:
+            if isinstance(instruction_map[intent], dict):
+                return instruction_map[intent].get(complexity, instruction_map[intent].get("moderate"))
+            return instruction_map[intent]
+        
+        # Fallback with complexity awareness
+        fallback_map = {
+            "simple": "Please provide a clear response to the following:",
+            "moderate": "Please provide a detailed and well-structured response to the following:",
+            "complex": "Please provide a comprehensive, nuanced analysis of the following:"
+        }
+        
+        return fallback_map.get(complexity, "Please provide a clear and helpful response to the following:")
     
     def _build_constraints(self, context: Optional[Dict[str, Any]] = None) -> str:
         """Build constraints based on context"""
@@ -101,7 +151,31 @@ class ZeroShotTechnique(BaseTechnique):
             return ""
             
         constraints = []
+        complexity = context.get("complexity", "simple")
+        intent = context.get("intent", "general")
         
+        # Add complexity-based structure requirements
+        if complexity == "moderate":
+            constraints.append("Structure your response with clear sections or paragraphs.")
+            constraints.append("Include relevant examples or evidence where appropriate.")
+        elif complexity == "complex":
+            constraints.append("Organize your response with clear headings or numbered sections.")
+            constraints.append("Provide comprehensive coverage with examples and evidence.")
+            constraints.append("Consider multiple viewpoints or approaches.")
+        
+        # Add intent-specific requirements
+        intent_requirements = {
+            "code_generation": ["Include comments explaining key logic", "Follow best practices and conventions"],
+            "explanation": ["Use clear examples", "Define technical terms"],
+            "problem_solving": ["Show your work", "Verify your solution"],
+            "data_analysis": ["Present findings clearly", "Support conclusions with data"],
+            "reasoning": ["Make your logic explicit", "Address potential counterarguments"]
+        }
+        
+        if intent in intent_requirements:
+            constraints.extend(intent_requirements[intent])
+        
+        # Add user-specified constraints
         if "max_length" in context:
             constraints.append(f"Keep your response under {context['max_length']} words.")
             
@@ -116,7 +190,7 @@ class ZeroShotTechnique(BaseTechnique):
                 constraints.append(f"Ensure you {req}.")
                 
         if constraints:
-            return "Requirements:\n" + "\n".join(f"- {c}" for c in constraints)
+            return "Guidelines:\n" + "\n".join(f"• {c}" for c in constraints)
             
         return ""
     

@@ -112,52 +112,61 @@ techniques:
       
       Approach 1:
 
-  - id: "constitutional_ai"
-    name: "Constitutional AI"
-    description: "Applies ethical principles and guidelines to responses"
+  - id: "analogical"
+    name: "Analogical Reasoning"
+    description: "Uses analogies and comparisons to explain concepts"
     priority: 5
     conditions:
+      intents:
+        - "explanation"
+        - "creative_writing"
+        - "reasoning"
       keywords:
-        - "ethical"
-        - "moral"
-        - "safe"
-        - "appropriate"
-        - "responsible"
-        - "fair"
+        - "like"
+        - "similar"
+        - "compare"
+        - "analogy"
+        - "example"
+        - "metaphor"
     template: |
-      I'll approach this with appropriate ethical considerations.
+      I'll explain this using analogies and comparisons.
       
       {original_prompt}
       
-      Considering the ethical implications:
+      To understand this better:
 
-  - id: "iterative_refinement"
-    name: "Iterative Refinement"
-    description: "Progressive improvement through multiple iterations"
+  - id: "step_by_step"
+    name: "Step by Step"
+    description: "Breaks down complex tasks into sequential steps"
     priority: 6
     conditions:
       intents:
-        - "creative_writing"
+        - "task_planning"
         - "code_generation"
+        - "problem_solving"
       keywords:
-        - "improve"
-        - "refine"
-        - "enhance"
-        - "optimize"
-        - "polish"
-        - "iterate"
+        - "steps"
+        - "procedure"
+        - "process"
+        - "workflow"
+        - "sequence"
+        - "guide"
     template: |
-      I'll start with a basic version and then refine it.
+      I'll break this down into clear sequential steps.
       
       {original_prompt}
       
-      Initial version:
+      Step-by-step process:
 
-  - id: "role_based"
-    name: "Role-Based Prompting"
+  - id: "role_play"
+    name: "Role Playing"
     description: "Assumes a specific role or expertise for the response"
     priority: 7
     conditions:
+      intents:
+        - "creative_writing"
+        - "conversation"
+        - "explanation"
       keywords:
         - "expert"
         - "professional"
@@ -192,25 +201,27 @@ techniques:
       
       Here's the structured response:
 
-  - id: "metacognitive"
-    name: "Metacognitive Prompting"
-    description: "Reflects on the thinking process while solving"
+  - id: "react"
+    name: "ReAct Framework"
+    description: "Combines reasoning and acting for problem solving"
     priority: 9
     conditions:
       intents:
-        - "reasoning"
         - "problem_solving"
+        - "task_planning"
+        - "code_generation"
       keywords:
+        - "action"
+        - "observe"
         - "think"
-        - "consider"
-        - "reflect"
-        - "approach"
+        - "reason"
+        - "execute"
     template: |
-      Let me think about how to approach this problem.
+      I'll use Thought-Action-Observation cycles.
       
       {original_prompt}
       
-      My thinking process:
+      Thought 1:
 
 # Selection rules
 selection_rules:
@@ -220,9 +231,9 @@ selection_rules:
   # Combination rules
   compatible_combinations:
     - ["chain_of_thought", "self_consistency"]
-    - ["few_shot", "iterative_refinement"]
-    - ["tree_of_thoughts", "metacognitive"]
-    - ["role_based", "structured_output"]
+    - ["few_shot", "step_by_step"]
+    - ["tree_of_thoughts", "react"]
+    - ["role_play", "structured_output"]
   
   incompatible_combinations:
     - ["zero_shot", "few_shot"]
@@ -237,8 +248,8 @@ selection_rules:
       few_shot: 2
       structured_output: 1
     creative_writing:
-      iterative_refinement: 2
-      role_based: 1
+      step_by_step: 2
+      role_play: 1
 
 # Complexity scoring factors
 complexity_factors:
