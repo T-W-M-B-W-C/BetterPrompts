@@ -25,3 +25,10 @@ e2e/*/node_modules/
 # Next.js build cache
 frontend/.next/
 .next/
+
+# Hugging Face cache directories
+backend/services/intent-classifier/.cache/
+backend/services/*/.cache/
+**/.cache/huggingface/
+.cache/
+venv
