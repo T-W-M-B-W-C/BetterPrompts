@@ -10,7 +10,10 @@ techniques:
         - "reasoning"
         - "problem_solving"
         - "data_analysis"
-        - "code_generation"
+      complexity_levels:
+        - "moderate"
+        - "complex"
+      complexity_threshold: 0.5
       keywords:
         - "explain"
         - "why"
@@ -41,6 +44,9 @@ techniques:
         - "problem_solving"
         - "task_planning"
         - "reasoning"
+      complexity_levels:
+        - "complex"
+      complexity_threshold: 0.7
       keywords:
         - "options"
         - "alternatives"
@@ -48,6 +54,7 @@ techniques:
         - "evaluate"
         - "best approach"
         - "pros and cons"
+      requires_exploration: true
     template: |
       I'll explore different approaches to this problem.
       
@@ -71,6 +78,7 @@ techniques:
         - "pattern"
         - "template"
         - "like"
+      requires_pattern: true
     template: |
       I'll follow a similar pattern to these examples:
       
@@ -87,6 +95,8 @@ techniques:
       intents:
         - "question_answering"
         - "conversation"
+      complexity_threshold_max: 0.3
+      simple_request: true
     template: |
       {original_prompt}
 
@@ -105,6 +115,7 @@ techniques:
         - "accurate"
         - "correct"
         - "validate"
+      requires_accuracy: true
     template: |
       I'll solve this multiple ways to ensure accuracy.
       
@@ -112,61 +123,53 @@ techniques:
       
       Approach 1:
 
-  - id: "analogical"
-    name: "Analogical Reasoning"
-    description: "Uses analogies and comparisons to explain concepts"
+  - id: "constitutional_ai"
+    name: "Constitutional AI"
+    description: "Applies ethical principles and guidelines to responses"
     priority: 5
     conditions:
-      intents:
-        - "explanation"
-        - "creative_writing"
-        - "reasoning"
       keywords:
-        - "like"
-        - "similar"
-        - "compare"
-        - "analogy"
-        - "example"
-        - "metaphor"
+        - "ethical"
+        - "moral"
+        - "safe"
+        - "appropriate"
+        - "responsible"
+        - "fair"
+      sensitive_content: true
     template: |
-      I'll explain this using analogies and comparisons.
+      I'll approach this with appropriate ethical considerations.
       
       {original_prompt}
       
-      To understand this better:
+      Considering the ethical implications:
 
-  - id: "step_by_step"
-    name: "Step by Step"
-    description: "Breaks down complex tasks into sequential steps"
+  - id: "iterative_refinement"
+    name: "Iterative Refinement"
+    description: "Progressive improvement through multiple iterations"
     priority: 6
     conditions:
       intents:
-        - "task_planning"
+        - "creative_writing"
         - "code_generation"
-        - "problem_solving"
       keywords:
-        - "steps"
-        - "procedure"
-        - "process"
-        - "workflow"
-        - "sequence"
-        - "guide"
+        - "improve"
+        - "refine"
+        - "enhance"
+        - "optimize"
+        - "polish"
+        - "iterate"
     template: |
-      I'll break this down into clear sequential steps.
+      I'll start with a basic version and then refine it.
       
       {original_prompt}
       
-      Step-by-step process:
+      Initial version:
 
-  - id: "role_play"
-    name: "Role Playing"
+  - id: "role_based"
+    name: "Role-Based Prompting"
     description: "Assumes a specific role or expertise for the response"
     priority: 7
     conditions:
-      intents:
-        - "creative_writing"
-        - "conversation"
-        - "explanation"
       keywords:
         - "expert"
         - "professional"
@@ -174,6 +177,7 @@ techniques:
         - "as a"
         - "role"
         - "perspective"
+      requires_expertise: true
     template: |
       As a {role}, I'll address this request:
       
@@ -184,9 +188,6 @@ techniques:
     description: "Provides response in a specific structured format"
     priority: 8
     conditions:
-      intents:
-        - "code_generation"
-        - "data_analysis"
       keywords:
         - "list"
         - "bullet points"
@@ -194,6 +195,7 @@ techniques:
         - "json"
         - "markdown"
         - "format"
+      requires_structure: true
     template: |
       I'll provide this in a structured format.
       
@@ -201,39 +203,38 @@ techniques:
       
       Here's the structured response:
 
-  - id: "react"
-    name: "ReAct Framework"
-    description: "Combines reasoning and acting for problem solving"
+  - id: "metacognitive"
+    name: "Metacognitive Prompting"
+    description: "Reflects on the thinking process while solving"
     priority: 9
     conditions:
       intents:
+        - "reasoning"
         - "problem_solving"
-        - "task_planning"
-        - "code_generation"
+      complexity_threshold: 0.8
       keywords:
-        - "action"
-        - "observe"
         - "think"
-        - "reason"
-        - "execute"
+        - "consider"
+        - "reflect"
+        - "approach"
     template: |
-      I'll use Thought-Action-Observation cycles.
+      Let me think about how to approach this problem.
       
       {original_prompt}
       
-      Thought 1:
+      My thinking process:
 
 # Selection rules
 selection_rules:
   max_techniques: 3  # Maximum number of techniques to apply
-  min_confidence: 0.3  # Minimum confidence to suggest a technique
+  min_confidence: 0.7  # Minimum confidence to suggest a technique
   
   # Combination rules
   compatible_combinations:
     - ["chain_of_thought", "self_consistency"]
-    - ["few_shot", "step_by_step"]
-    - ["tree_of_thoughts", "react"]
-    - ["role_play", "structured_output"]
+    - ["few_shot", "iterative_refinement"]
+    - ["tree_of_thoughts", "metacognitive"]
+    - ["role_based", "structured_output"]
   
   incompatible_combinations:
     - ["zero_shot", "few_shot"]
@@ -248,8 +249,8 @@ selection_rules:
       few_shot: 2
       structured_output: 1
     creative_writing:
-      step_by_step: 2
-      role_play: 1
+      iterative_refinement: 2
+      role_based: 1
 
 # Complexity scoring factors
 complexity_factors:

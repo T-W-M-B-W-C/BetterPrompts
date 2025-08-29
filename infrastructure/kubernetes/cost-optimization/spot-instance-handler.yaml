@@ -1,0 +1,253 @@
+# AWS Node Termination Handler for Spot Instances
+# Gracefully handles spot instance interruptions
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: aws-node-termination-handler
+  namespace: kube-system
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/aws-node-termination-handler
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: aws-node-termination-handler
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - ""
+  resources:
+  - pods/eviction
+  verbs:
+  - create
+- apiGroups:
+  - extensions
+  - apps
+  resources:
+  - daemonsets
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+  - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: aws-node-termination-handler
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: aws-node-termination-handler
+subjects:
+- kind: ServiceAccount
+  name: aws-node-termination-handler
+  namespace: kube-system
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: aws-node-termination-handler
+  namespace: kube-system
+  labels:
+    app: aws-node-termination-handler
+spec:
+  selector:
+    matchLabels:
+      app: aws-node-termination-handler
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app: aws-node-termination-handler
+    spec:
+      serviceAccountName: aws-node-termination-handler
+      securityContext:
+        fsGroup: 1000
+      priorityClassName: system-node-critical
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+      - name: aws-node-termination-handler
+        image: public.ecr.aws/aws-ec2/aws-node-termination-handler:v1.20.0
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 1000
+          runAsGroup: 1000
+          allowPrivilegeEscalation: false
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: SPOT_POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: DELETE_LOCAL_DATA
+          value: "true"
+        - name: IGNORE_DAEMON_SETS
+          value: "true"
+        - name: GRACE_PERIOD
+          value: "120"
+        - name: POD_TERMINATION_GRACE_PERIOD
+          value: "-1"
+        - name: INSTANCE_METADATA_URL
+          value: "http://169.254.169.254"
+        - name: NODE_TERMINATION_GRACE_PERIOD
+          value: "120"
+        - name: WEBHOOK_URL
+          value: ""
+        - name: WEBHOOK_HEADERS
+          value: ""
+        - name: WEBHOOK_TEMPLATE
+          value: ""
+        - name: DRY_RUN
+          value: "false"
+        - name: ENABLE_SPOT_INTERRUPTION_DRAINING
+          value: "true"
+        - name: ENABLE_SCHEDULED_EVENT_DRAINING
+          value: "true"
+        - name: ENABLE_REBALANCE_MONITORING
+          value: "true"
+        - name: ENABLE_REBALANCE_DRAINING
+          value: "true"
+        - name: ENABLE_SQS_TERMINATION_DRAINING
+          value: "true"
+        - name: QUEUE_URL
+          value: ""
+        - name: PROMETHEUS_SERVER
+          value: ""
+        - name: UPTIME_FROM_FILE
+          value: "/proc/uptime"
+        - name: ENABLE_PROMETHEUS_SERVER
+          value: "false"
+        - name: PROMETHEUS_PORT
+          value: "9092"
+        - name: LOG_LEVEL
+          value: "info"
+        - name: JSON_LOGGING
+          value: "true"
+        - name: LOG_FORMAT_VERSION
+          value: "2"
+        - name: ENABLE_WEBHOOK_MOCK
+          value: "false"
+        - name: WEBHOOK_MOCK_PORT
+          value: "1338"
+        - name: IMDS_RETRY_DELAY_MAX
+          value: "5s"
+        - name: CORDON_ONLY
+          value: "false"
+        - name: TAINT_NODE
+          value: "true"
+        - name: EXCLUDE_FROM_LOAD_BALANCERS
+          value: "true"
+        - name: EMIT_KUBERNETES_EVENTS
+          value: "true"
+        - name: KUBERNETES_EVENTS_EXTRA_ANNOTATIONS
+          value: ""
+        - name: AWS_REGION
+          value: "us-east-1"
+        - name: AWS_ENDPOINT
+          value: ""
+        resources:
+          limits:
+            cpu: 100m
+            memory: 128Mi
+          requests:
+            cpu: 50m
+            memory: 64Mi
+        volumeMounts:
+        - name: uptime
+          mountPath: /proc
+          readOnly: true
+      volumes:
+      - name: uptime
+        hostPath:
+          path: /proc
+      nodeSelector:
+        kubernetes.io/os: linux
+      tolerations:
+      - key: node.kubernetes.io/not-ready
+        operator: Exists
+        effect: NoSchedule
+      - key: node.kubernetes.io/unreachable
+        operator: Exists
+        effect: NoSchedule
+      - key: node.kubernetes.io/disk-pressure
+        operator: Exists
+        effect: NoSchedule
+      - key: node.kubernetes.io/memory-pressure
+        operator: Exists
+        effect: NoSchedule
+      - key: node.kubernetes.io/pid-pressure
+        operator: Exists
+        effect: NoSchedule
+      - key: node.kubernetes.io/unschedulable
+        operator: Exists
+        effect: NoSchedule
+      - key: node.kubernetes.io/network-unavailable
+        operator: Exists
+        effect: NoSchedule
+
+---
+# Priority Classes for Spot Instance Workloads
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: spot-low-priority
+value: 0
+globalDefault: false
+description: "Low priority class for non-critical workloads on spot instances"
+
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: spot-medium-priority
+value: 100
+globalDefault: false
+description: "Medium priority class for standard workloads on spot instances"
+
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: on-demand-high-priority
+value: 1000
+globalDefault: false
+description: "High priority class for critical workloads on on-demand instances"

@@ -1,0 +1,36 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'frontend'
+    static_configs:
+      - targets: ['frontend:3000']
+
+  - job_name: 'intent-classifier'
+    static_configs:
+      - targets: ['intent-classifier:8001']
+
+  - job_name: 'technique-selector'
+    static_configs:
+      - targets: ['technique-selector:8002']
+
+  - job_name: 'prompt-generator'
+    static_configs:
+      - targets: ['prompt-generator:8003']
+
+  - job_name: 'nginx'
+    static_configs:
+      - targets: ['nginx:9113']
+
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres:9187']
+
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:9121']

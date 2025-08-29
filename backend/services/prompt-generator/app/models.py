@@ -36,7 +36,7 @@ class PromptGenerationRequest(BaseModel):
     text: str = Field(..., min_length=1, max_length=5000, description="Original user input")
     intent: str = Field(..., description="Classified intent")
     complexity: str = Field(..., description="Complexity level", pattern="^(simple|moderate|complex)$")
-    techniques: List[str] = Field(default_factory=list, description="Selected techniques (auto-selected if empty)")
+    techniques: List[str] = Field(..., description="Selected techniques to apply")
     context: Optional[Dict[str, Any]] = Field(default=None, description="Additional context")
     parameters: Optional[Dict[str, Any]] = Field(default=None, description="Technique parameters")
     target_model: Optional[str] = Field(default="gpt-4", description="Target LLM model")

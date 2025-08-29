@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: model-store-pvc
+  namespace: model-serving
+  labels:
+    app: torchserve
+    component: storage
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: efs-sc  # AWS EFS or equivalent
+  resources:
+    requests:
+      storage: 100Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: model-cache-pvc
+  namespace: model-serving
+  labels:
+    app: torchserve
+    component: cache
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ssd-sc  # Fast SSD storage
+  resources:
+    requests:
+      storage: 50Gi

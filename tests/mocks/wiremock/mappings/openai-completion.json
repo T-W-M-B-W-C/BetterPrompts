@@ -1,0 +1,37 @@
+{
+  "request": {
+    "method": "POST",
+    "urlPath": "/v1/chat/completions",
+    "headers": {
+      "Content-Type": {
+        "equalTo": "application/json"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "id": "chatcmpl-{{randomValue type='UUID'}}",
+      "object": "chat.completion",
+      "created": "{{now epoch}}",
+      "model": "gpt-4",
+      "usage": {
+        "prompt_tokens": 50,
+        "completion_tokens": 150,
+        "total_tokens": 200
+      },
+      "choices": [{
+        "message": {
+          "role": "assistant",
+          "content": "{{#if (contains request.body 'chain_of_thought')}}Let me break this down step by step:\n\nStep 1: First, I'll analyze the problem\nStep 2: Then, I'll design the solution\nStep 3: Finally, I'll implement the code\n\nHere's the solution:\n```python\ndef solve_problem():\n    # Implementation here\n    pass\n```{{else if (contains request.body 'few_shot')}}Here are some examples:\n\nExample 1: Input: 'hello' → Output: 'HELLO'\nExample 2: Input: 'world' → Output: 'WORLD'\n\nBased on these examples, the pattern is to convert to uppercase.{{else}}This is a mock response for testing. The actual implementation would provide a more detailed answer based on the prompt engineering technique requested.{{/if}}"
+        },
+        "finish_reason": "stop",
+        "index": 0
+      }]
+    },
+    "transformers": ["response-template"]
+  }
+}

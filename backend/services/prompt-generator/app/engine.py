@@ -10,7 +10,6 @@ import structlog
 from uuid import uuid4
 from dataclasses import dataclass, field
 from copy import deepcopy
-import httpx
 
 from .models import (
     PromptGenerationRequest,
@@ -196,49 +195,6 @@ class PromptGenerationEngine:
             "priority": 1,
             "parameters": {}
         }
-    
-    async def _fetch_techniques_from_selector(self, request: PromptGenerationRequest) -> List[str]:
-        """Call technique selector if no techniques specified"""
-        # If user provided techniques, use them
-        if request.techniques:
-            return request.techniques
-        
-        # Try to get recommendations from technique selector
-        try:
-            async with httpx.AsyncClient(timeout=5.0) as client:
-                response = await client.post(
-                    f"{settings.technique_selector_url}/api/v1/select",
-                    json={
-                        "text": request.text,
-                        "intent": request.intent,
-                        "complexity": request.complexity
-                    }
-                )
-                if response.status_code == 200:
-                    data = response.json()
-                    raw_techniques = [t["id"] for t in data.get("techniques", [])]
-                    
-                    # Filter to only techniques we support
-                    valid_techniques = [t.value for t in TechniqueType]
-                    techniques = [t for t in raw_techniques if t in valid_techniques]
-                    
-                    if techniques:
-                        self.logger.info(
-                            "Retrieved techniques from selector",
-                            techniques=techniques,
-                            count=len(techniques),
-                            filtered_out=len(raw_techniques) - len(techniques)
-                        )
-                        return techniques
-        except Exception as e:
-            self.logger.warning(
-                "Failed to get techniques from selector",
-                error=str(e)
-            )
-        
-        # Fallback to zero_shot
-        self.logger.info("Using default technique: zero_shot")
-        return ["zero_shot"]
         
     async def generate(self, request: PromptGenerationRequest) -> PromptGenerationResponse:
         """Generate an enhanced prompt"""
@@ -253,9 +209,6 @@ class PromptGenerationEngine:
         )
         
         try:
-            # Get techniques from selector if not provided
-            request.techniques = await self._fetch_techniques_from_selector(request)
-            
             # Validate input
             validation_result = await self._validate_request(request)
             if not validation_result.is_valid:
@@ -346,21 +299,8 @@ class PromptGenerationEngine:
             "intent": request.intent,
             "complexity": request.complexity,
             "target_model": request.target_model,
-            "temperature": request.temperature or settings.default_temperature,
-            # Enable enhanced mode for supported techniques when complexity is moderate or complex
-            "enhanced": request.complexity in ["moderate", "complex"],
-            # Pass intent as initial domain hint for techniques that need it
-            "domain": request.intent,
-            # Enable sub-steps for complex problems
-            "show_substeps": request.complexity == "complex"
+            "temperature": request.temperature or settings.default_temperature
         }
-        
-        self.logger.info(
-            "Prepared context for techniques",
-            enhanced_mode=context["enhanced"],
-            complexity=request.complexity,
-            intent=request.intent
-        )
         
         # Merge with request context
         if request.context:
@@ -421,15 +361,6 @@ class PromptGenerationEngine:
                 )
                 
                 # Apply technique with enhanced context
-                self.logger.info(
-                    f"Applying technique with context",
-                    technique=technique_id,
-                    context_keys=list(technique_context.keys()),
-                    enhanced_mode=technique_context.get("enhanced", False),
-                    complexity=technique_context.get("complexity"),
-                    intent=technique_context.get("intent")
-                )
-                
                 result = await self._apply_single_technique_with_metadata(
                     technique_id,
                     chain_context.current_text,
@@ -511,25 +442,10 @@ class PromptGenerationEngine:
             
         # Apply technique with tracking if available
         tracking_id = None
-        self.logger.debug(
-            f"Calling technique.apply",
-            technique_id=technique_id,
-            text_length=len(text),
-            has_tracking=hasattr(technique, 'apply_with_tracking')
-        )
-        
         if hasattr(technique, 'apply_with_tracking'):
             result, tracking_id = technique.apply_with_tracking(text, context)
         else:
             result = technique.apply(text, context)
-        
-        self.logger.debug(
-            f"Technique applied",
-            technique_id=technique_id,
-            input_length=len(text),
-            output_length=len(result),
-            changed=result != text
-        )
         
         # Extract metadata if the technique provides it
         metadata = {}

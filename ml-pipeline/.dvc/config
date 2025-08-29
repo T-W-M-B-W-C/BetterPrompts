@@ -1,0 +1,12 @@
+[core]
+    remote = storage
+    autostage = true
+
+['remote "storage"']
+    url = s3://betterprompts-ml-data
+    
+['remote "local"']
+    url = /tmp/dvc-storage
+
+[cache]
+    type = reflink,hardlink,copy

@@ -18,8 +18,8 @@ RUN go mod download
 COPY . .
 
 # Build the application with optimizations
-RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build \
-    -ldflags="-w -s -extldflags '-static'" \
+RUN CGO_ENABLED=0 GOOS=linux go build \
+    -ldflags="-w -s" \
     -a -installsuffix cgo \
     -o technique-selector \
     ./cmd/server

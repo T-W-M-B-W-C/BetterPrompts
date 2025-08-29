@@ -31,3 +31,6 @@ backend/services/intent-classifier/.cache/
 backend/services/*/.cache/
 **/.cache/huggingface/
 .cache/
+venv
+**/.cache/**    
+**/.cache
