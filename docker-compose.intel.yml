@@ -1,0 +1,58 @@
+# Intel x86_64 specific overrides
+# Use with: docker compose -f docker-compose.yml -f docker-compose.intel.yml up
+
+services:
+  # TorchServe with Intel optimizations
+  torchserve:
+    build:
+      args:
+        - TORCHSERVE_VERSION=0.9.0
+        - BASE_IMAGE_TYPE=cpu  # Use CPU for development, GPU for production
+    environment:
+      # Higher memory allocation for Intel processors
+      - JAVA_OPTS=-Xmx2g -Xms1g -XX:+UseG1GC -XX:MaxGCPauseMillis=100
+      - TS_CONFIG_FILE=/home/model-server/config/config.properties
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+    platform: linux/amd64
+
+  # Intent classifier with Intel-optimized PyTorch
+  intent-classifier:
+    build:
+      args:
+        - PYTORCH_INDEX_URL=https://download.pytorch.org/whl/cpu
+    environment:
+      - ENVIRONMENT=development
+      - DATABASE_URL=postgresql://betterprompts:betterprompts@postgres:5432/betterprompts?sslmode=disable
+      - REDIS_URL=redis://redis:6379/0
+      - MODEL_NAME=microsoft/deberta-v3-base
+      - LOG_LEVEL=DEBUG
+      - USE_TORCHSERVE=false
+      - TORCHSERVE_HOST=torchserve
+      - TORCHSERVE_PORT=8080
+      - PYTHONPATH=/app
+    platform: linux/amd64
+
+  # All other services use AMD64
+  technique-selector:
+    platform: linux/amd64
+
+  prompt-generator:
+    platform: linux/amd64
+
+  api-gateway:
+    platform: linux/amd64
+
+  nginx:
+    platform: linux/amd64
+
+  postgres:
+    platform: linux/amd64
+
+  redis:
+    platform: linux/amd64
+
+  prometheus:
+    platform: linux/amd64
+
+  grafana:
+    platform: linux/amd64

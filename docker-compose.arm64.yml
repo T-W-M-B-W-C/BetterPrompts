@@ -1,0 +1,58 @@
+# ARM64/Apple Silicon specific overrides
+# Use with: docker compose -f docker-compose.yml -f docker-compose.arm64.yml up
+
+services:
+  # TorchServe with ARM64 optimizations
+  torchserve:
+    build:
+      args:
+        - TORCHSERVE_VERSION=0.9.0
+        - BASE_IMAGE_TYPE=cpu
+    environment:
+      # Reduced memory for ARM processors
+      - JAVA_OPTS=-Xmx1g -Xms512m -XX:+UseG1GC -XX:MaxGCPauseMillis=100
+      - TS_CONFIG_FILE=/home/model-server/config/config.properties
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+    platform: linux/arm64
+
+  # Intent classifier with ARM64 PyTorch
+  intent-classifier:
+    build:
+      args:
+        - PYTORCH_INDEX_URL=  # Use default PyPI for ARM64
+    environment:
+      - ENVIRONMENT=development
+      - DATABASE_URL=postgresql://betterprompts:betterprompts@postgres:5432/betterprompts?sslmode=disable
+      - REDIS_URL=redis://redis:6379/0
+      - MODEL_NAME=microsoft/deberta-v3-base
+      - LOG_LEVEL=DEBUG
+      - USE_TORCHSERVE=false
+      - TORCHSERVE_HOST=torchserve
+      - TORCHSERVE_PORT=8080
+      - PYTHONPATH=/app
+    platform: linux/arm64
+
+  # All other services use ARM64
+  technique-selector:
+    platform: linux/arm64
+
+  prompt-generator:
+    platform: linux/arm64
+
+  api-gateway:
+    platform: linux/arm64
+
+  nginx:
+    platform: linux/arm64
+
+  postgres:
+    platform: linux/arm64
+
+  redis:
+    platform: linux/arm64
+
+  prometheus:
+    platform: linux/arm64
+
+  grafana:
+    platform: linux/arm64

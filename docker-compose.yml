@@ -5,6 +5,7 @@ services:
     build:
       context: ./backend/services/intent-classifier
       dockerfile: Dockerfile
+    platform: ${DOCKER_PLATFORM:-linux/amd64}
     container_name: betterprompts-intent-classifier
     ports:
       - "8001:8001"
@@ -39,6 +40,7 @@ services:
     build:
       context: ./backend/services/technique-selector
       dockerfile: ../../../docker/backend/technique-selector/Dockerfile
+    platform: ${DOCKER_PLATFORM:-linux/amd64}
     container_name: betterprompts-technique-selector
     ports:
       - "8002:8002"
@@ -67,6 +69,7 @@ services:
     build:
       context: .
       dockerfile: docker/backend/prompt-generator/Dockerfile
+    platform: ${DOCKER_PLATFORM:-linux/amd64}
     container_name: betterprompts-prompt-generator
     ports:
       - "8003:8003"
@@ -97,6 +100,7 @@ services:
     build:
       context: ./backend/services/api-gateway
       dockerfile: Dockerfile
+    platform: ${DOCKER_PLATFORM:-linux/amd64}
     container_name: betterprompts-api-gateway
     ports:
       - "8000:8090"
@@ -139,6 +143,7 @@ services:
     build:
       context: ./docker/nginx
       dockerfile: Dockerfile
+    platform: ${DOCKER_PLATFORM:-linux/amd64}
     container_name: betterprompts-nginx
     ports:
       - "80:80"
@@ -160,6 +165,7 @@ services:
   # PostgreSQL Database
   postgres:
     image: pgvector/pgvector:pg16
+    platform: ${DOCKER_PLATFORM:-linux/amd64}
     container_name: betterprompts-postgres
     ports:
       - "5432:5432"
@@ -182,6 +188,7 @@ services:
   # Redis Cache
   redis:
     image: redis:7-alpine
+    platform: ${DOCKER_PLATFORM:-linux/amd64}
     container_name: betterprompts-redis
     ports:
       - "6379:6379"
@@ -199,6 +206,7 @@ services:
   # Monitoring - Prometheus
   prometheus:
     image: prom/prometheus:latest
+    platform: ${DOCKER_PLATFORM:-linux/amd64}
     container_name: betterprompts-prometheus
     ports:
       - "9090:9090"
@@ -216,6 +224,7 @@ services:
   # Monitoring - Grafana
   grafana:
     image: grafana/grafana:latest
+    platform: ${DOCKER_PLATFORM:-linux/amd64}
     container_name: betterprompts-grafana
     ports:
       - "3001:3000"
@@ -236,6 +245,10 @@ services:
     build:
       context: ./infrastructure/model-serving
       dockerfile: docker/Dockerfile.torchserve
+      args:
+        - TORCHSERVE_VERSION=${TORCHSERVE_VERSION:-0.9.0}
+        - BASE_IMAGE_TYPE=${TORCHSERVE_TYPE:-cpu}
+    platform: ${DOCKER_PLATFORM:-linux/amd64}
     container_name: betterprompts-torchserve
     ports:
       - "8080:8080"  # Inference API
@@ -246,8 +259,8 @@ services:
       - torchserve-models:/home/model-server/model-store
       - torchserve-logs:/home/model-server/logs
     environment:
-      # Reduced memory for development (production: -Xmx4g -Xms2g)
-      - JAVA_OPTS=-Xmx1g -Xms512m -XX:+UseG1GC -XX:MaxGCPauseMillis=100
+      # Memory settings configured per architecture
+      - JAVA_OPTS=${JAVA_OPTS:--Xmx1g -Xms512m -XX:+UseG1GC -XX:MaxGCPauseMillis=100}
       - TS_CONFIG_FILE=/home/model-server/config/config.properties
       - ENVIRONMENT=${ENVIRONMENT:-development}
     networks:

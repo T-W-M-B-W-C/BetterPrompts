@@ -1,8 +1,12 @@
 # TorchServe Docker Image for BetterPrompts
 # Multi-stage build for optimized production image
 
-# Stage 1: Base image with CUDA support
-FROM pytorch/torchserve:0.9.0-gpu AS base
+# Build arguments for flexible base image selection
+ARG TORCHSERVE_VERSION=0.9.0
+ARG BASE_IMAGE_TYPE=cpu
+
+# Stage 1: Base image with flexible CPU/GPU support
+FROM pytorch/torchserve:${TORCHSERVE_VERSION}-${BASE_IMAGE_TYPE} AS base
 
 # Install system dependencies
 USER root
@@ -49,8 +53,8 @@ COPY --from=model-builder /home/model-server /home/model-server
 COPY torchserve/config/config.properties /home/model-server/config/
 COPY torchserve/config/log4j2.xml /home/model-server/config/
 
-# Set environment variables
-ENV JAVA_OPTS="-Xmx4g -Xms2g -XX:+UseG1GC -XX:MaxGCPauseMillis=100"
+# Set environment variables with architecture-aware defaults
+ENV JAVA_OPTS="-Xmx2g -Xms1g -XX:+UseG1GC -XX:MaxGCPauseMillis=100"
 ENV TS_CONFIG_FILE="/home/model-server/config/config.properties"
 ENV LOG4J_CONFIG_FILE="/home/model-server/config/log4j2.xml"
 ENV MODEL_STORE="/home/model-server/model-store"

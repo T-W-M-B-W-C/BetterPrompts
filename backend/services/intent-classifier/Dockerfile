@@ -21,9 +21,14 @@ ENV PATH="/opt/venv/bin:$PATH"
 # Upgrade pip and install wheel for faster builds
 RUN pip install --upgrade pip wheel
 
-# Install ML dependencies with optimizations
-# Use CPU-only torch to reduce size (remove if GPU needed)
-RUN pip install torch==2.1.1 --index-url https://download.pytorch.org/whl/cpu \
+# Install ML dependencies with multi-architecture support
+# Use build arg to conditionally set PyTorch index URL
+ARG PYTORCH_INDEX_URL=""
+RUN if [ -n "$PYTORCH_INDEX_URL" ]; then \
+        pip install torch==2.1.1 --index-url "$PYTORCH_INDEX_URL"; \
+    else \
+        pip install torch==2.1.1; \
+    fi \
     && pip install transformers==4.36.0 \
     && pip install --no-cache-dir -r requirements.txt
 
