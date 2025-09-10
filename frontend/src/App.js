@@ -38,53 +38,177 @@ function App() {
   };
 
   return (
-    <div style={{ maxWidth: '900px', margin: '40px auto', padding: '20px', fontFamily: 'system-ui' }}>
-      <h1 style={{ borderBottom: '2px solid #333', paddingBottom: '10px' }}>BetterPrompts</h1>
-      <p style={{ color: '#666', marginBottom: '20px' }}>
-        Transform your prompts using advanced techniques automatically
-      </p>
-      
-      <textarea
-        value={prompt}
-        onChange={e => setPrompt(e.target.value)}
-        placeholder="Enter your prompt... e.g., 'Write a story about a robot' or 'Explain quantum computing'"
-        style={{ 
-          width: '100%', 
-          height: '120px', 
-          marginBottom: '10px', 
-          padding: '12px',
-          fontSize: '14px',
-          border: '1px solid #ddd',
-          borderRadius: '4px',
-          resize: 'vertical'
+    <>
+      <header style={{ background: '#ffffff', borderBottom: '1px solid #eeeeee' }}>
+        <div style={{ maxWidth: '900px', margin: '0 auto', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 800, color: '#198754' }}>
+            <img src="/favicon.ico" alt="BetterPrompts logo" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />
+            <span>BetterPrompts</span>
+          </div>
+          <nav style={{ display: 'flex', gap: '14px' }}>
+            <a href="#" style={{ color: '#198754', textDecoration: 'none' }}>Docs</a>
+            <a href="#" style={{ color: '#198754', textDecoration: 'none' }}>Pricing</a>
+            <a href="#" style={{ color: '#198754', textDecoration: 'none' }}>Blog</a>
+            <a href="#" style={{ color: '#198754', textDecoration: 'none' }}>Contact</a>
+            <a href="#" style={{ color: '#198754', textDecoration: 'none' }}>GitHub</a>
+          </nav>
+        </div>
+      </header>
+      <div
+        style={{
+          position: 'relative',
+          width: '100%',
+          height: '260px',
+          margin: 0,
+          borderRadius: 0,
+          overflow: 'hidden',
+          backgroundImage: "url('/images/bamboo.jpg')",
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
         }}
-      />
-      
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-        <button 
-          onClick={enhance} 
-          disabled={!prompt || loading}
-          style={{ 
-            padding: '10px 24px',
-            background: loading ? '#999' : '#007bff',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: !prompt || loading ? 'not-allowed' : 'pointer',
-            fontSize: '16px'
+        aria-label="Hero image"
+        role="img"
+      >
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.45) 60%, rgba(0,0,0,0.55) 100%)'
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexDirection: 'column',
+            padding: '0 24px',
+            textAlign: 'center',
+            textShadow: '0 3px 10px rgba(0,0,0,0.45)'
           }}
         >
-          {loading ? '🔄 Analyzing...' : '✨ Enhance Prompt'}
-        </button>
-        <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-          <input 
-            type="checkbox" 
-            checked={showThinking}
-            onChange={e => setShowThinking(e.target.checked)}
-            style={{ marginRight: '5px' }}
+          <div style={{ fontSize: '48px', fontWeight: 800, letterSpacing: '0.4px', lineHeight: 1.1, color: '#ffffff' }}>BetterPrompts</div>
+          <div style={{ fontSize: '20px', opacity: 0.98, marginTop: '6px', color: '#ffffff' }}>Transform your prompts using advanced techniques automatically</div>
+        </div>
+      </div>
+      <div style={{ maxWidth: '900px', margin: '8px auto 40px', padding: '10px 20px 20px 20px', fontFamily: 'system-ui' }}>
+        <h2
+          style={{
+            borderBottom: '2px solid #333',
+            color: '#198754',
+            textAlign: 'center',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '72px',
+            margin: '0 0 16px 0'
+          }}
+        >
+          Transform your prompts using advanced techniques automatically
+        </h2>
+        <div style={{ display: 'flex', justifyContent: 'space-evenly', gap: '16px', margin: '8px 0 16px 0' }}>
+          <p style={{ color: '#000', lineHeight: 1.5, flex: 1 }}>
+            BetterPrompts accelerates your workflow by turning vague ideas into clear, structured instructions. With intent-aware techniques and consistent formatting, you reduce revision cycles, improve clarity, and get high-quality results faster.
+          </p>
+          <p style={{ color: '#000', lineHeight: 1.5, flex: 1 }}>
+            Thoughtful elaboration guides models to the target outcome—specifying goals, constraints, style, and structure. This focus not only improves response relevance and coherence, but also builds better prompting habits over time.
+          </p>
+        </div>
+        <div style={{ width: '100%', background: '#f2f2f2', border: '1px solid #e5e5e5', borderRadius: '6px', padding: '28px 28px', margin: '24px 0 24px 0' }}>
+          <h3 style={{ margin: '0 0 8px 0', color: '#198754', fontSize: '18px' }}>
+            Why goals, constraints, style, and structure improve results
+          </h3>
+          <p style={{ color: '#000', margin: '12px 0 12px 0', lineHeight: 1.55 }}>
+            When you define <strong>goals</strong>, the model understands the destination—what “good” looks like—so it can prioritize information and make sharper trade‑offs. Clear <strong>constraints</strong> (time, scope, sources, compliance) reduce ambiguity and prevent detours, which directly improves accuracy, safety, and consistency.
+          </p>
+          <p style={{ color: '#000', margin: 0, lineHeight: 1.55 }}>
+            Choosing an appropriate <strong>style</strong> (tone, audience level, format) and imposing <strong>structure</strong> (sections, bullet points, JSON schema) creates a predictable shape for the output. This makes answers easier to evaluate, compare, and reuse—while guiding the model to produce focused, verifiable content that better serves your intent.
+          </p>
+        </div>
+        <div style={{ width: '100%', background: '#f2f2f2', border: '1px solid #e5e5e5', borderRadius: '6px', padding: '28px 28px', margin: '24px 0 24px 0' }}>
+          <h3 style={{ margin: '0 0 8px 0', color: '#198754', fontSize: '18px' }}>
+            What to expect from BetterPrompts
+          </h3>
+          <p style={{ color: '#000', margin: '12px 0 0 0', lineHeight: 1.55 }}>
+            BetterPrompts refines your input into clear, goal-driven instructions with explicit constraints and structure. Expect more relevant, verifiable outputs; fewer rewrites; and consistent formatting you can reuse across tasks and teams.
+          </p>
+        </div>
+        <div
+          style={{
+            position: 'relative',
+            left: '50%',
+            right: '50%',
+            marginLeft: '-50vw',
+            marginRight: '-50vw',
+            width: '100vw',
+            height: '260px',
+            marginTop: '56px',
+            marginBottom: '24px',
+            overflow: 'hidden',
+            backgroundImage: "url('/images/bamboo2.jpg')",
+            backgroundSize: 'cover',
+            backgroundPosition: 'center'
+          }}
+          aria-label="Secondary hero image"
+          role="img"
+        >
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.45) 60%, rgba(0,0,0,0.55) 100%)'
+            }}
           />
-          Show thinking process
-        </label>
+        </div>
+      
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '80px 0' }}>
+        <h2 style={{ textAlign: 'center', margin: '0 0 16px 0', color: '#198754' }}>
+          Try BetterPrompts now
+        </h2>
+        <textarea
+          value={prompt}
+          onChange={e => setPrompt(e.target.value)}
+          placeholder="Enter your prompt... e.g., 'Write a story about a robot' or 'Explain quantum computing'"
+          style={{ 
+            width: '100%', 
+            height: '120px', 
+            marginBottom: '10px', 
+            padding: '12px',
+            fontSize: '14px',
+            border: '1px solid #ddd',
+            borderRadius: '4px',
+            resize: 'vertical'
+          }}
+        />
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+          <button 
+            onClick={enhance} 
+            disabled={!prompt || loading}
+            style={{ 
+              padding: '10px 24px',
+              background: loading ? '#999' : '#198754',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: !prompt || loading ? 'not-allowed' : 'pointer',
+              fontSize: '16px'
+            }}
+          >
+            {loading ? '🔄 Analyzing...' : '✨ Enhance Prompt'}
+          </button>
+          <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', color: '#198754' }}>
+            <input 
+              type="checkbox" 
+              checked={showThinking}
+              onChange={e => setShowThinking(e.target.checked)}
+              style={{ marginRight: '5px', accentColor: '#198754' }}
+            />
+            Show thinking process
+          </label>
+        </div>
       </div>
 
       {loading && (
@@ -206,13 +330,47 @@ function App() {
         </div>
       )}
 
-      <style>{`
-        @keyframes loading {
-          0% { background-position: -200% 0; }
-          100% { background-position: 200% 0; }
-        }
-      `}</style>
-    </div>
+        <style>{`
+          body { margin: 0; }
+          @keyframes loading {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+          }
+        `}</style>
+      </div>
+      <div
+        style={{
+          position: 'relative',
+          width: '100%',
+          height: '260px',
+          margin: 0,
+          borderRadius: 0,
+          overflow: 'hidden',
+          backgroundImage: "url('/images/bamboo3.jpg')",
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
+        }}
+        aria-label="Bottom hero image"
+        role="img"
+      >
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.45) 60%, rgba(0,0,0,0.55) 100%)'
+          }}
+        />
+      </div>
+      <footer style={{ background: '#ffffff', borderTop: '1px solid #eeeeee', padding: '16px 20px' }}>
+        <div style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '14px', fontSize: '14px' }}>
+          <a href="#" style={{ color: '#198754', textDecoration: 'none' }}>Docs</a>
+          <a href="#" style={{ color: '#198754', textDecoration: 'none' }}>Privacy</a>
+          <a href="#" style={{ color: '#198754', textDecoration: 'none' }}>Terms</a>
+          <a href="#" style={{ color: '#198754', textDecoration: 'none' }}>Contact</a>
+          <a href="#" style={{ color: '#198754', textDecoration: 'none' }}>GitHub</a>
+        </div>
+      </footer>
+    </>
   );
 }
 
